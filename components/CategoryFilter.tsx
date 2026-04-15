@@ -21,12 +21,13 @@ const FOOD_CATEGORIES = [
   'Herbs & Spices',
 ]
 
-const NUTRIENT_CATEGORIES: NutrientCategory[] = [
-  'All',
-  'Macronutrients',
-  'Vitamins',
-  'Minerals',
-  'Fatty Acids',
+// These must match the `name` values in the nutrient_categories table exactly
+const NUTRIENT_CATEGORIES: { value: NutrientCategory; label: string }[] = [
+  { value: 'All',          label: 'All' },
+  { value: 'Macronutrient', label: 'Macros' },
+  { value: 'Vitamin',       label: 'Vitamins' },
+  { value: 'Mineral',       label: 'Minerals' },
+  { value: 'Fatty Acid',    label: 'Fatty Acids' },
 ]
 
 interface Props {
@@ -72,17 +73,17 @@ export default function CategoryFilter({
           Nutrient group
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {NUTRIENT_CATEGORIES.map((cat) => (
+          {NUTRIENT_CATEGORIES.map(({ value, label }) => (
             <button
-              key={cat}
-              onClick={() => onNutrientChange(cat)}
+              key={value}
+              onClick={() => onNutrientChange(value)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                selectedNutrient === cat
+                selectedNutrient === value
                   ? 'bg-slate-100 text-slate-900'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
               }`}
             >
-              {cat}
+              {label}
             </button>
           ))}
         </div>
