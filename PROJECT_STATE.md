@@ -1,13 +1,13 @@
 # Nutrition Platform — Project State
 
 **Last updated:** 2026-04-14  
-**Current phase: App build — Phase 2 (heatmap polish)**
+**Current phase: Phase 2 — Heatmap polish**
 
 ---
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 14 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (212 foods × 39 nutrients). The app is now being built on top of it. First deployed feature: an interactive heatmap table showing all foods × all nutrients, color-coded by relative nutrient density.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (212 foods × 39 nutrients). The app is now being built on top of it. First deployed feature: an interactive heatmap table showing all foods × all nutrients, color-coded by relative nutrient density.
 
 ---
 
@@ -23,8 +23,8 @@ A public-facing nutrition web app built on **Next.js 14 + Supabase + Vercel**, s
 | Reference CSVs | ✅ Complete |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
-| **Supabase project + database deployed** | ⬜ Manual step — user action required |
-| **Vercel project connected to GitHub** | ⬜ Manual step — user action required |
+| **Supabase project + database deployed** | ✅ Complete — 8,268 rows verified |
+| **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 
 **Total food_nutrients rows: 8,268** (212 foods × 39 nutrients ✓)
@@ -39,9 +39,9 @@ A public-facing nutrition web app built on **Next.js 14 + Supabase + Vercel**, s
 
 Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 
-### App source (to be created)
-- All app files live in the GitHub repo root (Next.js project)
-- `.env.local` — Supabase URL + anon key (never committed; set in Vercel dashboard too)
+### App source
+- All app files live in the GitHub repo root (Next.js 16 project)
+- `.env.local` — Supabase URL + anon key (never committed; also set in Vercel dashboard)
 
 ### Human-readable reference
 - **`reference/food_list.csv`** — All 212 foods with category, batch, priority
@@ -61,11 +61,11 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 
 - [x] **1a. Scaffold Next.js app** — Done (Next.js 16, TypeScript, Tailwind v4, App Router)
 - [x] **1b. Create GitHub repo** — Done (github.com/danzhig/nutrition-platform, pushed to `main`)
-- [x] **1f. Build MVP heatmap** — Done (`lib/supabase.ts`, `lib/fetchHeatmapData.ts`, `lib/colorScale.ts`, `components/HeatmapTable.tsx`, `components/HeatmapCell.tsx`, `components/CategoryFilter.tsx`, `types/nutrition.ts`)
-- [ ] **1c. Create Supabase project** ← **YOU ARE HERE** — new project at supabase.com, copy URL + anon key, create `.env.local` (see `.env.example`)
-- [ ] **1d. Deploy database** — run `sql/schema.sql` then `sql/seed_all.sql` in Supabase SQL editor; verify `SELECT COUNT(*) FROM food_nutrients;` = 8,268
-- [ ] **1e. Connect Vercel** — vercel.com → Add New Project → import `danzhig/nutrition-platform` from GitHub → add env vars `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Deploy
-- [ ] **1g. Confirm live URL** — open Vercel deployment URL, confirm heatmap loads with data
+- [x] **1c. Create Supabase project** — Done
+- [x] **1d. Deploy database** — Done (`sql/schema.sql` + `sql/seed_all.sql`; 8,268 rows verified)
+- [x] **1e. Connect Vercel** — Done (env vars set, auto-deploy active)
+- [x] **1f. Build MVP heatmap** — Done (`lib/supabase.ts`, `lib/fetchHeatmapData.ts`, `lib/colorScale.ts`, `lib/portionSizes.ts`, `lib/filterConstants.ts`, `components/HeatmapTable.tsx`, `components/HeatmapCell.tsx`, `components/FilterPanel.tsx`, `types/nutrition.ts`)
+- [x] **1g. Confirm live URL** — Done; heatmap loads all 212 foods
 
 ### Phase 2 — Heatmap Polish (current)
 - [x] Dark mode theme (slate-900 base, all components updated)
@@ -89,7 +89,7 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 | Framework | Next.js 14 App Router | Native Vercel target; server + client components |
 | Styling | Tailwind CSS | Rapid color-scale and layout work without custom CSS overhead |
 | Data client | `@supabase/supabase-js` | Auto-typed from schema; anon key safe for public read |
-| Heatmap normalization | Per-column min/max | Ensures color is meaningful within each nutrient regardless of unit scale |
+| Heatmap normalization | Per-column P10/P90 percentile | Outliers (e.g. liver B12, dried spices) don't compress all other foods to grey |
 | No auth for MVP | Public read only | Core exploration value requires zero friction; auth layer added in Phase 4+ |
 | NULL vs 0 | NULL = unavailable; 0 = genuinely none | Critical for correct color encoding — NULL renders as neutral grey, not red |
 

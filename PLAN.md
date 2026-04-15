@@ -1,7 +1,7 @@
 # Nutrition Platform — Build Plan
 
 **Last updated:** 2026-04-14  
-**Phase:** App build — MVP heatmap table
+**Phase:** Phase 2 — Heatmap polish
 
 ---
 
@@ -15,7 +15,7 @@ Build and deploy a public-facing nutrition web app backed by a Supabase PostgreS
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Frontend framework | Next.js 14 (App Router) | React-based, built for Vercel; `use client` components for interactivity |
+| Frontend framework | Next.js 16 (App Router) | React-based, built for Vercel; `use client` components for interactivity |
 | Styling | Tailwind CSS | Utility-first; rapid layout and color-scale work |
 | Data layer | Supabase (PostgreSQL) | Auto-generated REST API + `@supabase/supabase-js` client |
 | Hosting | Vercel | Deploy on push to `main`; preview deploys on PRs |
@@ -33,14 +33,16 @@ nutrition-platform/          ← GitHub repo root
 │   ├── page.tsx             ← Home page (heatmap table)
 │   └── globals.css
 ├── components/
-│   ├── HeatmapTable.tsx     ← Main heatmap component
+│   ├── HeatmapTable.tsx     ← Main heatmap component (filter state, sort, per-serving)
 │   ├── HeatmapCell.tsx      ← Individual cell with color + tooltip
-│   ├── FoodDetailPanel.tsx  ← Slide-in panel on row click
-│   └── CategoryFilter.tsx   ← Food category filter bar
+│   ├── FilterPanel.tsx      ← Slide-out filter & settings panel (left edge tab)
+│   └── FoodDetailPanel.tsx  ← Slide-in panel on row click (Phase 2, not yet built)
 ├── lib/
 │   ├── supabase.ts          ← Supabase client initialisation
-│   ├── fetchHeatmapData.ts  ← Data fetching + normalization logic
-│   └── colorScale.ts        ← Per-column min/max normalization → color
+│   ├── fetchHeatmapData.ts  ← Data fetching + P10/P90 normalization logic
+│   ├── colorScale.ts        ← Per-column P10/P90 normalization → color
+│   ├── filterConstants.ts   ← Shared FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
+│   └── portionSizes.ts      ← Per-food serving sizes (all 212 foods)
 ├── types/
 │   └── nutrition.ts         ← TypeScript interfaces
 ├── sql/                     ← Existing SQL files (deploy to Supabase)
@@ -126,14 +128,17 @@ Returns ~8,268 rows. Reshape on the front end into a `Map<food_id, Map<nutrient_
 
 ### Front-end normalization (colorScale.ts)
 
-For each nutrient column:
+For each nutrient column, color is normalized to the **P10/P90 range** (not min/max). Outliers clamp to 0 or 1 rather than distorting the scale.
+
 ```
-normalizedValue = (value - colMin) / (colMax - colMin)  → 0.0 to 1.0
+normalizedValue = clamp((value - p10) / (p90 - p10), 0, 1)  → 0.0 to 1.0
 ```
-- `1.0` → darkest green (e.g. `hsl(142, 76%, 28%)`)
-- `0.5` → white/grey (e.g. `hsl(0, 0%, 92%)`)
-- `0.0` → deep red (e.g. `hsl(0, 72%, 42%)`)
-- `NULL` → slate grey (data unavailable)
+- `1.0` → darkest green
+- `0.5` → mid (slate in dark mode)
+- `0.0` → deep red
+- `NULL` → `#1e293b` slate grey (data unavailable)
+
+In per-serving mode, p10/p90 is recomputed using `value × (portionGrams / 100)` so the color scale reflects serving-sized amounts.
 
 ### Interactivity (MVP + near-term)
 
@@ -158,11 +163,13 @@ normalizedValue = (value - colMin) / (colMax - colMin)  → 0.0 to 1.0
 - Renders a `<td>` with inline background color from `colorScale(normalizedValue)`
 - Tooltip on hover via Tailwind `group`/`group-hover` or a lightweight tooltip lib
 
-**`CategoryFilter.tsx`** — row filter
-- 15 food category buttons; active state highlights selected
-- "All" button resets filter
+**`FilterPanel.tsx`** — slide-out settings panel
+- Fixed to left edge; tab toggles open/close with backdrop
+- Multi-select food category pills + nutrient group buttons
+- Search input, per-serving toggle, reset footer
+- Active filter count badge on the tab
 
-**`FoodDetailPanel.tsx`** — V2 slide-in
+**`FoodDetailPanel.tsx`** — Phase 2 slide-in (not yet built)
 - Fixed-position panel, opens when a food row is clicked
 - Shows food name, category, and a vertical bar chart of all 39 nutrients
 
@@ -216,6 +223,10 @@ Full data reference: `reference/` folder (food_list.csv, nutrients_list.csv, foo
 
 ### Phase 2 — Heatmap Polish (current)
 - [x] Dark mode theme (slate-900 base, all components)
+- [x] P10/P90 percentile colour scale (replaces min/max)
+- [x] Per-serving toggle with Serving column (p10/p90 recomputed per-serving)
+- [x] Slide-out filter panel (left edge tab, backdrop, active badge, reset)
+- [x] Multi-select food category + nutrient group (select/deselect all, count badge)
 - [ ] Food row click → detail panel (FoodDetailPanel.tsx)
 - [ ] % RDA values in hover tooltips
 - [ ] Mobile-responsive: collapse to single-nutrient ranked list on small screens
