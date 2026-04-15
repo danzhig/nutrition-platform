@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
 import { getPortionSize } from '@/lib/portionSizes'
 import HeatmapCell from './HeatmapCell'
-import CategoryFilter from './CategoryFilter'
+import FilterPanel from './FilterPanel'
 
 interface Props {
   data: HeatmapData
@@ -21,32 +21,33 @@ function percentile(sorted: number[], p: number): number {
 }
 
 export default function HeatmapTable({ data }: Props) {
+  // Filter / view state — passed down to FilterPanel
   const [foodCategory, setFoodCategory] = useState<string>('All')
   const [nutrientCategory, setNutrientCategory] = useState<NutrientCategory>('All')
   const [search, setSearch] = useState('')
+  const [perServing, setPerServing] = useState(false)
+
+  // Sort state — owned here, controlled by column header clicks
   const [sortNutrientId, setSortNutrientId] = useState<number | null>(null)
   const [sortAsc, setSortAsc] = useState(false)
-  const [perServing, setPerServing] = useState(false)
 
   const visibleNutrients = useMemo(() => {
     if (nutrientCategory === 'All') return data.nutrients
     return data.nutrients.filter((n) => n.nutrient_category === nutrientCategory)
   }, [data.nutrients, nutrientCategory])
 
-  // Per-serving column ranges: recompute p10/p90 using scaled values so the
-  // colour scale reflects actual serving amounts, not per-100g.
-  const servingColumnRanges = useMemo(() => {
+  // Recompute p10/p90 ranges using per-serving scaled values when that mode is active
+  const activeRanges = useMemo(() => {
     if (!perServing) return data.columnRanges
 
     const columnValues: Record<number, number[]> = {}
     for (const food of data.foods) {
-      const portion = getPortionSize(food.food_id)
-      const multiplier = portion.grams / 100
+      const multiplier = getPortionSize(food.food_id).grams / 100
       for (const [nIdStr, value] of Object.entries(food.nutrients)) {
         if (value === null || value === undefined) continue
         const nId = Number(nIdStr)
         if (!columnValues[nId]) columnValues[nId] = []
-        columnValues[nId].push(value * multiplier)
+        columnValues[nId].push((value as number) * multiplier)
       }
     }
 
@@ -60,8 +61,6 @@ export default function HeatmapTable({ data }: Props) {
     }
     return ranges
   }, [data.foods, data.columnRanges, perServing])
-
-  const activeRanges = perServing ? servingColumnRanges : data.columnRanges
 
   const visibleFoods = useMemo(() => {
     let foods = data.foods
@@ -77,10 +76,10 @@ export default function HeatmapTable({ data }: Props) {
 
     if (sortNutrientId !== null) {
       foods = [...foods].sort((a, b) => {
-        const multiplierA = perServing ? getPortionSize(a.food_id).grams / 100 : 1
-        const multiplierB = perServing ? getPortionSize(b.food_id).grams / 100 : 1
-        const av = (a.nutrients[sortNutrientId] ?? -Infinity) * multiplierA
-        const bv = (b.nutrients[sortNutrientId] ?? -Infinity) * multiplierB
+        const mA = perServing ? getPortionSize(a.food_id).grams / 100 : 1
+        const mB = perServing ? getPortionSize(b.food_id).grams / 100 : 1
+        const av = (a.nutrients[sortNutrientId] ?? -Infinity) * mA
+        const bv = (b.nutrients[sortNutrientId] ?? -Infinity) * mB
         return sortAsc ? av - bv : bv - av
       })
     }
@@ -97,55 +96,31 @@ export default function HeatmapTable({ data }: Props) {
     }
   }
 
-  // Sticky left offsets: Food (160px) + Category (110px) + optional Serving (90px)
+  // Sticky left offsets
   const categoryLeft = 160
-  const servingLeft = categoryLeft + 110
-  const firstNutrientLeft = servingLeft + (perServing ? 90 : 0)
+  const servingLeft  = categoryLeft + 110
 
   return (
-    <div className="space-y-4">
-      {/* Controls bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <CategoryFilter
-          selectedFood={foodCategory}
-          selectedNutrient={nutrientCategory}
-          onFoodChange={setFoodCategory}
-          onNutrientChange={setNutrientCategory}
-        />
-        <div className="flex items-center gap-3">
-          {/* Per serving toggle */}
-          <button
-            onClick={() => setPerServing((v) => !v)}
-            title={perServing ? 'Switch to per 100g' : 'Switch to per serving'}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              perServing
-                ? 'bg-emerald-600 border-emerald-500 text-white'
-                : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600 hover:text-white'
-            }`}
-          >
-            <span className={`inline-block w-7 h-4 rounded-full relative transition-colors ${perServing ? 'bg-emerald-400' : 'bg-slate-500'}`}>
-              <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-all ${perServing ? 'left-3.5' : 'left-0.5'}`} />
-            </span>
-            {perServing ? 'Per serving' : 'Per 100g'}
-          </button>
+    <>
+      {/* Slide-out filter & settings panel */}
+      <FilterPanel
+        selectedFood={foodCategory}
+        selectedNutrient={nutrientCategory}
+        search={search}
+        perServing={perServing}
+        onFoodChange={setFoodCategory}
+        onNutrientChange={setNutrientCategory}
+        onSearchChange={setSearch}
+        onPerServingChange={setPerServing}
+      />
 
-          <input
-            type="search"
-            placeholder="Search foods…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full sm:w-56 px-3 py-1.5 text-sm bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-400 rounded-lg outline-none focus:ring-2 focus:ring-slate-400"
-          />
-        </div>
-      </div>
-
-      {/* Row count + mode note */}
-      <p className="text-xs text-slate-500">
+      {/* Thin status bar */}
+      <p className="text-xs text-slate-500 mb-2">
         {visibleFoods.length} food{visibleFoods.length !== 1 ? 's' : ''} ·{' '}
         {visibleNutrients.length} nutrient{visibleNutrients.length !== 1 ? 's' : ''}
-        {perServing && <span className="ml-2 text-emerald-500">· values scaled to typical serving size</span>}
+        {perServing && <span className="ml-2 text-emerald-500">· per serving</span>}
         {sortNutrientId !== null && (
-          <span className="ml-2 text-slate-500">
+          <span className="ml-2">
             · sorted by{' '}
             <span className="font-medium text-slate-300">
               {data.nutrients.find((n) => n.nutrient_id === sortNutrientId)?.nutrient_name}
@@ -162,23 +137,23 @@ export default function HeatmapTable({ data }: Props) {
         )}
       </p>
 
-      {/* Scrollable table — max-height enables internal vertical scroll so sticky headers work */}
-      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-220px)]">
+      {/* Scrollable table — full height now that the controls bar is gone */}
+      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-130px)]">
         <table className="border-collapse text-xs">
           <thead>
             <tr className="bg-slate-950 text-slate-100">
-              {/* Food — sticky top-left corner: needs both top-0 and left-0, highest z-index */}
+              {/* Food — top-left sticky corner */}
               <th className="sticky top-0 left-0 z-30 bg-slate-950 px-3 py-2 text-left font-semibold whitespace-nowrap min-w-[160px] border-r border-b border-slate-700">
                 Food
               </th>
-              {/* Category — sticky top + sticky left */}
+              {/* Category */}
               <th
                 style={{ left: categoryLeft }}
                 className="sticky top-0 z-30 bg-slate-950 px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[110px] border-r border-b border-slate-700"
               >
                 Category
               </th>
-              {/* Serving — sticky top + sticky left, only in per-serving mode */}
+              {/* Serving — only in per-serving mode */}
               {perServing && (
                 <th
                   style={{ left: servingLeft }}
@@ -187,7 +162,7 @@ export default function HeatmapTable({ data }: Props) {
                   Serving
                 </th>
               )}
-              {/* Nutrient columns — sticky top only */}
+              {/* Nutrient columns */}
               {visibleNutrients.map((n) => (
                 <th
                   key={n.nutrient_id}
@@ -218,18 +193,15 @@ export default function HeatmapTable({ data }: Props) {
 
               return (
                 <tr key={food.food_id} className={i % 2 === 0 ? 'bg-slate-900' : 'bg-slate-800/50'}>
-                  {/* Sticky food name */}
                   <td className={`sticky left-0 z-10 px-3 py-1 font-medium text-slate-100 whitespace-nowrap border-r border-slate-700 min-w-[160px] ${rowBg}`}>
                     {food.food_name}
                   </td>
-                  {/* Sticky category */}
                   <td
                     style={{ left: categoryLeft }}
                     className={`sticky z-10 px-2 py-1 text-slate-400 whitespace-nowrap border-r border-slate-700 min-w-[110px] ${rowBg}`}
                   >
                     {food.category}
                   </td>
-                  {/* Sticky serving size — only in per-serving mode */}
                   {perServing && (
                     <td
                       style={{ left: servingLeft }}
@@ -240,7 +212,6 @@ export default function HeatmapTable({ data }: Props) {
                       <span className="text-slate-500 ml-1">{portion.label}</span>
                     </td>
                   )}
-                  {/* Nutrient cells */}
                   {visibleNutrients.map((n) => {
                     const raw = food.nutrients[n.nutrient_id] ?? null
                     const value = raw !== null ? raw * multiplier : null
@@ -273,6 +244,6 @@ export default function HeatmapTable({ data }: Props) {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   )
 }
