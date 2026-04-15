@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
 **Last updated:** 2026-04-14  
-**Current phase: App build — Phase 1 (Foundation & Deploy)**
+**Current phase: App build — Phase 1, steps 1c–1g remaining (Supabase + Vercel user setup)**
 
 ---
 
@@ -21,11 +21,11 @@ A public-facing nutrition web app built on **Next.js 14 + Supabase + Vercel**, s
 | Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
 | Status tracker | ✅ Complete |
 | Reference CSVs | ✅ Complete |
-| **Next.js app scaffold** | ⬜ Not started |
-| **GitHub repo** | ⬜ Not started |
-| **Supabase project + database deployed** | ⬜ Not started |
-| **Vercel project connected to GitHub** | ⬜ Not started |
-| **MVP Heatmap Table** | ⬜ Not started |
+| **Next.js app scaffold** | ✅ Complete |
+| **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
+| **Supabase project + database deployed** | ⬜ Manual step — user action required |
+| **Vercel project connected to GitHub** | ⬜ Manual step — user action required |
+| **MVP Heatmap Table** | ✅ Code complete — awaiting live Supabase connection |
 
 **Total food_nutrients rows: 8,268** (212 foods × 39 nutrients ✓)
 
@@ -59,13 +59,13 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 
 ### Phase 1 — Foundation & Deploy (do these in order)
 
-- [ ] **1a. Scaffold Next.js app** — `npx create-next-app@latest nutrition-platform --typescript --tailwind --app` locally
-- [ ] **1b. Create GitHub repo** — `nutrition-platform`, push scaffold to `main`
-- [ ] **1c. Create Supabase project** — new project at supabase.com, copy URL + anon key
-- [ ] **1d. Deploy database** — run `sql/schema.sql` then `sql/seed_all.sql` in Supabase SQL editor; verify 8,268 rows
-- [ ] **1e. Connect Vercel** — import GitHub repo, add `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` env vars
-- [ ] **1f. Build MVP heatmap** — `lib/supabase.ts`, `lib/fetchHeatmapData.ts`, `lib/colorScale.ts`, `components/HeatmapTable.tsx`, `components/HeatmapCell.tsx`, `components/CategoryFilter.tsx`
-- [ ] **1g. Confirm live URL** — push to `main`, verify Vercel deployment, test heatmap end-to-end
+- [x] **1a. Scaffold Next.js app** — Done (Next.js 16, TypeScript, Tailwind v4, App Router)
+- [x] **1b. Create GitHub repo** — Done (github.com/danzhig/nutrition-platform, pushed to `main`)
+- [x] **1f. Build MVP heatmap** — Done (`lib/supabase.ts`, `lib/fetchHeatmapData.ts`, `lib/colorScale.ts`, `components/HeatmapTable.tsx`, `components/HeatmapCell.tsx`, `components/CategoryFilter.tsx`, `types/nutrition.ts`)
+- [ ] **1c. Create Supabase project** ← **YOU ARE HERE** — new project at supabase.com, copy URL + anon key, create `.env.local` (see `.env.example`)
+- [ ] **1d. Deploy database** — run `sql/schema.sql` then `sql/seed_all.sql` in Supabase SQL editor; verify `SELECT COUNT(*) FROM food_nutrients;` = 8,268
+- [ ] **1e. Connect Vercel** — vercel.com → Add New Project → import `danzhig/nutrition-platform` from GitHub → add env vars `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Deploy
+- [ ] **1g. Confirm live URL** — open Vercel deployment URL, confirm heatmap loads with data
 
 ### Phase 2 — Heatmap Polish (after Phase 1 ships)
 - Food row click → slide-in detail panel
