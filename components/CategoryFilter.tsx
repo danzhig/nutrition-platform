@@ -46,7 +46,7 @@ export default function CategoryFilter({
     <div className="space-y-3">
       {/* Food category filter */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Food category
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -56,8 +56,8 @@ export default function CategoryFilter({
               onClick={() => onFoodChange(cat)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                 selectedFood === cat
-                  ? 'bg-slate-800 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-slate-100 text-slate-900'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
               }`}
             >
               {cat}
@@ -68,7 +68,7 @@ export default function CategoryFilter({
 
       {/* Nutrient group filter */}
       <div>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
           Nutrient group
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -78,8 +78,8 @@ export default function CategoryFilter({
               onClick={() => onNutrientChange(cat)}
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                 selectedNutrient === cat
-                  ? 'bg-slate-800 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-slate-100 text-slate-900'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
               }`}
             >
               {cat}
