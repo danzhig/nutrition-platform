@@ -6,12 +6,16 @@
  *   0.5  → dark slate   hsl(220, 13%, 22%)  — mid blends into dark bg
  *   0.0  → deep red     hsl(0, 72%, 42%)
  *   null → dark slate   #1e293b
+ *
+ *  min/max are the p10/p90 of the column. Values outside that range are clamped
+ *  to 0 or 1 so outliers don't push everything else into a grey band.
  */
 export function cellColor(value: number | null, min: number, max: number): string {
   if (value === null || value === undefined) return '#1e293b' // dark slate — data unavailable
 
   const range = max - min
-  const normalised = range === 0 ? 0.5 : (value - min) / range // 0.0 → 1.0
+  // Clamp to [0, 1] — values below p10 → deepest red; above p90 → deepest green
+  const normalised = range === 0 ? 0.5 : Math.min(1, Math.max(0, (value - min) / range))
 
   if (normalised >= 0.5) {
     // Green half: 0.5 → dark slate, 1.0 → deep green
@@ -33,7 +37,7 @@ export function cellColor(value: number | null, min: number, max: number): strin
 export function textColor(value: number | null, min: number, max: number): string {
   if (value === null || value === undefined) return '#475569' // muted for unavailable
   const range = max - min
-  const normalised = range === 0 ? 0.5 : (value - min) / range
+  const normalised = range === 0 ? 0.5 : Math.min(1, Math.max(0, (value - min) / range))
   // White text on strongly coloured cells; muted slate on mid cells
   if (normalised > 0.6 || normalised < 0.25) return '#ffffff'
   return '#94a3b8' // slate-400

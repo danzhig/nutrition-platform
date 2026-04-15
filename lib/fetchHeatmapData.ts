@@ -43,8 +43,7 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
   // Reshape flat rows into structured HeatmapData
   const foodMap = new Map<number, FoodRow>()
   const nutrientMap = new Map<number, NutrientMeta>()
-  const columnMin = new Map<number, number>()
-  const columnMax = new Map<number, number>()
+  const columnValues = new Map<number, number[]>() // all non-null values per nutrient column
 
   for (const row of data as any[]) {
     const food = row.foods
@@ -75,18 +74,22 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
     }
     foodMap.get(foodId)!.nutrients[nutrientId] = value
 
-    // Track column min/max (ignoring NULLs)
+    // Collect non-null values for percentile calculation
     if (value !== null && value !== undefined) {
-      const currentMin = columnMin.get(nutrientId)
-      const currentMax = columnMax.get(nutrientId)
-      if (currentMin === undefined || value < currentMin) columnMin.set(nutrientId, value)
-      if (currentMax === undefined || value > currentMax) columnMax.set(nutrientId, value)
+      if (!columnValues.has(nutrientId)) columnValues.set(nutrientId, [])
+      columnValues.get(nutrientId)!.push(value)
     }
   }
 
+  // Compute p10/p90 per column — prevents outliers from monopolising the colour scale.
+  // Values below p10 clamp to deepest red; values above p90 clamp to deepest green.
   const columnRanges: Record<number, { min: number; max: number }> = {}
-  for (const [id, min] of columnMin) {
-    columnRanges[id] = { min, max: columnMax.get(id) ?? min }
+  for (const [id, values] of columnValues) {
+    values.sort((a, b) => a - b)
+    columnRanges[id] = {
+      min: percentile(values, 10),
+      max: percentile(values, 90),
+    }
   }
 
   return {
@@ -94,4 +97,14 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
     nutrients: Array.from(nutrientMap.values()),
     columnRanges,
   }
+}
+
+/** Linear-interpolation percentile on a pre-sorted array. */
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0
+  const idx = (p / 100) * (sorted.length - 1)
+  const lo = Math.floor(idx)
+  const hi = Math.ceil(idx)
+  if (lo === hi) return sorted[lo]
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo)
 }
