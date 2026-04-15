@@ -96,21 +96,21 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   76: { grams: 56,  label: '1 cup chopped' },   // Mustard Greens
 
   // ── Legumes ───────────────────────────────────────────────────────────────
-  77: { grams: 192, label: '1 cup dry' },       // Lentils (Red)
-  78: { grams: 192, label: '1 cup dry' },       // Lentils (Green)
-  79: { grams: 200, label: '1 cup dry' },       // Chickpeas
-  80: { grams: 185, label: '1 cup dry' },       // Black Beans
-  81: { grams: 185, label: '1 cup dry' },       // Kidney Beans
-  82: { grams: 186, label: '1 cup dry' },       // Soybeans
+  77: { grams: 48,  label: '¼ cup dry' },       // Lentils (Red)
+  78: { grams: 48,  label: '¼ cup dry' },       // Lentils (Green)
+  79: { grams: 50,  label: '¼ cup dry' },       // Chickpeas
+  80: { grams: 46,  label: '¼ cup dry' },       // Black Beans
+  81: { grams: 46,  label: '¼ cup dry' },       // Kidney Beans
+  82: { grams: 47,  label: '¼ cup dry' },       // Soybeans
   83: { grams: 155, label: '1 cup' },           // Edamame
-  84: { grams: 207, label: '1 cup dry' },       // Mung Beans
-  85: { grams: 208, label: '1 cup dry' },       // Navy Beans
-  86: { grams: 193, label: '1 cup dry' },       // Pinto Beans
-  87: { grams: 178, label: '1 cup dry' },       // Lima Beans
+  84: { grams: 52,  label: '¼ cup dry' },       // Mung Beans
+  85: { grams: 52,  label: '¼ cup dry' },       // Navy Beans
+  86: { grams: 48,  label: '¼ cup dry' },       // Pinto Beans
+  87: { grams: 45,  label: '¼ cup dry' },       // Lima Beans
   88: { grams: 126, label: '½ cup' },           // Tofu (Firm)
   89: { grams: 84,  label: '3 oz' },            // Tempeh
-  90: { grams: 196, label: '1 cup dry' },       // Green Split Peas
-  91: { grams: 170, label: '1 cup dry' },       // Fava Beans
+  90: { grams: 49,  label: '¼ cup dry' },       // Green Split Peas
+  91: { grams: 43,  label: '¼ cup dry' },       // Fava Beans
 
   // ── Nuts ──────────────────────────────────────────────────────────────────
   92:  { grams: 28, label: '1 oz (~23 nuts)' }, // Almonds
@@ -135,23 +135,23 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   109: { grams: 9,  label: '1 tbsp' },          // Poppy Seeds
 
   // ── Grains & Cereals ──────────────────────────────────────────────────────
-  110: { grams: 85,  label: '½ cup dry' },      // Quinoa
-  111: { grams: 185, label: '1 cup dry' },      // Brown Rice
-  112: { grams: 185, label: '1 cup dry' },      // White Rice
-  113: { grams: 81,  label: '1 cup dry' },      // Rolled Oats
-  114: { grams: 120, label: '1 cup' },          // Whole Wheat Flour
-  115: { grams: 125, label: '1 cup' },          // White Flour
-  116: { grams: 200, label: '1 cup dry' },      // Barley (pearled)
-  117: { grams: 102, label: '1 cup' },          // Rye Flour
-  118: { grams: 108, label: '1 cup' },          // Corn Flour (Masa)
-  119: { grams: 170, label: '1 cup dry' },      // Buckwheat
-  120: { grams: 200, label: '1 cup dry' },      // Millet
-  121: { grams: 100, label: '1 cup' },          // Spelt Flour
-  122: { grams: 195, label: '1 cup dry' },      // Amaranth
-  123: { grams: 140, label: '1 cup dry' },      // Bulgur Wheat
-  124: { grams: 173, label: '1 cup dry' },      // Couscous (dry)
-  125: { grams: 192, label: '1 cup dry' },      // Sorghum
-  126: { grams: 160, label: '1 cup dry' },      // Wild Rice
+  110: { grams: 43,  label: '¼ cup dry' },      // Quinoa
+  111: { grams: 45,  label: '¼ cup dry' },      // Brown Rice
+  112: { grams: 45,  label: '¼ cup dry' },      // White Rice
+  113: { grams: 40,  label: '½ cup dry' },      // Rolled Oats
+  114: { grams: 30,  label: '¼ cup' },          // Whole Wheat Flour
+  115: { grams: 30,  label: '¼ cup' },          // White Flour
+  116: { grams: 50,  label: '¼ cup dry' },      // Barley (pearled)
+  117: { grams: 25,  label: '¼ cup' },          // Rye Flour
+  118: { grams: 27,  label: '¼ cup' },          // Corn Flour (Masa)
+  119: { grams: 43,  label: '¼ cup dry' },      // Buckwheat
+  120: { grams: 50,  label: '¼ cup dry' },      // Millet
+  121: { grams: 25,  label: '¼ cup' },          // Spelt Flour
+  122: { grams: 49,  label: '¼ cup dry' },      // Amaranth
+  123: { grams: 35,  label: '¼ cup dry' },      // Bulgur Wheat
+  124: { grams: 43,  label: '¼ cup dry' },      // Couscous (dry)
+  125: { grams: 48,  label: '¼ cup dry' },      // Sorghum
+  126: { grams: 40,  label: '¼ cup dry' },      // Wild Rice
   127: { grams: 85,  label: '2 oz dry' },       // Pasta (dry white)
 
   // ── Red Meat ──────────────────────────────────────────────────────────────

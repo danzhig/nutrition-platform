@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-14  
+**Last updated:** 2026-04-15  
 **Current phase: Phase 2 — Heatmap polish**
 
 ---
@@ -77,6 +77,23 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 - [ ] % RDA in hover tooltips
 - [ ] Mobile-responsive collapse (single-nutrient ranked list on small screens)
 - [ ] Nutrient name tooltips from `nutrients.description`
+
+### Changelog
+
+#### 2026-04-15 — Portion size corrections (`lib/portionSizes.ts`)
+All data is stored per 100g raw/uncooked. The per-serving toggle multiplies by `portionGrams / 100`, so overstated dry portions inflated per-serving values 3–4×.
+
+**Dry legumes (IDs 77–82, 84–87, 90–91):** Changed from "1 cup dry" (~170–210g) to "¼ cup dry" (~43–52g). 1 cup dry beans yields ~3 cups cooked — far above a standard serving. ¼ cup dry → ~½ cup cooked is the USDA reference serving.
+
+**Whole/dry grains (IDs 110–112, 116, 119–120, 122–126):** Changed from "1 cup dry" (~140–200g) to "¼ cup dry" (~35–50g). 1 cup dry rice/barley/etc. yields 3+ cups cooked. ¼ cup dry → ~¾ cup cooked is a standard serving.
+
+**Rolled oats (ID 113):** Changed from "1 cup dry" (81g) to "½ cup dry" (40g). ½ cup dry yields ~1 cup cooked oatmeal — the standard bowl.
+
+**Quinoa (ID 110):** Changed from "½ cup dry" (85g) to "¼ cup dry" (43g). ½ cup dry quinoa yields ~1.5 cups cooked; ¼ cup dry → ~¾ cup cooked is a standard serving.
+
+**Flours (IDs 114–115, 117–118, 121):** Changed from "1 cup" (~100–125g) to "¼ cup" (~25–30g). Flours are used as ingredients; ¼ cup is the standard nutrition-label serving.
+
+**Unchanged:** Edamame (83, cooked serving), Tofu (88), Tempeh (89), Pasta (127, already at 2 oz dry / 85g).
 
 ### Phase 3 and beyond — see PLAN.md Build Phases section
 
