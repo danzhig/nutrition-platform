@@ -162,39 +162,39 @@ export default function HeatmapTable({ data }: Props) {
         )}
       </p>
 
-      {/* Scrollable table */}
-      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg">
+      {/* Scrollable table — max-height enables internal vertical scroll so sticky headers work */}
+      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-220px)]">
         <table className="border-collapse text-xs">
           <thead>
-            <tr className="sticky top-0 z-10 bg-slate-950 text-slate-100">
-              {/* Food name — always sticky at left-0 */}
-              <th className="sticky left-0 z-20 bg-slate-950 px-3 py-2 text-left font-semibold whitespace-nowrap min-w-[160px] border-r border-slate-700">
+            <tr className="bg-slate-950 text-slate-100">
+              {/* Food — sticky top-left corner: needs both top-0 and left-0, highest z-index */}
+              <th className="sticky top-0 left-0 z-30 bg-slate-950 px-3 py-2 text-left font-semibold whitespace-nowrap min-w-[160px] border-r border-b border-slate-700">
                 Food
               </th>
-              {/* Category — sticky after food */}
+              {/* Category — sticky top + sticky left */}
               <th
                 style={{ left: categoryLeft }}
-                className="sticky z-20 bg-slate-950 px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[110px] border-r border-slate-700"
+                className="sticky top-0 z-30 bg-slate-950 px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[110px] border-r border-b border-slate-700"
               >
                 Category
               </th>
-              {/* Serving size column — only visible in per-serving mode */}
+              {/* Serving — sticky top + sticky left, only in per-serving mode */}
               {perServing && (
                 <th
                   style={{ left: servingLeft }}
-                  className="sticky z-20 bg-slate-950 px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[90px] border-r border-slate-700 text-emerald-400"
+                  className="sticky top-0 z-30 bg-slate-950 px-2 py-2 text-left font-semibold whitespace-nowrap min-w-[90px] border-r border-b border-slate-700 text-emerald-400"
                 >
                   Serving
                 </th>
               )}
-              {/* Nutrient columns */}
+              {/* Nutrient columns — sticky top only */}
               {visibleNutrients.map((n) => (
                 <th
                   key={n.nutrient_id}
                   onClick={() => handleColumnClick(n.nutrient_id)}
                   title={`Sort by ${n.nutrient_name} (${n.unit})`}
-                  className={`px-1 py-2 text-center font-medium whitespace-nowrap cursor-pointer select-none hover:bg-slate-800 transition-colors min-w-[3rem] ${
-                    sortNutrientId === n.nutrient_id ? 'bg-slate-700' : ''
+                  className={`sticky top-0 z-20 px-1 py-2 text-center font-medium whitespace-nowrap cursor-pointer select-none hover:bg-slate-800 transition-colors min-w-[3rem] border-b border-slate-700 ${
+                    sortNutrientId === n.nutrient_id ? 'bg-slate-700' : 'bg-slate-950'
                   }`}
                 >
                   <span className="block text-[10px] leading-tight text-slate-200">
