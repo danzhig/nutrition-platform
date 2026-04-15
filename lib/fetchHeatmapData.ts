@@ -1,28 +1,44 @@
 import { supabase } from './supabase'
-import type { HeatmapData, HeatmapRow, FoodRow, NutrientMeta } from '@/types/nutrition'
+import type { HeatmapData, FoodRow, NutrientMeta } from '@/types/nutrition'
+
+const PAGE_SIZE = 1000
 
 export async function fetchHeatmapData(): Promise<HeatmapData> {
-  const { data, error } = await supabase
-    .from('food_nutrients')
-    .select(`
-      food_id,
-      value_per_100g,
-      foods (
-        id,
-        name,
-        food_categories ( name )
-      ),
-      nutrients (
-        id,
-        name,
-        unit,
-        nutrient_categories ( name )
-      )
-    `)
-    .order('food_id')
+  // Supabase defaults to 1,000 rows per request. Paginate to fetch all 8,268 rows.
+  let allRows: any[] = []
+  let from = 0
 
-  if (error) throw new Error(`Supabase query failed: ${error.message}`)
-  if (!data) throw new Error('No data returned from Supabase')
+  while (true) {
+    const { data, error } = await supabase
+      .from('food_nutrients')
+      .select(`
+        food_id,
+        value_per_100g,
+        foods (
+          id,
+          name,
+          food_categories ( name )
+        ),
+        nutrients (
+          id,
+          name,
+          unit,
+          nutrient_categories ( name )
+        )
+      `)
+      .order('food_id')
+      .range(from, from + PAGE_SIZE - 1)
+
+    if (error) throw new Error(`Supabase query failed: ${error.message}`)
+    if (!data || data.length === 0) break
+
+    allRows = allRows.concat(data)
+    if (data.length < PAGE_SIZE) break
+    from += PAGE_SIZE
+  }
+
+  const data = allRows
+  if (data.length === 0) throw new Error('No data returned from Supabase')
 
   // Reshape flat rows into structured HeatmapData
   const foodMap = new Map<number, FoodRow>()
