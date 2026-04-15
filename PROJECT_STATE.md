@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
 **Last updated:** 2026-04-14  
-**Current phase: App build — Phase 1, steps 1c–1g remaining (Supabase + Vercel user setup)**
+**Current phase: App build — Phase 2 (heatmap polish)**
 
 ---
 
@@ -25,7 +25,7 @@ A public-facing nutrition web app built on **Next.js 14 + Supabase + Vercel**, s
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ⬜ Manual step — user action required |
 | **Vercel project connected to GitHub** | ⬜ Manual step — user action required |
-| **MVP Heatmap Table** | ✅ Code complete — awaiting live Supabase connection |
+| **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 
 **Total food_nutrients rows: 8,268** (212 foods × 39 nutrients ✓)
 
@@ -67,11 +67,12 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 - [ ] **1e. Connect Vercel** — vercel.com → Add New Project → import `danzhig/nutrition-platform` from GitHub → add env vars `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` → Deploy
 - [ ] **1g. Confirm live URL** — open Vercel deployment URL, confirm heatmap loads with data
 
-### Phase 2 — Heatmap Polish (after Phase 1 ships)
-- Food row click → slide-in detail panel
-- % RDA in hover tooltips
-- Mobile-responsive collapse (single-nutrient ranked list on small screens)
-- Nutrient name tooltips from `nutrients.description`
+### Phase 2 — Heatmap Polish (current)
+- [x] Dark mode theme (slate-900 base, all components updated)
+- [ ] Food row click → slide-in detail panel
+- [ ] % RDA in hover tooltips
+- [ ] Mobile-responsive collapse (single-nutrient ranked list on small screens)
+- [ ] Nutrient name tooltips from `nutrients.description`
 
 ### Phase 3 and beyond — see PLAN.md Build Phases section
 

@@ -206,19 +206,20 @@ Full data reference: `reference/` folder (food_list.csv, nutrients_list.csv, foo
 
 ## Build Phases
 
-### Phase 1 — Foundation & Deploy (current)
-1. Scaffold Next.js 14 app (TypeScript, Tailwind)
-2. Create GitHub repo, push scaffold
+### Phase 1 — Foundation & Deploy ✅ Complete
+1. Scaffold Next.js 16 app (TypeScript, Tailwind v4)
+2. Create GitHub repo (danzhig/nutrition-platform), push scaffold
 3. Create Supabase project, run `schema.sql` + `seed_all.sql`
 4. Connect Vercel to GitHub repo, set env vars
-5. Build and ship MVP heatmap table (with column sort + category filter + search)
-6. Confirm live URL works end-to-end
+5. Build and ship MVP heatmap table (column sort, category filter, search, dark mode)
+6. Fix Supabase 1,000-row default limit with pagination
 
-### Phase 2 — Heatmap Polish
-- Food row click → detail panel (FoodDetailPanel.tsx)
-- % RDA values in hover tooltips
-- Mobile-responsive: collapse to single-nutrient ranked list on small screens
-- Nutrient name tooltips (plain-English description from `nutrients.description`)
+### Phase 2 — Heatmap Polish (current)
+- [x] Dark mode theme (slate-900 base, all components)
+- [ ] Food row click → detail panel (FoodDetailPanel.tsx)
+- [ ] % RDA values in hover tooltips
+- [ ] Mobile-responsive: collapse to single-nutrient ranked list on small screens
+- [ ] Nutrient name tooltips (plain-English description from `nutrients.description`)
 
 ### Phase 3 — Nutrient Ranking View
 - Pick a nutrient from a dropdown → ranked bar chart of all 212 foods
@@ -260,8 +261,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 Read PROJECT_STATE.md, PLAN.md, and status_tracker.csv before starting.
 
 This is a nutrition web app project. The database is fully built (212 foods × 39 nutrients).
-The app is built in Next.js 14 (TypeScript + Tailwind), deployed on Vercel, source on GitHub,
-backed by Supabase PostgreSQL.
+The app is built in Next.js 16 (TypeScript + Tailwind), deployed on Vercel, source on GitHub
+(danzhig/nutrition-platform), backed by Supabase PostgreSQL. Dark mode is the established theme.
 
 Live-file contract:
 - Update PROJECT_STATE.md "Current Completion Status" and "Prioritized Next Steps" after any
