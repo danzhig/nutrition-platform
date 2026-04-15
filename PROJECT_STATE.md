@@ -69,6 +69,10 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 
 ### Phase 2 — Heatmap Polish (current)
 - [x] Dark mode theme (slate-900 base, all components updated)
+- [x] P10/P90 percentile colour scale (replaces min/max — outliers no longer dominate)
+- [x] Per-serving toggle with transparent Serving column (all 212 foods, p10/p90 recalculated per-serving)
+- [x] Slide-out filter panel (left edge tab, backdrop close, active filter badge, reset button)
+- [x] Multi-select food category + nutrient group filters (select/deselect all, min-1 enforced, count badge)
 - [ ] Food row click → slide-in detail panel
 - [ ] % RDA in hover tooltips
 - [ ] Mobile-responsive collapse (single-nutrient ranked list on small screens)

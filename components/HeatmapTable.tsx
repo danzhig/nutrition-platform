@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
+import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import HeatmapCell from './HeatmapCell'
 import FilterPanel from './FilterPanel'
@@ -22,8 +23,8 @@ function percentile(sorted: number[], p: number): number {
 
 export default function HeatmapTable({ data }: Props) {
   // Filter / view state — passed down to FilterPanel
-  const [foodCategory, setFoodCategory] = useState<string>('All')
-  const [nutrientCategory, setNutrientCategory] = useState<NutrientCategory>('All')
+  const [selectedFoods, setSelectedFoods] = useState<string[]>([...FOOD_CATEGORY_LIST])
+  const [selectedNutrients, setSelectedNutrients] = useState<NutrientCategory[]>([...ALL_NUTRIENT_CATEGORIES])
   const [search, setSearch] = useState('')
   const [perServing, setPerServing] = useState(false)
 
@@ -32,9 +33,8 @@ export default function HeatmapTable({ data }: Props) {
   const [sortAsc, setSortAsc] = useState(false)
 
   const visibleNutrients = useMemo(() => {
-    if (nutrientCategory === 'All') return data.nutrients
-    return data.nutrients.filter((n) => n.nutrient_category === nutrientCategory)
-  }, [data.nutrients, nutrientCategory])
+    return data.nutrients.filter((n) => selectedNutrients.includes(n.nutrient_category as NutrientCategory))
+  }, [data.nutrients, selectedNutrients])
 
   // Recompute p10/p90 ranges using per-serving scaled values when that mode is active
   const activeRanges = useMemo(() => {
@@ -65,9 +65,7 @@ export default function HeatmapTable({ data }: Props) {
   const visibleFoods = useMemo(() => {
     let foods = data.foods
 
-    if (foodCategory !== 'All') {
-      foods = foods.filter((f) => f.category === foodCategory)
-    }
+    foods = foods.filter((f) => selectedFoods.includes(f.category))
 
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -85,7 +83,7 @@ export default function HeatmapTable({ data }: Props) {
     }
 
     return foods
-  }, [data.foods, foodCategory, search, sortNutrientId, sortAsc, perServing])
+  }, [data.foods, selectedFoods, search, sortNutrientId, sortAsc, perServing])
 
   function handleColumnClick(nutrientId: number) {
     if (sortNutrientId === nutrientId) {
@@ -104,12 +102,12 @@ export default function HeatmapTable({ data }: Props) {
     <>
       {/* Slide-out filter & settings panel */}
       <FilterPanel
-        selectedFood={foodCategory}
-        selectedNutrient={nutrientCategory}
+        selectedFoods={selectedFoods}
+        selectedNutrients={selectedNutrients}
         search={search}
         perServing={perServing}
-        onFoodChange={setFoodCategory}
-        onNutrientChange={setNutrientCategory}
+        onFoodsChange={setSelectedFoods}
+        onNutrientsChange={setSelectedNutrients}
         onSearchChange={setSearch}
         onPerServingChange={setPerServing}
       />
