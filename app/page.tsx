@@ -1,7 +1,7 @@
 import { fetchHeatmapData } from '@/lib/fetchHeatmapData'
 import HeatmapTable from '@/components/HeatmapTable'
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const data = await fetchHeatmapData()
