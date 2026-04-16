@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
 **Last updated:** 2026-04-15  
-**Current phase: Phase 2 — Heatmap polish**
+**Current phase: Phase 2 — Heatmap polish + Data expansion**
 
 ---
 
@@ -18,16 +18,20 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | Schema (all 6 tables, indexes, RLS) | ✅ Complete |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 39 nutrients) | ✅ Complete |
+| **Amino acids (9 EAAs), Glycemic Index, Antioxidant Capacity** | ✅ Complete — 2,332 new rows across 212 foods |
 | Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
-| Status tracker | ✅ Complete |
-| Reference CSVs | ✅ Complete |
+| Extended seed file (`sql/seed_amino_acids_gi_antioxidant.sql`) | ✅ Complete — run after seed_all.sql |
+| Status tracker | ✅ Complete — updated to 50/50 nutrients per food |
+| Reference CSVs | ✅ Complete — nutrients_list.csv updated to 50 nutrients |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 8,268 rows verified |
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 
-**Total food_nutrients rows: 8,268** (212 foods × 39 nutrients ✓)
+**Total food_nutrients rows: 10,600** (212 foods × 50 nutrients — after running extended seed)
+- Base: 8,268 rows (212 × 39 original nutrients)
+- Extended: +2,332 rows (212 × 11 new: 9 amino acids + GI + antioxidant capacity)
 
 ---
 
@@ -36,8 +40,9 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 ### Deploy to Supabase (run in this order)
 1. **`sql/schema.sql`** — Creates all 6 tables, indexes, Row Level Security policies
 2. **`sql/seed_all.sql`** — Inserts all reference data + all 212 foods + all 8,268 nutrient rows
+3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 2 nutrient categories, 11 nutrients (9 EAAs + GI + antioxidant), and 2,332 food_nutrient rows
 
-Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
+Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **10,600**
 
 ### App source
 - All app files live in the GitHub repo root (Next.js 16 project)
@@ -79,6 +84,32 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **8,268**
 - [ ] Nutrient name tooltips from `nutrients.description`
 
 ### Changelog
+
+#### 2026-04-15 — Nutrient expansion: amino acids, glycemic index, antioxidant capacity
+
+New file: `sql/seed_amino_acids_gi_antioxidant.sql` — run after `seed_all.sql`.
+
+**9 Essential Amino Acids (nutrient IDs 40–48, unit: mg/100g, category: Amino Acid)**
+All sourced from USDA FoodData Central SR Legacy. Values represent mg per 100g raw food weight.
+Histidine, Isoleucine, Leucine, Lysine, Methionine, Phenylalanine, Threonine, Tryptophan, Valine.
+Oils & fats have values of 0 (genuinely no protein). Herbs/spices carry values reflecting their
+protein content (e.g. cumin 17.8g protein/100g → substantial amino acid values).
+
+**Glycemic Index (nutrient ID 49, unit: GI score, category: Food Metric)**
+Glucose reference scale (glucose = 100). Source: Foster-Powell et al. 2002 / Atkinson et al. 2008
+International Tables. Values represent the cooked/prepared form of the food (grain and legume GI
+values reflect cooked state even though nutrient data is raw weight). NULL for: oils, fats, meats,
+fish, poultry, eggs, hard cheeses, butter, cream — these have negligible carbohydrate and a GI
+cannot be meaningfully measured.
+
+**Antioxidant Capacity (nutrient ID 50, unit: mmol/100g, category: Food Metric)**
+FRAP method. Source: Carlsen et al. 2010 Nutrition Journal. All 212 foods carry a value — even
+low-antioxidant foods (refined grains, dairy) have small measured values. Key highlights:
+- Ground cinnamon: 139.0 mmol/100g (highest in database)
+- Ground turmeric: 127.68 mmol/100g
+- Dried thyme: 75.65 mmol/100g, cumin: 76.8 mmol/100g, oregano: 63.2 mmol/100g
+- Walnuts: 21.9 mmol/100g, pecans: 17.6 mmol/100g, flaxseeds: 19.0 mmol/100g
+- Berries: blueberry 9.19, raspberry 6.60, blackberry 5.75, pomegranate 4.42
 
 #### 2026-04-15 — Portion size corrections (`lib/portionSizes.ts`)
 All data is stored per 100g raw/uncooked. The per-serving toggle multiplies by `portionGrams / 100`, so overstated dry portions inflated per-serving values 3–4×.

@@ -1,213 +1,213 @@
 food_id,food_name,food_category,batch,priority,status,nutrients_populated,nutrients_total,data_source,notes,last_updated
-1,Apple,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-2,Banana,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-3,Orange,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-4,Strawberry,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-5,Blueberry,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-6,Mango,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-7,Avocado,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-8,Watermelon,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-9,Pineapple,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-10,Grape,Fruits,1,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-11,Peach,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-12,Pear,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-13,Cherry,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-14,Kiwi,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-15,Lemon,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-16,Lime,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-17,Grapefruit,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-18,Papaya,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-19,Plum,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-20,Apricot,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-21,Date (Medjool),Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-22,Fig,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-23,Pomegranate,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-24,Raspberry,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-25,Blackberry,Fruits,1,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-26,Cranberry,Fruits,1,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-27,Cantaloupe,Fruits,1,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-28,Honeydew Melon,Fruits,1,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-29,Passion Fruit,Fruits,1,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-30,Guava,Fruits,1,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-31,Broccoli,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-32,Carrot,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-33,Sweet Potato,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-34,Potato,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-35,Tomato,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-36,Cucumber,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-37,Red Bell Pepper,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-38,Onion,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-39,Garlic,Vegetables,2,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-40,Celery,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-41,White Cabbage,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-42,Cauliflower,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-43,Zucchini,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-44,Eggplant,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-45,Asparagus,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-46,Beetroot,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-47,Peas (Green),Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-48,Green Beans,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-49,Corn,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-50,Pumpkin,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-51,Butternut Squash,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-52,Brussels Sprouts,Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-53,Mushroom (White Button),Vegetables,2,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-54,Artichoke,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-55,Leek,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-56,Fennel,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-57,Radish,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-58,Turnip,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-59,Parsnip,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-60,Okra,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-61,Jalapeño Pepper,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-62,Shiitake Mushroom,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-63,Portobello Mushroom,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-64,Acorn Squash,Vegetables,2,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-65,Spinach,Leafy Greens,3,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-66,Kale,Leafy Greens,3,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-67,Romaine Lettuce,Leafy Greens,3,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-68,Arugula,Leafy Greens,3,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-69,Swiss Chard,Leafy Greens,3,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-70,Collard Greens,Leafy Greens,3,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-71,Bok Choy,Leafy Greens,3,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-72,Watercress,Leafy Greens,3,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-73,Endive,Leafy Greens,3,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-74,Dandelion Greens,Leafy Greens,3,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-75,Beet Greens,Leafy Greens,3,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-76,Mustard Greens,Leafy Greens,3,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-77,Lentils (Red),Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-78,Lentils (Green),Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-79,Chickpeas,Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-80,Black Beans,Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-81,Kidney Beans,Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-82,Soybeans,Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-83,Edamame,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-84,Mung Beans,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-85,Navy Beans,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-86,Pinto Beans,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-87,Lima Beans,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-88,Tofu (Firm),Legumes,4,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-89,Tempeh,Legumes,4,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-90,Green Split Peas,Legumes,4,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-91,Fava Beans,Legumes,4,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-92,Almonds,Nuts,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-93,Walnuts,Nuts,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-94,Cashews,Nuts,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-95,Pistachios,Nuts,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-96,Pecans,Nuts,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-97,Macadamia Nuts,Nuts,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-98,Brazil Nuts,Nuts,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-99,Hazelnuts,Nuts,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-100,Pine Nuts,Nuts,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-101,Peanuts,Nuts,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-102,Chestnuts,Nuts,5,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-103,Chia Seeds,Seeds,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-104,Flaxseeds,Seeds,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-105,Sunflower Seeds,Seeds,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-106,Pumpkin Seeds,Seeds,5,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-107,Hemp Seeds,Seeds,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-108,Sesame Seeds,Seeds,5,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-109,Poppy Seeds,Seeds,5,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-110,Quinoa (uncooked),Grains & Cereals,6,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-111,Brown Rice (uncooked),Grains & Cereals,6,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-112,White Rice (uncooked),Grains & Cereals,6,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-113,Rolled Oats,Grains & Cereals,6,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-114,Whole Wheat Flour,Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-115,White Flour,Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-116,Barley (pearled),Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-117,Rye Flour,Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-118,Corn Flour (Masa),Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-119,Buckwheat,Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-120,Millet,Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-121,Spelt Flour,Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-122,Amaranth,Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-123,Bulgur Wheat,Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-124,Couscous (dry),Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-125,Sorghum,Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-126,Wild Rice,Grains & Cereals,6,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-127,Pasta (dry white),Grains & Cereals,6,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-128,Beef (ground 80% lean),Red Meat,7,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-129,Beef (sirloin steak),Red Meat,7,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-130,Beef Liver,Red Meat,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-131,Lamb (leg),Red Meat,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-132,Pork Chop,Red Meat,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-133,Pork Belly,Red Meat,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-134,Bacon (pork),Red Meat,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-135,Veal,Red Meat,7,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-136,Venison,Red Meat,7,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-137,Bison,Red Meat,7,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-138,Chicken Breast (skinless),Poultry,7,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-139,Chicken Thigh (skinless),Poultry,7,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-140,Chicken Drumstick,Poultry,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-141,Turkey Breast,Poultry,7,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-142,Turkey Ground,Poultry,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-143,Duck Breast,Poultry,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-144,Chicken Liver,Poultry,7,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-145,Salmon (Atlantic),Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-146,Tuna (yellowfin),Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-147,Sardines (canned in oil),Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-148,Mackerel (Atlantic),Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-149,Cod,Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-150,Tilapia,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-151,Halibut,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-152,Rainbow Trout,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-153,Herring,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-154,Anchovies,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-155,Shrimp,Fish & Seafood,8,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-156,Crab (Alaskan King),Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-157,Lobster,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-158,Mussels,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-159,Oysters,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-160,Scallops,Fish & Seafood,8,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-161,Clams,Fish & Seafood,8,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-162,Squid,Fish & Seafood,8,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-163,Chicken Egg (whole),Eggs,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-164,Chicken Egg White,Eggs,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-165,Chicken Egg Yolk,Eggs,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-166,Duck Egg,Eggs,9,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-167,Quail Egg,Eggs,9,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-168,Whole Milk (3.25%),Dairy,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-169,Skim Milk (0%),Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-170,Cheddar Cheese,Dairy,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-171,Mozzarella Cheese,Dairy,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-172,Parmesan Cheese,Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-173,Greek Yogurt (plain full fat),Dairy,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-174,Plain Yogurt (whole milk),Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-175,Butter (unsalted),Dairy,9,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-176,Heavy Cream,Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-177,Cottage Cheese,Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-178,Cream Cheese,Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-179,Sour Cream,Dairy,9,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-180,Goat Milk,Dairy,9,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-181,Brie Cheese,Dairy,9,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-182,Whey Protein Powder,Dairy,9,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-183,Almond Milk (unsweetened),Dairy Alternatives,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-184,Oat Milk (unsweetened),Dairy Alternatives,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-185,Soy Milk (unsweetened),Dairy Alternatives,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-186,Coconut Milk (canned full fat),Dairy Alternatives,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-187,Rice Milk,Dairy Alternatives,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-188,Cashew Milk,Dairy Alternatives,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-189,Olive Oil (extra virgin),Oils & Fats,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-190,Coconut Oil,Oils & Fats,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-191,Avocado Oil,Oils & Fats,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-192,Sunflower Oil,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-193,Flaxseed Oil,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-194,Canola Oil,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-195,Sesame Oil,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-196,Walnut Oil,Oils & Fats,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-197,Ghee,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-198,Lard,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-199,Fish Oil,Oils & Fats,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-200,Peanut Oil,Oils & Fats,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-201,Turmeric (ground),Herbs & Spices,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-202,Ginger (ground),Herbs & Spices,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-203,Cinnamon (ground),Herbs & Spices,10,high,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-204,Black Pepper (ground),Herbs & Spices,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-205,Garlic Powder,Herbs & Spices,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-206,Cumin (ground),Herbs & Spices,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-207,Paprika (sweet),Herbs & Spices,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-208,Oregano (dried),Herbs & Spices,10,medium,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-209,Basil (fresh),Herbs & Spices,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-210,Parsley (fresh),Herbs & Spices,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-211,Rosemary (dried),Herbs & Spices,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
-212,Thyme (dried),Herbs & Spices,10,low,complete,39,39,USDA FoodData Central SR Legacy,,2026-04-14
+1,Apple,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+2,Banana,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+3,Orange,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+4,Strawberry,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+5,Blueberry,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+6,Mango,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+7,Avocado,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+8,Watermelon,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+9,Pineapple,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+10,Grape,Fruits,1,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+11,Peach,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+12,Pear,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+13,Cherry,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+14,Kiwi,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+15,Lemon,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+16,Lime,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+17,Grapefruit,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+18,Papaya,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+19,Plum,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+20,Apricot,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+21,Date (Medjool),Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+22,Fig,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+23,Pomegranate,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+24,Raspberry,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+25,Blackberry,Fruits,1,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+26,Cranberry,Fruits,1,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+27,Cantaloupe,Fruits,1,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+28,Honeydew Melon,Fruits,1,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+29,Passion Fruit,Fruits,1,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+30,Guava,Fruits,1,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+31,Broccoli,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+32,Carrot,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+33,Sweet Potato,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+34,Potato,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+35,Tomato,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+36,Cucumber,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+37,Red Bell Pepper,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+38,Onion,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+39,Garlic,Vegetables,2,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+40,Celery,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+41,White Cabbage,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+42,Cauliflower,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+43,Zucchini,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+44,Eggplant,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+45,Asparagus,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+46,Beetroot,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+47,Peas (Green),Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+48,Green Beans,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+49,Corn,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+50,Pumpkin,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+51,Butternut Squash,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+52,Brussels Sprouts,Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+53,Mushroom (White Button),Vegetables,2,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+54,Artichoke,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+55,Leek,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+56,Fennel,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+57,Radish,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+58,Turnip,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+59,Parsnip,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+60,Okra,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+61,Jalapeño Pepper,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+62,Shiitake Mushroom,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+63,Portobello Mushroom,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+64,Acorn Squash,Vegetables,2,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+65,Spinach,Leafy Greens,3,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+66,Kale,Leafy Greens,3,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+67,Romaine Lettuce,Leafy Greens,3,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+68,Arugula,Leafy Greens,3,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+69,Swiss Chard,Leafy Greens,3,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+70,Collard Greens,Leafy Greens,3,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+71,Bok Choy,Leafy Greens,3,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+72,Watercress,Leafy Greens,3,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+73,Endive,Leafy Greens,3,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+74,Dandelion Greens,Leafy Greens,3,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+75,Beet Greens,Leafy Greens,3,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+76,Mustard Greens,Leafy Greens,3,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+77,Lentils (Red),Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+78,Lentils (Green),Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+79,Chickpeas,Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+80,Black Beans,Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+81,Kidney Beans,Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+82,Soybeans,Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+83,Edamame,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+84,Mung Beans,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+85,Navy Beans,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+86,Pinto Beans,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+87,Lima Beans,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+88,Tofu (Firm),Legumes,4,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+89,Tempeh,Legumes,4,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+90,Green Split Peas,Legumes,4,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+91,Fava Beans,Legumes,4,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+92,Almonds,Nuts,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+93,Walnuts,Nuts,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+94,Cashews,Nuts,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+95,Pistachios,Nuts,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+96,Pecans,Nuts,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+97,Macadamia Nuts,Nuts,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+98,Brazil Nuts,Nuts,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+99,Hazelnuts,Nuts,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+100,Pine Nuts,Nuts,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+101,Peanuts,Nuts,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+102,Chestnuts,Nuts,5,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+103,Chia Seeds,Seeds,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+104,Flaxseeds,Seeds,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+105,Sunflower Seeds,Seeds,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+106,Pumpkin Seeds,Seeds,5,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+107,Hemp Seeds,Seeds,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+108,Sesame Seeds,Seeds,5,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+109,Poppy Seeds,Seeds,5,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+110,Quinoa (uncooked),Grains & Cereals,6,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+111,Brown Rice (uncooked),Grains & Cereals,6,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+112,White Rice (uncooked),Grains & Cereals,6,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+113,Rolled Oats,Grains & Cereals,6,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+114,Whole Wheat Flour,Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+115,White Flour,Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+116,Barley (pearled),Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+117,Rye Flour,Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+118,Corn Flour (Masa),Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+119,Buckwheat,Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+120,Millet,Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+121,Spelt Flour,Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+122,Amaranth,Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+123,Bulgur Wheat,Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+124,Couscous (dry),Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+125,Sorghum,Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+126,Wild Rice,Grains & Cereals,6,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+127,Pasta (dry white),Grains & Cereals,6,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+128,Beef (ground 80% lean),Red Meat,7,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+129,Beef (sirloin steak),Red Meat,7,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+130,Beef Liver,Red Meat,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+131,Lamb (leg),Red Meat,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+132,Pork Chop,Red Meat,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+133,Pork Belly,Red Meat,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+134,Bacon (pork),Red Meat,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+135,Veal,Red Meat,7,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+136,Venison,Red Meat,7,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+137,Bison,Red Meat,7,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+138,Chicken Breast (skinless),Poultry,7,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+139,Chicken Thigh (skinless),Poultry,7,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+140,Chicken Drumstick,Poultry,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+141,Turkey Breast,Poultry,7,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+142,Turkey Ground,Poultry,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+143,Duck Breast,Poultry,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+144,Chicken Liver,Poultry,7,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+145,Salmon (Atlantic),Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+146,Tuna (yellowfin),Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+147,Sardines (canned in oil),Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+148,Mackerel (Atlantic),Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+149,Cod,Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+150,Tilapia,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+151,Halibut,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+152,Rainbow Trout,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+153,Herring,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+154,Anchovies,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+155,Shrimp,Fish & Seafood,8,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+156,Crab (Alaskan King),Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+157,Lobster,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+158,Mussels,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+159,Oysters,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+160,Scallops,Fish & Seafood,8,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+161,Clams,Fish & Seafood,8,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+162,Squid,Fish & Seafood,8,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+163,Chicken Egg (whole),Eggs,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+164,Chicken Egg White,Eggs,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+165,Chicken Egg Yolk,Eggs,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+166,Duck Egg,Eggs,9,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+167,Quail Egg,Eggs,9,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+168,Whole Milk (3.25%),Dairy,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+169,Skim Milk (0%),Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+170,Cheddar Cheese,Dairy,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+171,Mozzarella Cheese,Dairy,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+172,Parmesan Cheese,Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+173,Greek Yogurt (plain full fat),Dairy,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+174,Plain Yogurt (whole milk),Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+175,Butter (unsalted),Dairy,9,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+176,Heavy Cream,Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+177,Cottage Cheese,Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+178,Cream Cheese,Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+179,Sour Cream,Dairy,9,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+180,Goat Milk,Dairy,9,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+181,Brie Cheese,Dairy,9,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+182,Whey Protein Powder,Dairy,9,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+183,Almond Milk (unsweetened),Dairy Alternatives,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+184,Oat Milk (unsweetened),Dairy Alternatives,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+185,Soy Milk (unsweetened),Dairy Alternatives,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+186,Coconut Milk (canned full fat),Dairy Alternatives,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+187,Rice Milk,Dairy Alternatives,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+188,Cashew Milk,Dairy Alternatives,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+189,Olive Oil (extra virgin),Oils & Fats,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+190,Coconut Oil,Oils & Fats,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+191,Avocado Oil,Oils & Fats,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+192,Sunflower Oil,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+193,Flaxseed Oil,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+194,Canola Oil,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+195,Sesame Oil,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+196,Walnut Oil,Oils & Fats,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+197,Ghee,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+198,Lard,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+199,Fish Oil,Oils & Fats,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+200,Peanut Oil,Oils & Fats,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+201,Turmeric (ground),Herbs & Spices,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+202,Ginger (ground),Herbs & Spices,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+203,Cinnamon (ground),Herbs & Spices,10,high,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+204,Black Pepper (ground),Herbs & Spices,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+205,Garlic Powder,Herbs & Spices,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+206,Cumin (ground),Herbs & Spices,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+207,Paprika (sweet),Herbs & Spices,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+208,Oregano (dried),Herbs & Spices,10,medium,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+209,Basil (fresh),Herbs & Spices,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+210,Parsley (fresh),Herbs & Spices,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+211,Rosemary (dried),Herbs & Spices,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15
+212,Thyme (dried),Herbs & Spices,10,low,complete,50,50,USDA FoodData Central SR Legacy,,2026-04-15

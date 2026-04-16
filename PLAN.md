@@ -202,12 +202,14 @@ Full data reference: `reference/` folder (food_list.csv, nutrients_list.csv, foo
 
 ---
 
-## The 39 Nutrients
+## The 50 Nutrients
 
 **Macronutrients (7):** Calories, Protein, Total Fat, Carbohydrates, Dietary Fiber, Total Sugar, Water  
-**Fatty Acids (5):** Saturated Fat, Monounsaturated Fat, Polyunsaturated Fat, Omega-3 (ALA), Omega-6 (LA)  
-**Vitamins (14):** A (RAE), C, D, E, K, B1, B2, B3, B5, B6, B7, B9 (Folate), B12, Choline  
-**Minerals (13):** Calcium, Iron, Magnesium, Phosphorus, Potassium, Sodium, Zinc, Copper, Manganese, Selenium, Iodine, Chromium, Fluoride  
+**Fatty Acids (7):** Saturated Fat, Monounsaturated Fat, Polyunsaturated Fat, Omega-3 (ALA), Omega-6 (LA), Trans Fat, Cholesterol  
+**Vitamins (13):** A (RAE), C, D, E, K, B1, B2, B3, B5, B6, B9 (Folate), B12, Choline  
+**Minerals (12):** Calcium, Iron, Magnesium, Phosphorus, Potassium, Sodium, Zinc, Copper, Manganese, Selenium, Iodine, Chromium  
+**Amino Acids (9):** Histidine, Isoleucine, Leucine, Lysine, Methionine, Phenylalanine, Threonine, Tryptophan, Valine  
+**Food Metrics (2):** Glycemic Index, Antioxidant Capacity  
 
 ---
 
@@ -333,8 +335,9 @@ move to the next one.
 
 ## Future Extensions (post-MVP, from ideas.md)
 
-- Amino acid profiles (9 essential AAs as new nutrient rows — schema already supports)
-- Glycemic index / glycemic load table
+- ~~Amino acid profiles (9 essential AAs)~~ ✅ Done — IDs 40–48
+- ~~Glycemic index table~~ ✅ Done — ID 49
+- ~~Antioxidant capacity~~ ✅ Done — ID 50 (mmol/100g FRAP)
 - Allergen flags junction table
 - Cooking-state variants (separate `foods` rows with `is_raw = FALSE`)
 - Portion sizes table (enables per-serving toggle in ranking charts)
