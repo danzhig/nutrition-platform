@@ -34,4 +34,4 @@ export interface HeatmapData {
   columnRanges: Record<number, { min: number; max: number }>
 }
 
-export type NutrientCategory = 'Macronutrient' | 'Vitamin' | 'Mineral' | 'Fatty Acid'
+export type NutrientCategory = 'Macronutrient' | 'Vitamin' | 'Mineral' | 'Fatty Acid' | 'Amino Acid' | 'Food Metric'

@@ -14,6 +14,8 @@ export const NUTRIENT_GROUP_LIST: {
   { value: 'Vitamin',       label: 'Vitamins' },
   { value: 'Mineral',       label: 'Minerals' },
   { value: 'Fatty Acid',    label: 'Fatty Acids' },
+  { value: 'Amino Acid',    label: 'Amino Acids' },
+  { value: 'Food Metric',   label: 'Food Metrics' },
 ]
 
 export const ALL_NUTRIENT_CATEGORIES: NutrientCategory[] =
