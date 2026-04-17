@@ -61,9 +61,12 @@ export default function HeatmapCell({
         ? `${foodName} — ${nutrientName}: data not available`
         : `${foodName} — ${nutrientName}: ${value} ${unit} = ${displayValue} DV${ulText}`
   } else {
-    // Relative (p10/p90) mode
-    bg = cellColor(value, min, max)
-    fg = textColor(value, min, max)
+    // Relative (p10/p90) mode.
+    // For 'limit' nutrients (GI, sat fat, sodium, etc.) invert the scale so
+    // lower values get the green end and higher values get the red end.
+    const relValue = (behavior === 'limit' && value !== null) ? (min + max - value) : value
+    bg = cellColor(relValue, min, max)
+    fg = textColor(relValue, min, max)
 
     displayValue =
       value === null

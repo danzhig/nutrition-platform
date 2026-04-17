@@ -102,11 +102,12 @@ export default function NutrientSidebar({
               let bg: string
               let labelRight: string | null = null
 
+              const behavior: NutrientBehavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
+
               if (rdaProfile) {
                 const rdaTarget = rdaProfile.values[n.nutrient_name] ?? null
                 if (rdaTarget != null && rdaTarget > 0 && avg !== null) {
                   const pct = (avg / rdaTarget) * 100
-                  const behavior: NutrientBehavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
                   const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
                   const ulPct = ulValue != null ? (ulValue / rdaTarget) * 100 : undefined
                   bg = rdaCellColor(pct, behavior, ulPct)
@@ -117,7 +118,11 @@ export default function NutrientSidebar({
                 }
               } else {
                 const range = columnRanges[n.nutrient_id] ?? { min: 0, max: 0 }
-                bg = cellColor(avg, range.min, range.max)
+                // Invert 'limit' nutrients so low avg = green in relative mode
+                const relAvg = (behavior === 'limit' && avg !== null)
+                  ? range.min + range.max - avg
+                  : avg
+                bg = cellColor(relAvg, range.min, range.max)
               }
 
               const tooltipAvg =

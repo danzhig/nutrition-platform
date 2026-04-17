@@ -38,6 +38,7 @@ export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
   'Cholesterol':    'limit',
   'Sodium':         'limit',
   'Total Sugars':   'limit',
+  'Glycemic Index': 'limit',   // target ≤55 (low-GI threshold); higher = worse blood sugar response
 
   // Normal but with a meaningful safety UL reachable through diet
   'Vitamin A':      'normal-with-ul',
@@ -133,9 +134,9 @@ const MALE_AVG: RDAValues = {
   'Tryptophan':     320,
   'Valine':         2100,
 
-  // Food metrics — no established daily target
-  'Glycemic Index':       null,
-  'Antioxidant Capacity': null,
+  // Food metrics — research-derived targets (no official DRI)
+  'Glycemic Index':       55,   // stay below low-GI threshold; behavior='limit'
+  'Antioxidant Capacity': 10,   // ~10 mmol FRAP/day achievable from healthy diet (Carlsen 2010)
 }
 
 const FEMALE_AVG: RDAValues = {

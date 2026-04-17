@@ -43,7 +43,18 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
     [meals, viewId]
   )
 
-  // Compute total nutrient values for the active meal selection
+  // Resolve nutrient IDs for special-cased nutrients
+  const giNutrientId = useMemo(
+    () => nutrients.find((n) => n.nutrient_name === 'Glycemic Index')?.nutrient_id ?? null,
+    [nutrients]
+  )
+  const carbsNutrientId = useMemo(
+    () => nutrients.find((n) => n.nutrient_name === 'Carbohydrates')?.nutrient_id ?? null,
+    [nutrients]
+  )
+
+  // Compute total nutrient values for the active meal selection.
+  // GI is excluded here — it gets a carb-weighted average instead (see below).
   const totals = useMemo<Record<number, number>>(() => {
     const t: Record<number, number> = {}
     for (const meal of activeMeals) {
@@ -54,12 +65,37 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
         for (const [nIdStr, value] of Object.entries(food.nutrients)) {
           if (value === null || value === undefined) continue
           const nId = Number(nIdStr)
+          if (nId === giNutrientId) continue  // handled separately
           t[nId] = (t[nId] ?? 0) + (value as number) * multiplier
         }
       }
     }
     return t
-  }, [activeMeals, foodsById])
+  }, [activeMeals, foodsById, giNutrientId])
+
+  // Carbohydrate-weighted average GI across all items that have both GI and carb data.
+  // null = no carb-containing foods in the active selection (meats, oils, etc.).
+  const weightedGI = useMemo<number | null>(() => {
+    if (giNutrientId === null || carbsNutrientId === null) return null
+    let sumGIxCarbs = 0
+    let sumCarbs = 0
+    for (const meal of activeMeals) {
+      for (const item of meal.items) {
+        const food = foodsById.get(item.food_id)
+        if (!food) continue
+        const multiplier = item.grams / 100
+        const gi = food.nutrients[giNutrientId]
+        const carbs = food.nutrients[carbsNutrientId]
+        if (gi == null || carbs == null) continue
+        const carbAmount = (carbs as number) * multiplier
+        if (carbAmount > 0) {
+          sumGIxCarbs += (gi as number) * carbAmount
+          sumCarbs += carbAmount
+        }
+      }
+    }
+    return sumCarbs > 0 ? Math.round(sumGIxCarbs / sumCarbs) : null
+  }, [activeMeals, foodsById, giNutrientId, carbsNutrientId])
 
   const hasAnyItems = meals.some((m) => m.items.length > 0)
   const mealsWithItems = meals.filter((m) => m.items.length > 0)
@@ -133,30 +169,44 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                 </p>
                 <div className="space-y-0.5">
                   {group.map((n) => {
-                    const total = totals[n.nutrient_id] ?? 0
+                    const isGI = n.nutrient_id === giNutrientId
+
+                    // GI uses carb-weighted average; all others use summed total
+                    const effectiveTotal: number | null = isGI
+                      ? weightedGI
+                      : (totals[n.nutrient_id] ?? 0) > 0 || totals[n.nutrient_id] !== undefined
+                        ? (totals[n.nutrient_id] ?? 0)
+                        : 0
+
                     const rdaTarget = rdaProfile?.values[n.nutrient_name] ?? null
-                    const pct = rdaTarget != null ? (total / rdaTarget) * 100 : null
+                    const pct = rdaTarget != null && effectiveTotal !== null
+                      ? (effectiveTotal / rdaTarget) * 100
+                      : null
                     const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
                     const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
                     const ulPct = rdaTarget != null && ulValue != null
                       ? (ulValue / rdaTarget) * 100
                       : undefined
-                    // 100% DV = full bar; anything over also fills completely
+
+                    // 100% DV = full bar
                     const barWidth = pct !== null ? Math.min(pct, 100) : 0
                     const barColor = pct !== null
                       ? rdaCellColor(pct, behavior, ulPct)
-                      : total > 0 ? '#475569' : '#334155'
+                      : (effectiveTotal ?? 0) > 0 ? '#475569' : '#334155'
 
                     const hasCap = behavior === 'limit' || behavior === 'normal-with-ul'
 
-                    // Display value when no DV profile
-                    const displayVal = total === 0
-                      ? null
-                      : total < 1
-                        ? total.toFixed(2)
-                        : total < 100
-                          ? total.toFixed(1)
-                          : Math.round(total).toString()
+                    // Label shown when no DV profile is active
+                    const rawVal = effectiveTotal ?? 0
+                    const displayVal = isGI && effectiveTotal === null
+                      ? null  // handled as N/A below
+                      : rawVal === 0
+                        ? null
+                        : rawVal < 1
+                          ? rawVal.toFixed(2)
+                          : rawVal < 100
+                            ? rawVal.toFixed(1)
+                            : Math.round(rawVal).toString()
 
                     return (
                       <div key={n.nutrient_id} className="flex items-center gap-1.5 px-1">
@@ -176,28 +226,39 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                               ⚠
                             </span>
                           )}
-                          <span
-                            className="text-slate-300 truncate"
-                            title={n.nutrient_name}
-                          >
+                          <span className="text-slate-300 truncate" title={n.nutrient_name}>
                             {abbr(n.nutrient_name)}
                           </span>
                         </div>
                         <div className="flex-1 h-3.5 bg-slate-700 rounded-sm overflow-hidden relative">
-                          {(pct !== null || total > 0) && (
+                          {pct !== null && (
                             <div
                               className="h-full rounded-sm transition-all duration-300"
                               style={{ width: `${barWidth}%`, backgroundColor: barColor }}
                             />
                           )}
+                          {pct === null && (effectiveTotal ?? 0) > 0 && (
+                            <div
+                              className="h-full rounded-sm"
+                              style={{ width: '100%', backgroundColor: barColor }}
+                            />
+                          )}
+                          {/* % label (DV mode) */}
                           {pct !== null && (
                             <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-white font-medium leading-none">
                               {pct < 1 ? '<1' : Math.round(pct)}%
                             </span>
                           )}
+                          {/* Raw value label (no DV profile) */}
                           {pct === null && displayVal && (
                             <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-slate-300 leading-none">
-                              {displayVal}{n.unit}
+                              {displayVal} {n.unit}
+                            </span>
+                          )}
+                          {/* GI N/A — plan has no carb-containing foods */}
+                          {isGI && effectiveTotal === null && hasAnyItems && (
+                            <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-slate-500 leading-none">
+                              N/A
                             </span>
                           )}
                         </div>
