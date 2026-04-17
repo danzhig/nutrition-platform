@@ -6,6 +6,7 @@ import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstan
 import { getPortionSize } from '@/lib/portionSizes'
 import HeatmapCell from './HeatmapCell'
 import FilterPanel from './FilterPanel'
+import NutrientSidebar from './NutrientSidebar'
 
 interface Props {
   data: HeatmapData
@@ -135,8 +136,11 @@ export default function HeatmapTable({ data }: Props) {
         )}
       </p>
 
-      {/* Scrollable table — full height now that the controls bar is gone */}
-      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-130px)]">
+      {/* Table + nutrient profile sidebar */}
+      <div className="flex gap-2 items-start">
+
+      {/* Scrollable table */}
+      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-130px)] flex-1 min-w-0">
         <table className="border-collapse text-xs">
           <thead>
             <tr className="bg-slate-950 text-slate-100">
@@ -241,6 +245,16 @@ export default function HeatmapTable({ data }: Props) {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Nutrient average profile sidebar */}
+      <NutrientSidebar
+        nutrients={data.nutrients}
+        visibleFoods={visibleFoods}
+        columnRanges={activeRanges}
+        perServing={perServing}
+      />
+
       </div>
     </>
   )
