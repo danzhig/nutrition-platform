@@ -59,7 +59,7 @@ export default function NutrientSidebar({ nutrients, visibleFoods, columnRanges,
   }))
 
   return (
-    <div className="flex-shrink-0 flex flex-col overflow-y-auto max-h-[calc(100vh-130px)] rounded-lg border border-slate-700 shadow-lg bg-slate-950 w-[82px]">
+    <div className="flex-shrink-0 flex flex-col overflow-y-auto max-h-[calc(100vh-130px)] rounded-lg border border-slate-700 shadow-lg bg-slate-950 w-[107px]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-slate-950 px-1 py-1.5 text-center border-b border-slate-700">
         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide leading-none">
