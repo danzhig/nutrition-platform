@@ -377,7 +377,7 @@ export default function FilterPanel({
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(35,76%,46%)' }} />
-                  <span className="text-[9px] text-slate-400">30–50% — modest</span>
+                  <span className="text-[9px] text-slate-400">25–50% — modest</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(142,68%,33%)' }} />

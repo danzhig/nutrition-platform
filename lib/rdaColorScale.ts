@@ -64,25 +64,25 @@ export function rdaCellColor(
 function normalAscending(pct: number): string {
   if (pct <= 0) return 'hsl(0, 75%, 40%)'
 
-  if (pct < 30) {
-    // 0–30 %: deep red — poor contribution from this food
-    const t = pct / 30
-    return `hsl(${Math.round(t * 12)}, 74%, ${Math.round(40 + t * 3)}%)`
+  if (pct < 25) {
+    // 0–25 %: deep red — poor contribution from this food
+    const t = pct / 25
+    return `hsl(${Math.round(t * 10)}, 74%, ${Math.round(40 + t * 3)}%)`
+  }
+
+  if (pct < 40) {
+    // 25–40 %: red → orange
+    const t = (pct - 25) / 15
+    return `hsl(${Math.round(10 + t * 37)}, ${Math.round(74 + t * 5)}%, ${Math.round(43 + t * 4)}%)`
   }
 
   if (pct < 50) {
-    // 30–50 %: red-orange — modest but improving
-    const t = (pct - 30) / 20
-    return `hsl(${Math.round(12 + t * 35)}, ${Math.round(74 + t * 5)}%, ${Math.round(43 + t * 4)}%)`
-  }
-
-  if (pct < 65) {
-    // 50–65 %: orange → green transition — "approaching 50% is good"
-    const t = (pct - 50) / 15
+    // 40–50 %: orange → green transition — fully green by 50%
+    const t = (pct - 40) / 10
     return `hsl(${Math.round(47 + t * 95)}, ${Math.round(79 - t * 12)}%, ${Math.round(47 - t * 16)}%)`
   }
 
-  // 65 %+: green zone — good contribution from a single food
+  // 50 %+: green zone — good contribution from a single food
   if (pct <= 150) {
     // Richer green as you approach and pass 100 %
     const proximity = Math.max(0, 1 - Math.abs(pct - 100) / 80)
