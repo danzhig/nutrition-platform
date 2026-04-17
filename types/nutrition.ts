@@ -38,3 +38,4 @@ export type NutrientCategory = 'Macronutrient' | 'Vitamin' | 'Mineral' | 'Fatty 
 
 export type { ProfileId, RDAProfile, RDAValues, NutrientBehavior } from '@/lib/rdaProfiles'
 export type { SavedProfile } from '@/lib/profileStorage'
+export type { SavedFilterSet, FilterSetState } from '@/lib/filterSetStorage'

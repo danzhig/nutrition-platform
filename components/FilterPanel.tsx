@@ -11,6 +11,7 @@ import {
 import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
 import { RDA_PROFILES, NUTRIENT_BEHAVIORS } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
+import type { SavedFilterSet } from '@/lib/filterSetStorage'
 
 interface Props {
   selectedFoods: string[]
@@ -22,6 +23,7 @@ interface Props {
   nutrients: NutrientMeta[]
   savedProfiles: SavedProfile[]
   savedProfileId: string | null
+  savedFilterSets: SavedFilterSet[]
   isLoggedIn: boolean
   onFoodsChange: (cats: string[]) => void
   onNutrientsChange: (cats: NutrientCategory[]) => void
@@ -32,6 +34,9 @@ interface Props {
   onSavedProfileSelect: (id: string | null) => void
   onSaveProfile: (name: string) => Promise<void>
   onDeleteSavedProfile: (id: string) => Promise<void>
+  onSaveFilterSet: (name: string) => Promise<void>
+  onDeleteFilterSet: (id: string) => Promise<void>
+  onApplyFilterSet: (fs: SavedFilterSet) => void
 }
 
 /** Short nutrient name for the custom editor rows. */
@@ -64,6 +69,7 @@ export default function FilterPanel({
   nutrients,
   savedProfiles,
   savedProfileId,
+  savedFilterSets,
   isLoggedIn,
   onFoodsChange,
   onNutrientsChange,
@@ -74,12 +80,19 @@ export default function FilterPanel({
   onSavedProfileSelect,
   onSaveProfile,
   onDeleteSavedProfile,
+  onSaveFilterSet,
+  onDeleteFilterSet,
+  onApplyFilterSet,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [customExpanded, setCustomExpanded] = useState(false)
   const [saveProfileName, setSaveProfileName] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveViewName, setSaveViewName] = useState('')
+  const [savingView, setSavingView] = useState(false)
+  const [saveViewError, setSaveViewError] = useState<string | null>(null)
+  const [saveViewExpanded, setSaveViewExpanded] = useState(false)
 
   const allFoods     = FOOD_CATEGORY_LIST.length
   const allNutrients = ALL_NUTRIENT_CATEGORIES.length
@@ -121,6 +134,21 @@ export default function FilterPanel({
     onRdaProfileChange(null)
     onCustomRdaValuesChange({})
     onSavedProfileSelect(null)
+  }
+
+  async function handleSaveView() {
+    if (!saveViewName.trim()) return
+    setSavingView(true)
+    setSaveViewError(null)
+    try {
+      await onSaveFilterSet(saveViewName.trim())
+      setSaveViewName('')
+      setSaveViewExpanded(false)
+    } catch (e: unknown) {
+      setSaveViewError(e instanceof Error ? e.message : 'Failed to save')
+    } finally {
+      setSavingView(false)
+    }
   }
 
   async function handleSaveProfile() {
@@ -228,6 +256,83 @@ export default function FilterPanel({
               className="w-full px-3 py-2 text-sm bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-400 rounded-lg outline-none focus:ring-2 focus:ring-slate-400"
             />
           </section>
+
+          {/* ── Saved views ── */}
+          {isLoggedIn && (
+            <section>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Saved views
+                </label>
+                <button
+                  onClick={() => setSaveViewExpanded((v) => !v)}
+                  className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors font-medium"
+                >
+                  {saveViewExpanded ? 'Cancel' : '+ Save current'}
+                </button>
+              </div>
+
+              {/* Save current view form */}
+              {saveViewExpanded && (
+                <div className="mb-3 flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="View name…"
+                    value={saveViewName}
+                    onChange={(e) => setSaveViewName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveView() }}
+                    autoFocus
+                    className="flex-1 min-w-0 px-2 py-1.5 text-xs bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-lg focus:ring-1 focus:ring-violet-500 outline-none"
+                  />
+                  <button
+                    onClick={handleSaveView}
+                    disabled={savingView || !saveViewName.trim()}
+                    className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors shrink-0"
+                  >
+                    {savingView ? '…' : 'Save'}
+                  </button>
+                </div>
+              )}
+              {saveViewError && (
+                <p className="mb-2 text-[10px] text-red-400">{saveViewError}</p>
+              )}
+
+              {/* Saved views list */}
+              {savedFilterSets.length === 0 ? (
+                <p className="text-[10px] text-slate-600 italic">
+                  No saved views yet. Set your filters and save a view to recall it quickly.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1">
+                  {savedFilterSets.map((fs) => (
+                    <div
+                      key={fs.id}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border bg-slate-700 border-slate-600 text-slate-300"
+                    >
+                      <button
+                        onClick={() => onApplyFilterSet(fs)}
+                        className="flex-1 text-left text-xs font-medium truncate hover:text-white transition-colors"
+                        title={`Apply view: ${fs.name}`}
+                      >
+                        {fs.name}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Delete view "${fs.name}"?`)) {
+                            await onDeleteFilterSet(fs.id)
+                          }
+                        }}
+                        title="Delete view"
+                        className="shrink-0 text-[11px] text-slate-400 hover:text-red-400 transition-colors px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* ── Value mode ── */}
           <section>
