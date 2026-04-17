@@ -373,19 +373,19 @@ export default function FilterPanel({
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(0,75%,40%)' }} />
-                  <span className="text-[9px] text-slate-400">0–50% — deficient</span>
+                  <span className="text-[9px] text-slate-400">0–30% — poor contribution</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(35,76%,46%)' }} />
-                  <span className="text-[9px] text-slate-400">50–85% — low</span>
+                  <span className="text-[9px] text-slate-400">30–50% — modest</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(142,72%,30%)' }} />
-                  <span className="text-[9px] text-slate-400">85–115% — optimal</span>
+                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(142,68%,33%)' }} />
+                  <span className="text-[9px] text-slate-400">50%+ — good serving contribution</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(142,40%,34%)' }} />
-                  <span className="text-[9px] text-slate-400">&gt;115% — excess (safe for most)</span>
+                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(142,76%,30%)' }} />
+                  <span className="text-[9px] text-slate-400">100%+ — exceptional</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: 'hsl(32,85%,42%)' }} />

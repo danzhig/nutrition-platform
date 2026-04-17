@@ -62,28 +62,36 @@ export function rdaCellColor(
 }
 
 function normalAscending(pct: number): string {
-  if (pct <= 0)  return 'hsl(0, 75%, 40%)'
+  if (pct <= 0) return 'hsl(0, 75%, 40%)'
+
+  if (pct < 30) {
+    // 0–30 %: deep red — poor contribution from this food
+    const t = pct / 30
+    return `hsl(${Math.round(t * 12)}, 74%, ${Math.round(40 + t * 3)}%)`
+  }
 
   if (pct < 50) {
-    const t = pct / 50
-    return `hsl(${Math.round(t * 18)}, ${Math.round(75 - t * 5)}%, ${Math.round(40 + t * 4)}%)`
+    // 30–50 %: red-orange — modest but improving
+    const t = (pct - 30) / 20
+    return `hsl(${Math.round(12 + t * 35)}, ${Math.round(74 + t * 5)}%, ${Math.round(43 + t * 4)}%)`
   }
 
-  if (pct < 85) {
-    const t = (pct - 50) / 35
-    const hue = Math.round(18 + t * 108)
-    return `hsl(${hue}, ${Math.round(70 + t * 8)}%, ${Math.round(44 - t * 10)}%)`
+  if (pct < 65) {
+    // 50–65 %: orange → green transition — "approaching 50% is good"
+    const t = (pct - 50) / 15
+    return `hsl(${Math.round(47 + t * 95)}, ${Math.round(79 - t * 12)}%, ${Math.round(47 - t * 16)}%)`
   }
 
-  if (pct <= 120) {
-    // Sweet spot — peak green near 100 %
-    const t = Math.abs(pct - 100) / 20  // 0 at 100 %, 1 at 80 or 120
-    return `hsl(142, ${Math.round(72 - t * 8)}%, ${Math.round(30 - t * 2)}%)`
+  // 65 %+: green zone — good contribution from a single food
+  if (pct <= 150) {
+    // Richer green as you approach and pass 100 %
+    const proximity = Math.max(0, 1 - Math.abs(pct - 100) / 80)
+    return `hsl(142, ${Math.round(62 + proximity * 14)}%, ${Math.round(35 - proximity * 5)}%)`
   }
 
-  // Over 120 % with no UL concern — fade gently
-  const fade = Math.min(1, (pct - 120) / 200)
-  return `hsl(142, ${Math.round(64 - fade * 35)}%, ${Math.round(32 + fade * 5)}%)`
+  // Over 150 %: slowly fade (excellent, just a lot)
+  const fade = Math.min(1, (pct - 150) / 250)
+  return `hsl(142, ${Math.round(74 - fade * 35)}%, ${Math.round(31 + fade * 6)}%)`
 }
 
 function limitColor(pct: number): string {
