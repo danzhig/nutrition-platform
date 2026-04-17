@@ -254,6 +254,13 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   210: { grams: 4,  label: '2 tbsp chopped' },  // Parsley (fresh)
   211: { grams: 1,  label: '1 tsp' },           // Rosemary (dried)
   212: { grams: 1,  label: '1 tsp' },           // Thyme (dried)
+
+  // ── Supplements ───────────────────────────────────────────────────────────
+  // portion_grams = 100 so multiplier = 1.0; value_per_100g = per-serving label value
+  213: { grams: 100, label: '1 tablet' },        // Multivitamin
+  214: { grams: 100, label: '1 serving' },       // Magnesium Bisglycinate
+  215: { grams: 100, label: '1 softgel' },       // Fish Oil (Omega-3)
+  216: { grams: 100, label: '1 capsule' },       // Vitamin K2 + D3
 }
 
 /** Returns the portion size for a food, falling back to 100g if not defined. */

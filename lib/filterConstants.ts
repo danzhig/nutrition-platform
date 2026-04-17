@@ -4,6 +4,7 @@ export const FOOD_CATEGORY_LIST = [
   'Fruits', 'Vegetables', 'Leafy Greens', 'Legumes', 'Nuts', 'Seeds',
   'Grains & Cereals', 'Red Meat', 'Poultry', 'Fish & Seafood', 'Eggs',
   'Dairy', 'Dairy Alternatives', 'Oils & Fats', 'Herbs & Spices',
+  'Supplements',
 ] as const
 
 export const NUTRIENT_GROUP_LIST: {
