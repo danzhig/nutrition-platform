@@ -18,12 +18,16 @@
 
 
 -- ── 1. New food category ─────────────────────────────────────
+-- Reset sequence in case it is out of sync (common after manual data loads).
+SELECT setval('food_categories_id_seq', (SELECT MAX(id) FROM food_categories));
+SELECT setval('foods_id_seq',           (SELECT MAX(id) FROM foods));
 
 INSERT INTO food_categories (name, description)
 VALUES (
   'Supplements',
   'Dietary supplements. Values are per-serving amounts (treat each serving as the 100g reference unit).'
-);
+)
+ON CONFLICT (name) DO NOTHING;
 
 
 -- ── 2. Supplement foods ───────────────────────────────────────
