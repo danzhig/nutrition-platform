@@ -1,5 +1,6 @@
 import { fetchHeatmapData } from '@/lib/fetchHeatmapData'
 import HeatmapTable from '@/components/HeatmapTable'
+import AuthButton from '@/components/AuthButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +18,12 @@ export default async function Home() {
               {data.foods.length} foods · {data.nutrients.length} nutrients · values per 100 g raw
             </p>
           </div>
-          <p className="text-xs text-slate-500 hidden sm:block">
-            Click any column header to sort · Hover a cell for exact value
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-slate-500 hidden sm:block">
+              Click any column header to sort · Hover a cell for exact value
+            </p>
+            <AuthButton />
+          </div>
         </div>
       </header>
 

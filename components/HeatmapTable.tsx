@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile, NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
+import type { SavedProfile } from '@/lib/profileStorage'
+import { loadSavedProfiles, saveNewProfile, deleteSavedProfile } from '@/lib/profileStorage'
+import { useAuth } from './AuthProvider'
 import HeatmapCell from './HeatmapCell'
 import FilterPanel from './FilterPanel'
 import NutrientSidebar from './NutrientSidebar'
@@ -39,10 +42,54 @@ export default function HeatmapTable({ data }: Props) {
   const [rdaProfileId, setRdaProfileId] = useState<ProfileId | null>(null)
   const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
 
-  const activeRdaProfile = useMemo(
-    () => getProfile(rdaProfileId, customRdaValues),
-    [rdaProfileId, customRdaValues]
-  )
+  // Saved profiles from Supabase
+  const { user } = useAuth()
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
+  const [savedProfileId, setSavedProfileId] = useState<string | null>(null)
+
+  // Load / clear saved profiles when auth changes
+  useEffect(() => {
+    if (!user) {
+      setSavedProfiles([])
+      setSavedProfileId(null)
+      return
+    }
+    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
+  }, [user])
+
+  const activeRdaProfile = useMemo(() => {
+    if (savedProfileId) {
+      const saved = savedProfiles.find((p) => p.id === savedProfileId)
+      if (saved) {
+        const label = saved.name.length > 14 ? saved.name.slice(0, 13) + '…' : saved.name
+        return { id: 'custom' as ProfileId, label: saved.name, shortLabel: label, description: 'Saved profile', values: saved.values }
+      }
+    }
+    return getProfile(rdaProfileId, customRdaValues)
+  }, [rdaProfileId, savedProfileId, savedProfiles, customRdaValues])
+
+  async function handleSaveProfile(name: string) {
+    const profile = await saveNewProfile(name, customRdaValues)
+    setSavedProfiles((prev) => [...prev, profile])
+    setSavedProfileId(profile.id)
+    setRdaProfileId(null)
+  }
+
+  async function handleDeleteSavedProfile(id: string) {
+    await deleteSavedProfile(id)
+    setSavedProfiles((prev) => prev.filter((p) => p.id !== id))
+    if (savedProfileId === id) setSavedProfileId(null)
+  }
+
+  function handleSelectSavedProfile(id: string | null) {
+    setSavedProfileId(id)
+    if (id) setRdaProfileId(null)
+  }
+
+  function handleRdaProfileChange(id: ProfileId | null) {
+    setRdaProfileId(id)
+    setSavedProfileId(null)
+  }
 
   const visibleNutrients = useMemo(() => {
     return data.nutrients.filter((n) => selectedNutrients.includes(n.nutrient_category as NutrientCategory))
@@ -120,12 +167,18 @@ export default function HeatmapTable({ data }: Props) {
         rdaProfileId={rdaProfileId}
         customRdaValues={customRdaValues}
         nutrients={data.nutrients}
+        savedProfiles={savedProfiles}
+        savedProfileId={savedProfileId}
+        isLoggedIn={!!user}
         onFoodsChange={setSelectedFoods}
         onNutrientsChange={setSelectedNutrients}
         onSearchChange={setSearch}
         onPerServingChange={setPerServing}
-        onRdaProfileChange={setRdaProfileId}
+        onRdaProfileChange={handleRdaProfileChange}
         onCustomRdaValuesChange={setCustomRdaValues}
+        onSavedProfileSelect={handleSelectSavedProfile}
+        onSaveProfile={handleSaveProfile}
+        onDeleteSavedProfile={handleDeleteSavedProfile}
       />
 
       {/* Thin status bar */}

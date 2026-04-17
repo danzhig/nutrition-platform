@@ -234,7 +234,7 @@ Full data reference: `reference/` folder (food_list.csv, nutrients_list.csv, foo
 - [x] Multi-select food category + nutrient group (select/deselect all, count badge)
 - [x] Nutrient average profile sidebar (all 50 nutrients, grouped, color-coded by avg across visible foods)
 - [x] % Daily Value mode — 4 RDA profiles + custom, new color scale, UL warnings, inverted nutrients
-- [ ] Supabase Auth + saved custom profiles (requires: supabase auth setup, `rda_profiles` table, row-level security per user)
+- [x] Supabase Auth — email/password; AuthProvider context; saved custom RDA profiles in `user_rda_profiles` table
 - [ ] Food row click → detail panel (FoodDetailPanel.tsx)
 - [ ] % RDA values in hover tooltips
 - [ ] Mobile-responsive: collapse to single-nutrient ranked list on small screens

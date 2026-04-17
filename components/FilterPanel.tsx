@@ -10,6 +10,7 @@ import {
 } from '@/lib/filterConstants'
 import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
 import { RDA_PROFILES, NUTRIENT_BEHAVIORS } from '@/lib/rdaProfiles'
+import type { SavedProfile } from '@/lib/profileStorage'
 
 interface Props {
   selectedFoods: string[]
@@ -19,12 +20,18 @@ interface Props {
   rdaProfileId: ProfileId | null
   customRdaValues: RDAValues
   nutrients: NutrientMeta[]
+  savedProfiles: SavedProfile[]
+  savedProfileId: string | null
+  isLoggedIn: boolean
   onFoodsChange: (cats: string[]) => void
   onNutrientsChange: (cats: NutrientCategory[]) => void
   onSearchChange: (s: string) => void
   onPerServingChange: (v: boolean) => void
   onRdaProfileChange: (id: ProfileId | null) => void
   onCustomRdaValuesChange: (values: RDAValues) => void
+  onSavedProfileSelect: (id: string | null) => void
+  onSaveProfile: (name: string) => Promise<void>
+  onDeleteSavedProfile: (id: string) => Promise<void>
 }
 
 /** Short nutrient name for the custom editor rows. */
@@ -55,15 +62,24 @@ export default function FilterPanel({
   rdaProfileId,
   customRdaValues,
   nutrients,
+  savedProfiles,
+  savedProfileId,
+  isLoggedIn,
   onFoodsChange,
   onNutrientsChange,
   onSearchChange,
   onPerServingChange,
   onRdaProfileChange,
   onCustomRdaValuesChange,
+  onSavedProfileSelect,
+  onSaveProfile,
+  onDeleteSavedProfile,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [customExpanded, setCustomExpanded] = useState(false)
+  const [saveProfileName, setSaveProfileName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const allFoods     = FOOD_CATEGORY_LIST.length
   const allNutrients = ALL_NUTRIENT_CATEGORIES.length
@@ -76,7 +92,7 @@ export default function FilterPanel({
     perServing,
     foodsFiltered,
     nutrientsFiltered,
-    rdaProfileId !== null,
+    rdaProfileId !== null || savedProfileId !== null,
   ].filter(Boolean).length
 
   function toggleFood(cat: string) {
@@ -104,6 +120,21 @@ export default function FilterPanel({
     onPerServingChange(false)
     onRdaProfileChange(null)
     onCustomRdaValuesChange({})
+    onSavedProfileSelect(null)
+  }
+
+  async function handleSaveProfile() {
+    if (!saveProfileName.trim()) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await onSaveProfile(saveProfileName.trim())
+      setSaveProfileName('')
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
   }
 
   /** When the user selects a built-in profile as the custom base, seed custom values. */
@@ -114,11 +145,13 @@ export default function FilterPanel({
 
   function handleProfileSelect(id: ProfileId | null) {
     onRdaProfileChange(id)
+    onSavedProfileSelect(null)
     if (id === 'custom' && Object.keys(customRdaValues).length === 0) {
-      // Seed custom from male-avg on first open
       seedCustomFromProfile('male-avg')
     }
   }
+
+  const anyProfileActive = rdaProfileId !== null || savedProfileId !== null
 
   /** Resolve the effective values for the custom editor display. */
   const effectiveCustomValues: RDAValues = (() => {
@@ -225,9 +258,9 @@ export default function FilterPanel({
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 % Daily Value
               </label>
-              {rdaProfileId !== null && (
+              {anyProfileActive && (
                 <button
-                  onClick={() => handleProfileSelect(null)}
+                  onClick={() => { onRdaProfileChange(null); onSavedProfileSelect(null) }}
                   className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
                 >
                   Off
@@ -273,6 +306,55 @@ export default function FilterPanel({
                 <span className="block text-[9px] opacity-70 mt-0.5">Set your own daily targets.</span>
               </button>
             </div>
+
+            {/* ── Saved profiles ── */}
+            {isLoggedIn && (
+              <div className="mt-3">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  My saved profiles
+                </p>
+                {savedProfiles.length === 0 ? (
+                  <p className="text-[10px] text-slate-600 italic">None saved yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {savedProfiles.map((p) => (
+                      <div
+                        key={p.id}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition-colors ${
+                          savedProfileId === p.id
+                            ? 'bg-violet-700 border-violet-600 text-white'
+                            : 'bg-slate-700 border-slate-600 text-slate-300'
+                        }`}
+                      >
+                        <button
+                          onClick={() => onSavedProfileSelect(savedProfileId === p.id ? null : p.id)}
+                          className="flex-1 text-left text-xs font-medium truncate"
+                        >
+                          {p.name}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Delete "${p.name}"?`)) {
+                              await onDeleteSavedProfile(p.id)
+                            }
+                          }}
+                          title="Delete profile"
+                          className="shrink-0 text-[11px] text-slate-400 hover:text-red-400 transition-colors px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!isLoggedIn && (
+              <p className="mt-2 text-[10px] text-slate-600 italic">
+                Sign in to save custom profiles.
+              </p>
+            )}
 
             {/* Custom profile editor — shown when custom is selected */}
             {rdaProfileId === 'custom' && (
@@ -360,13 +442,42 @@ export default function FilterPanel({
                       <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
                       <span className="text-slate-400">↓</span> lower is better
                     </p>
+
+                    {/* Save profile — only when logged in */}
+                    {isLoggedIn && (
+                      <div className="mt-4 border-t border-slate-700 pt-3">
+                        <p className="text-[10px] font-semibold text-slate-400 mb-2">
+                          Save as named profile
+                        </p>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="Profile name…"
+                            value={saveProfileName}
+                            onChange={(e) => setSaveProfileName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProfile() }}
+                            className="flex-1 min-w-0 px-2 py-1 text-xs bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
+                          />
+                          <button
+                            onClick={handleSaveProfile}
+                            disabled={saving || !saveProfileName.trim()}
+                            className="px-2.5 py-1 text-xs font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors shrink-0"
+                          >
+                            {saving ? '…' : 'Save'}
+                          </button>
+                        </div>
+                        {saveError && (
+                          <p className="mt-1 text-[10px] text-red-400">{saveError}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* Legend */}
-            {rdaProfileId !== null && (
+            {anyProfileActive && (
               <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 space-y-1">
                 <p className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                   Colour guide

@@ -37,3 +37,4 @@ export interface HeatmapData {
 export type NutrientCategory = 'Macronutrient' | 'Vitamin' | 'Mineral' | 'Fatty Acid' | 'Amino Acid' | 'Food Metric'
 
 export type { ProfileId, RDAProfile, RDAValues, NutrientBehavior } from '@/lib/rdaProfiles'
+export type { SavedProfile } from '@/lib/profileStorage'
