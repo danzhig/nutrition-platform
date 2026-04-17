@@ -13,12 +13,13 @@ interface Props {
   perServing: boolean
 }
 
-/** Abbreviate a nutrient name to fit in the narrow sidebar. */
+/** Abbreviate a nutrient name to fit in the sidebar. */
 function abbr(name: string): string {
   return name
     .replace('Vitamin ', 'Vit ')
+    .replace('Pantothenic Acid', 'Pantothenic Ac.')
     .replace('Antioxidant Capacity', 'Antioxidant')
-    .replace('Glycemic Index', 'GI')
+    .replace('Glycemic Index', 'Glycemic Idx')
     .replace('Saturated Fat', 'Sat Fat')
     .replace('Monounsaturated Fat', 'MUFA')
     .replace('Polyunsaturated Fat', 'PUFA')
@@ -59,7 +60,7 @@ export default function NutrientSidebar({ nutrients, visibleFoods, columnRanges,
   }))
 
   return (
-    <div className="flex-shrink-0 flex flex-col overflow-y-auto max-h-[calc(100vh-130px)] rounded-lg border border-slate-700 shadow-lg bg-slate-950 w-[107px]">
+    <div className="flex-shrink-0 flex flex-col overflow-y-auto max-h-[calc(100vh-130px)] rounded-lg border border-slate-700 shadow-lg bg-slate-950 w-[155px]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-slate-950 px-1 py-1.5 text-center border-b border-slate-700">
         <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wide leading-none">
@@ -84,17 +85,12 @@ export default function NutrientSidebar({ nutrients, visibleFoods, columnRanges,
               const range = columnRanges[n.nutrient_id] ?? { min: 0, max: 0 }
               const bg = cellColor(avg, range.min, range.max)
               const displayAvg =
-                avg === null
-                  ? null
-                  : avg >= 1000
-                  ? `${(avg / 1000).toFixed(1)}k`
-                  : avg >= 100
-                  ? Math.round(avg).toString()
-                  : avg >= 10
-                  ? avg.toFixed(1)
-                  : avg >= 0.01
-                  ? avg.toFixed(2)
-                  : '<0.01'
+                avg === null ? null
+                : avg >= 1000 ? `${(avg / 1000).toFixed(1)}k`
+                : avg >= 100 ? Math.round(avg).toString()
+                : avg >= 10  ? avg.toFixed(1)
+                : avg >= 0.01 ? avg.toFixed(2)
+                : '<0.01'
 
               const tooltipText =
                 avg === null
@@ -108,14 +104,9 @@ export default function NutrientSidebar({ nutrients, visibleFoods, columnRanges,
                   style={{ backgroundColor: bg }}
                   className="flex items-center justify-between px-1.5 h-[16px] border-b border-black/25 cursor-default select-none hover:brightness-125 transition-[filter]"
                 >
-                  <span className="text-[8.5px] text-white/75 truncate leading-none flex-1 min-w-0">
+                  <span className="text-[8.5px] text-white/75 leading-none">
                     {abbr(n.nutrient_name)}
                   </span>
-                  {displayAvg !== null && (
-                    <span className="text-[7px] text-white/50 font-mono ml-0.5 shrink-0 leading-none">
-                      {displayAvg}
-                    </span>
-                  )}
                 </div>
               )
             })}
