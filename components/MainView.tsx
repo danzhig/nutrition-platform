@@ -12,21 +12,21 @@ interface Props {
 type Tab = 'heatmap' | 'meals'
 
 export default function MainView({ data }: Props) {
-  const [tab, setTab] = useState<Tab>('heatmap')
+  const [tab, setTab] = useState<Tab>('meals')
 
   return (
     <div>
       {/* Tab bar */}
       <div className="flex gap-0 mb-5 border-b border-slate-700">
         <TabButton
-          label="Nutrient Heatmap"
-          active={tab === 'heatmap'}
-          onClick={() => setTab('heatmap')}
-        />
-        <TabButton
           label="Meal Planner"
           active={tab === 'meals'}
           onClick={() => setTab('meals')}
+        />
+        <TabButton
+          label="Nutrient Heatmap"
+          active={tab === 'heatmap'}
+          onClick={() => setTab('heatmap')}
         />
       </div>
 

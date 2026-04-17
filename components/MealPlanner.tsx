@@ -5,13 +5,14 @@ import type { HeatmapData, FoodRow } from '@/types/nutrition'
 import type { ActiveMealPlan, Meal } from '@/types/meals'
 import type { SavedMealPlan } from '@/lib/mealStorage'
 import { loadMealPlans, createMealPlan, updateMealPlan, deleteMealPlan } from '@/lib/mealStorage'
-import type { ProfileId, RDAProfile } from '@/lib/rdaProfiles'
-import { getProfile, RDA_PROFILES } from '@/lib/rdaProfiles'
+import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
+import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
 import { loadSavedProfiles } from '@/lib/profileStorage'
 import { useAuth } from './AuthProvider'
 import MealCard from './MealCard'
 import MealNutritionSidebar from './MealNutritionSidebar'
+import DVProfilePanel from './DVProfilePanel'
 
 interface Props {
   data: HeatmapData
@@ -28,6 +29,7 @@ export default function MealPlanner({ data }: Props) {
   const [plan, setPlan] = useState<ActiveMealPlan>(newPlan())
   const [savedPlans, setSavedPlans] = useState<SavedMealPlan[]>([])
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
+  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showPlanList, setShowPlanList] = useState(false)
@@ -55,6 +57,9 @@ export default function MealPlanner({ data }: Props) {
   const rdaProfile = useMemo<RDAProfile | null>(() => {
     const sel = plan.rda_selection
     if (!sel) return null
+    if (sel === 'custom') {
+      return getProfile('custom', customRdaValues)
+    }
     if (sel.startsWith('saved:')) {
       const savedId = sel.slice(6)
       const saved = savedProfiles.find((p) => p.id === savedId)
@@ -66,7 +71,7 @@ export default function MealPlanner({ data }: Props) {
       return null
     }
     return getProfile(sel as ProfileId, undefined)
-  }, [plan.rda_selection, savedProfiles])
+  }, [plan.rda_selection, savedProfiles, customRdaValues])
 
   // ── Plan mutation helpers ──────────────────────────────────────────────────
 
@@ -211,46 +216,20 @@ export default function MealPlanner({ data }: Props) {
             </div>
           )}
 
-          {/* DV profile selector */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-slate-400 flex-shrink-0">% DV profile:</span>
-            <button
-              onClick={() => setPlan((p) => ({ ...p, rda_selection: '' }))}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                !plan.rda_selection
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-              }`}
-            >
-              None
-            </button>
-            {RDA_PROFILES.map((profile) => (
+          {/* Active DV profile indicator */}
+          {rdaProfile && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-500">DV profile:</span>
+              <span className="text-[10px] font-medium text-violet-300">{rdaProfile.shortLabel}</span>
               <button
-                key={profile.id}
-                onClick={() => setPlan((p) => ({ ...p, rda_selection: profile.id }))}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                  plan.rda_selection === profile.id
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                }`}
+                onClick={() => setPlan((p) => ({ ...p, rda_selection: '' }))}
+                className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+                title="Clear profile"
               >
-                {profile.shortLabel}
+                ✕
               </button>
-            ))}
-            {savedProfiles.map((sp) => (
-              <button
-                key={sp.id}
-                onClick={() => setPlan((p) => ({ ...p, rda_selection: `saved:${sp.id}` }))}
-                className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
-                  plan.rda_selection === `saved:${sp.id}`
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                }`}
-              >
-                {sp.name}
-              </button>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Meal cards */}
@@ -280,6 +259,18 @@ export default function MealPlanner({ data }: Props) {
           + Add Meal
         </button>
       </div>
+
+      {/* Middle: DV profile panel */}
+      <DVProfilePanel
+        nutrients={data.nutrients}
+        rdaSelection={plan.rda_selection}
+        customRdaValues={customRdaValues}
+        savedProfiles={savedProfiles}
+        isLoggedIn={!!user}
+        onRdaSelectionChange={(sel) => setPlan((p) => ({ ...p, rda_selection: sel }))}
+        onCustomValuesChange={setCustomRdaValues}
+        onSavedProfilesChange={setSavedProfiles}
+      />
 
       {/* Right: nutrition sidebar */}
       <MealNutritionSidebar
