@@ -141,13 +141,15 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                     const ulPct = rdaTarget != null && ulValue != null
                       ? (ulValue / rdaTarget) * 100
                       : undefined
-                    // Bar fills to 200% max
-                    const barWidth = pct !== null ? Math.min(pct, 200) / 200 * 100 : 0
+                    // 100% DV = full bar; anything over also fills completely
+                    const barWidth = pct !== null ? Math.min(pct, 100) : 0
                     const barColor = pct !== null
                       ? rdaCellColor(pct, behavior, ulPct)
                       : total > 0 ? '#475569' : '#334155'
 
-                    // Display value
+                    const hasCap = behavior === 'limit' || behavior === 'normal-with-ul'
+
+                    // Display value when no DV profile
                     const displayVal = total === 0
                       ? null
                       : total < 1
@@ -158,13 +160,29 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
 
                     return (
                       <div key={n.nutrient_id} className="flex items-center gap-1.5 px-1">
-                        <span
-                          className="text-slate-300 truncate flex-shrink-0"
+                        <div
+                          className="flex items-center gap-0.5 flex-shrink-0"
                           style={{ width: 110 }}
-                          title={n.nutrient_name}
                         >
-                          {abbr(n.nutrient_name)}
-                        </span>
+                          {hasCap && (
+                            <span
+                              className="text-amber-400 text-[9px] flex-shrink-0 leading-none"
+                              title={
+                                behavior === 'limit'
+                                  ? `${n.nutrient_name}: lower is better — this is a daily cap`
+                                  : `${n.nutrient_name}: has a recommended upper limit`
+                              }
+                            >
+                              ⚠
+                            </span>
+                          )}
+                          <span
+                            className="text-slate-300 truncate"
+                            title={n.nutrient_name}
+                          >
+                            {abbr(n.nutrient_name)}
+                          </span>
+                        </div>
                         <div className="flex-1 h-3.5 bg-slate-700 rounded-sm overflow-hidden relative">
                           {(pct !== null || total > 0) && (
                             <div
