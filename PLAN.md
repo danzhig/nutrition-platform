@@ -1,6 +1,6 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-17  
+**Last updated:** 2026-04-17 (evening)  
 **Phase:** Phase 2 — Heatmap polish
 
 ---
@@ -36,14 +36,16 @@ nutrition-platform/          ← GitHub repo root
 │   ├── HeatmapTable.tsx     ← Main heatmap component (filter state, sort, per-serving)
 │   ├── HeatmapCell.tsx      ← Individual cell with color + tooltip
 │   ├── FilterPanel.tsx      ← Slide-out filter & settings panel (left edge tab)
-│   ├── NutrientSidebar.tsx  ← Vertical avg-profile sidebar (all 50 nutrients, right of table)
+│   ├── NutrientSidebar.tsx  ← Vertical avg-profile sidebar (all 50 nutrients, right of table; DV mode aware)
 │   └── FoodDetailPanel.tsx  ← Slide-in panel on row click (Phase 2, not yet built)
 ├── lib/
 │   ├── supabase.ts          ← Supabase client initialisation
 │   ├── fetchHeatmapData.ts  ← Data fetching + P10/P90 normalization logic
 │   ├── colorScale.ts        ← Per-column P10/P90 normalization → color
 │   ├── filterConstants.ts   ← Shared FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
-│   └── portionSizes.ts      ← Per-food serving sizes (all 212 foods)
+│   ├── portionSizes.ts      ← Per-food serving sizes (all 212 foods)
+│   ├── rdaProfiles.ts       ← 4 built-in RDA profiles + custom; nutrient behavior + UL metadata
+│   └── rdaColorScale.ts     ← Color scale for % DV mode (normal / limit / normal-with-ul)
 ├── types/
 │   └── nutrition.ts         ← TypeScript interfaces
 ├── sql/                     ← Existing SQL files (deploy to Supabase)
@@ -231,6 +233,8 @@ Full data reference: `reference/` folder (food_list.csv, nutrients_list.csv, foo
 - [x] Slide-out filter panel (left edge tab, backdrop, active badge, reset)
 - [x] Multi-select food category + nutrient group (select/deselect all, count badge)
 - [x] Nutrient average profile sidebar (all 50 nutrients, grouped, color-coded by avg across visible foods)
+- [x] % Daily Value mode — 4 RDA profiles + custom, new color scale, UL warnings, inverted nutrients
+- [ ] Supabase Auth + saved custom profiles (requires: supabase auth setup, `rda_profiles` table, row-level security per user)
 - [ ] Food row click → detail panel (FoodDetailPanel.tsx)
 - [ ] % RDA values in hover tooltips
 - [ ] Mobile-responsive: collapse to single-nutrient ranked list on small screens
