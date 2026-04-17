@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-15  
+**Last updated:** 2026-04-17  
 **Current phase: Phase 2 — Heatmap polish + Data expansion**
 
 ---
@@ -28,6 +28,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Supabase project + database deployed** | ✅ Complete — 8,268 rows verified |
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
+| **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
 
 **Total food_nutrients rows: 10,600** (212 foods × 50 nutrients — after running extended seed)
 - Base: 8,268 rows (212 × 39 original nutrients)
@@ -78,6 +79,7 @@ Verify after seeding: `SELECT COUNT(*) FROM food_nutrients;` → **10,600**
 - [x] Per-serving toggle with transparent Serving column (all 212 foods, p10/p90 recalculated per-serving)
 - [x] Slide-out filter panel (left edge tab, backdrop close, active filter badge, reset button)
 - [x] Multi-select food category + nutrient group filters (select/deselect all, min-1 enforced, count badge)
+- [x] Nutrient average profile sidebar — vertical column of all 50 nutrients right of the table, color-coded by avg value across currently visible foods, grouped by category, updates with food filters
 - [ ] Food row click → slide-in detail panel
 - [ ] % RDA in hover tooltips
 - [ ] Mobile-responsive collapse (single-nutrient ranked list on small screens)
