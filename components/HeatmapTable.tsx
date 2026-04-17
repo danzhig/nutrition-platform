@@ -5,7 +5,7 @@ import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
-import { getProfile, NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
+import { getProfile, NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
 import { loadSavedProfiles, saveNewProfile, updateSavedProfile, deleteSavedProfile } from '@/lib/profileStorage'
 import type { SavedFilterSet } from '@/lib/filterSetStorage'
@@ -341,7 +341,7 @@ export default function HeatmapTable({ data }: Props) {
 
                       // DV mode props
                       const rdaTarget = activeRdaProfile
-                        ? (activeRdaProfile.values[n.nutrient_name] ?? null)
+                        ? (activeRdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null)
                         : undefined
                       const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
                       const ulValue  = NUTRIENT_UPPER_LIMITS[n.nutrient_name]

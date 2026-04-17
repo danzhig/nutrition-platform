@@ -56,6 +56,17 @@ export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
   'Phosphorus':     'normal-with-ul',
 }
 
+/**
+ * Fixed research-derived targets for food metrics.
+ * These are absolute scientific thresholds, not personal targets, so they
+ * apply as a fallback for ALL profiles (including old saved profiles that
+ * pre-date the addition of these nutrients).
+ */
+export const FOOD_METRIC_TARGETS: Record<string, number> = {
+  'Glycemic Index':       55,   // stay below low-GI threshold (Foster-Powell / Atkinson)
+  'Antioxidant Capacity': 10,   // ~10 mmol FRAP/day from a healthy diet (Carlsen 2010)
+}
+
 /** Absolute upper intake level (UL) in the same unit as the DB column. */
 export const NUTRIENT_UPPER_LIMITS: Record<string, number> = {
   'Vitamin A':  3000,  // mcg RAE — fat-soluble, teratogenic at high doses

@@ -7,7 +7,7 @@ import { rdaCellColor } from '@/lib/rdaColorScale'
 import { getPortionSize } from '@/lib/portionSizes'
 import { NUTRIENT_GROUP_LIST } from '@/lib/filterConstants'
 import type { RDAProfile, NutrientBehavior } from '@/lib/rdaProfiles'
-import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
+import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 
 interface Props {
   nutrients: NutrientMeta[]
@@ -105,7 +105,7 @@ export default function NutrientSidebar({
               const behavior: NutrientBehavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
 
               if (rdaProfile) {
-                const rdaTarget = rdaProfile.values[n.nutrient_name] ?? null
+                const rdaTarget = rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null
                 if (rdaTarget != null && rdaTarget > 0 && avg !== null) {
                   const pct = (avg / rdaTarget) * 100
                   const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]

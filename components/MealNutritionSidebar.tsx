@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
-import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
+import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import type { Meal } from '@/types/meals'
 
@@ -178,7 +178,9 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                         ? (totals[n.nutrient_id] ?? 0)
                         : 0
 
-                    const rdaTarget = rdaProfile?.values[n.nutrient_name] ?? null
+                    const rdaTarget = rdaProfile != null
+                      ? (rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null)
+                      : null
                     const pct = rdaTarget != null && effectiveTotal !== null
                       ? (effectiveTotal / rdaTarget) * 100
                       : null
