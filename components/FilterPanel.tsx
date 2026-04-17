@@ -33,6 +33,7 @@ interface Props {
   onCustomRdaValuesChange: (values: RDAValues) => void
   onSavedProfileSelect: (id: string | null) => void
   onSaveProfile: (name: string) => Promise<void>
+  onUpdateSavedProfile: (id: string, name: string, values: RDAValues) => Promise<void>
   onDeleteSavedProfile: (id: string) => Promise<void>
   onSaveFilterSet: (name: string) => Promise<void>
   onDeleteFilterSet: (id: string) => Promise<void>
@@ -79,6 +80,7 @@ export default function FilterPanel({
   onCustomRdaValuesChange,
   onSavedProfileSelect,
   onSaveProfile,
+  onUpdateSavedProfile,
   onDeleteSavedProfile,
   onSaveFilterSet,
   onDeleteFilterSet,
@@ -89,6 +91,10 @@ export default function FilterPanel({
   const [saveProfileName, setSaveProfileName] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Edit-mode state — tracks which saved profile is being edited
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null)
+  const [updating, setUpdating] = useState(false)
+  const [updateError, setUpdateError] = useState<string | null>(null)
   const [saveViewName, setSaveViewName] = useState('')
   const [savingView, setSavingView] = useState(false)
   const [saveViewError, setSaveViewError] = useState<string | null>(null)
@@ -163,6 +169,43 @@ export default function FilterPanel({
     } finally {
       setSaving(false)
     }
+  }
+
+  /** Load a saved profile into the custom editor for editing. */
+  function handleEditSavedProfile(p: SavedProfile) {
+    setEditingProfileId(p.id)
+    setSaveProfileName(p.name)
+    setUpdateError(null)
+    onCustomRdaValuesChange({ ...p.values })
+    onRdaProfileChange('custom')
+    onSavedProfileSelect(null)
+    setCustomExpanded(true)
+  }
+
+  /** Save edits back to an existing saved profile. */
+  async function handleUpdateProfile() {
+    if (!editingProfileId || !saveProfileName.trim()) return
+    setUpdating(true)
+    setUpdateError(null)
+    try {
+      await onUpdateSavedProfile(editingProfileId, saveProfileName.trim(), customRdaValues)
+      // Switch back to the now-updated saved profile
+      onSavedProfileSelect(editingProfileId)
+      onRdaProfileChange(null)
+      setEditingProfileId(null)
+      setSaveProfileName('')
+      onCustomRdaValuesChange({})
+    } catch (e: unknown) {
+      setUpdateError(e instanceof Error ? e.message : 'Update failed')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  function cancelEdit() {
+    setEditingProfileId(null)
+    setSaveProfileName('')
+    setUpdateError(null)
   }
 
   /** When the user selects a built-in profile as the custom base, seed custom values. */
@@ -438,6 +481,13 @@ export default function FilterPanel({
                           {p.name}
                         </button>
                         <button
+                          onClick={() => handleEditSavedProfile(p)}
+                          title="Edit profile values"
+                          className="shrink-0 text-[11px] text-slate-400 hover:text-violet-400 transition-colors px-1"
+                        >
+                          ✎
+                        </button>
+                        <button
                           onClick={async () => {
                             if (confirm(`Delete "${p.name}"?`)) {
                               await onDeleteSavedProfile(p.id)
@@ -475,7 +525,7 @@ export default function FilterPanel({
 
                 {customExpanded && (
                   <div className="px-3 pb-3">
-                    {/* Seed from built-in */}
+                    {/* Seed from built-in or saved profile */}
                     <div className="flex gap-1.5 mb-3 flex-wrap">
                       <p className="w-full text-[9px] text-slate-500 mb-1">Copy from:</p>
                       {RDA_PROFILES.map((p) => (
@@ -485,6 +535,16 @@ export default function FilterPanel({
                           className="px-2 py-0.5 rounded text-[9px] bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors"
                         >
                           {p.shortLabel}
+                        </button>
+                      ))}
+                      {savedProfiles.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => onCustomRdaValuesChange({ ...p.values })}
+                          title={`Copy values from "${p.name}"`}
+                          className="px-2 py-0.5 rounded text-[9px] bg-violet-900 text-violet-300 hover:bg-violet-800 hover:text-white transition-colors max-w-[80px] truncate"
+                        >
+                          {p.name}
                         </button>
                       ))}
                     </div>
@@ -548,31 +608,71 @@ export default function FilterPanel({
                       <span className="text-slate-400">↓</span> lower is better
                     </p>
 
-                    {/* Save profile — only when logged in */}
+                    {/* Save / update — only when logged in */}
                     {isLoggedIn && (
                       <div className="mt-4 border-t border-slate-700 pt-3">
-                        <p className="text-[10px] font-semibold text-slate-400 mb-2">
-                          Save as named profile
-                        </p>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            placeholder="Profile name…"
-                            value={saveProfileName}
-                            onChange={(e) => setSaveProfileName(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProfile() }}
-                            className="flex-1 min-w-0 px-2 py-1 text-xs bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
-                          />
-                          <button
-                            onClick={handleSaveProfile}
-                            disabled={saving || !saveProfileName.trim()}
-                            className="px-2.5 py-1 text-xs font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors shrink-0"
-                          >
-                            {saving ? '…' : 'Save'}
-                          </button>
-                        </div>
-                        {saveError && (
-                          <p className="mt-1 text-[10px] text-red-400">{saveError}</p>
+                        {editingProfileId ? (
+                          /* ── Edit mode: update existing profile ── */
+                          <>
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-[10px] font-semibold text-slate-400">
+                                Update profile
+                              </p>
+                              <button
+                                onClick={cancelEdit}
+                                className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors"
+                              >
+                                Cancel edit
+                              </button>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                placeholder="Profile name…"
+                                value={saveProfileName}
+                                onChange={(e) => setSaveProfileName(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleUpdateProfile() }}
+                                className="flex-1 min-w-0 px-2 py-1 text-xs bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
+                              />
+                              <button
+                                onClick={handleUpdateProfile}
+                                disabled={updating || !saveProfileName.trim()}
+                                className="px-2.5 py-1 text-xs font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors shrink-0"
+                              >
+                                {updating ? '…' : 'Update'}
+                              </button>
+                            </div>
+                            {updateError && (
+                              <p className="mt-1 text-[10px] text-red-400">{updateError}</p>
+                            )}
+                          </>
+                        ) : (
+                          /* ── Normal mode: save as new profile ── */
+                          <>
+                            <p className="text-[10px] font-semibold text-slate-400 mb-2">
+                              Save as named profile
+                            </p>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                placeholder="Profile name…"
+                                value={saveProfileName}
+                                onChange={(e) => setSaveProfileName(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveProfile() }}
+                                className="flex-1 min-w-0 px-2 py-1 text-xs bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
+                              />
+                              <button
+                                onClick={handleSaveProfile}
+                                disabled={saving || !saveProfileName.trim()}
+                                className="px-2.5 py-1 text-xs font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors shrink-0"
+                              >
+                                {saving ? '…' : 'Save'}
+                              </button>
+                            </div>
+                            {saveError && (
+                              <p className="mt-1 text-[10px] text-red-400">{saveError}</p>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

@@ -7,7 +7,7 @@ import { getPortionSize } from '@/lib/portionSizes'
 import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile, NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
-import { loadSavedProfiles, saveNewProfile, deleteSavedProfile } from '@/lib/profileStorage'
+import { loadSavedProfiles, saveNewProfile, updateSavedProfile, deleteSavedProfile } from '@/lib/profileStorage'
 import type { SavedFilterSet } from '@/lib/filterSetStorage'
 import { loadFilterSets, saveFilterSet, deleteFilterSet } from '@/lib/filterSetStorage'
 import { useAuth } from './AuthProvider'
@@ -78,6 +78,13 @@ export default function HeatmapTable({ data }: Props) {
     setSavedProfiles((prev) => [...prev, profile])
     setSavedProfileId(profile.id)
     setRdaProfileId(null)
+  }
+
+  async function handleUpdateSavedProfile(id: string, name: string, values: RDAValues) {
+    await updateSavedProfile(id, name, values)
+    setSavedProfiles((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, name, values } : p))
+    )
   }
 
   async function handleDeleteSavedProfile(id: string) {
@@ -216,6 +223,7 @@ export default function HeatmapTable({ data }: Props) {
         onCustomRdaValuesChange={setCustomRdaValues}
         onSavedProfileSelect={handleSelectSavedProfile}
         onSaveProfile={handleSaveProfile}
+        onUpdateSavedProfile={handleUpdateSavedProfile}
         onDeleteSavedProfile={handleDeleteSavedProfile}
         onSaveFilterSet={handleSaveFilterSet}
         onDeleteFilterSet={handleDeleteFilterSet}
