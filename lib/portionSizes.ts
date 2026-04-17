@@ -255,6 +255,10 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   211: { grams: 1,  label: '1 tsp' },           // Rosemary (dried)
   212: { grams: 1,  label: '1 tsp' },           // Thyme (dried)
 
+  // ── Tortillas ─────────────────────────────────────────────────────────────
+  217: { grams: 28,  label: '1 tortilla (6 inch)' },  // Corn Tortilla
+  218: { grams: 45,  label: '1 tortilla (8 inch)' },  // Flour Tortilla
+
   // ── Supplements ───────────────────────────────────────────────────────────
   // portion_grams = 100 so multiplier = 1.0; value_per_100g = per-serving label value
   213: { grams: 100, label: '1 tablet' },        // Multivitamin

@@ -7,7 +7,7 @@
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (216 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (218 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
 
 ---
 
@@ -19,9 +19,11 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
+| Tortillas (Corn + Flour, all 50 nutrients) | ✅ Complete |
 | Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
 | Extended seed file (`sql/seed_amino_acids_gi_antioxidant.sql`) | ✅ Complete |
 | Supplements seed file (`sql/seed_supplements.sql`) | ✅ Complete |
+| Tortillas seed file (`sql/seed_tortillas.sql`) | ✅ Complete |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
@@ -33,8 +35,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
 | **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
 
-**Total foods: 216** (212 whole foods + 4 supplements)  
-**Total food_nutrients rows: ~10,625** (212 foods × 50 nutrients + 25 supplement nutrient rows)
+**Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
+**Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
 
 ---
 
@@ -45,7 +47,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 2. **`sql/seed_all.sql`** — Inserts all reference data + all 212 foods + original 8,268 nutrient rows
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
 4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
-5. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+5. **`sql/seed_tortillas.sql`** — Adds Corn Tortilla + Flour Tortilla to Grains & Cereals (100 nutrient rows)
+6. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
 -- Saved custom RDA profiles
@@ -153,8 +156,8 @@ CREATE POLICY "Users manage their own meal plans"
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
 nutrients            (50 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
-foods               (216 rows)    — 212 whole foods + 4 supplements
-food_nutrients   (~10,625 rows)   — food_id × nutrient_id × value_per_100g
+foods               (218 rows)    — 212 whole foods + 4 supplements + 2 tortillas
+food_nutrients   (~10,725 rows)   — food_id × nutrient_id × value_per_100g
 food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)

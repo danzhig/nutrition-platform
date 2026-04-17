@@ -7,7 +7,7 @@
 
 ## Project Goal
 
-A public-facing nutrition web app backed by Supabase PostgreSQL (216 foods × 50 nutrients), hosted on **Vercel**, source-controlled on **GitHub**. Two shipped features: an interactive heatmap table and a meal planner. Auth is live — logged-in users can save custom RDA profiles, filter sets, and meal plans.
+A public-facing nutrition web app backed by Supabase PostgreSQL (218 foods × 50 nutrients), hosted on **Vercel**, source-controlled on **GitHub**. Two shipped features: an interactive heatmap table and a meal planner. Auth is live — logged-in users can save custom RDA profiles, filter sets, and meal plans.
 
 ---
 
@@ -59,7 +59,7 @@ nutrition-platform/
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization
 │   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
 │   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST, ALL_NUTRIENT_CATEGORIES
-│   ├── portionSizes.ts         ← Per-food serving sizes (all 216 foods, keyed by food_id)
+│   ├── portionSizes.ts         ← Per-food serving sizes (all 218 foods, keyed by food_id)
 │   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
 │   ├── rdaColorScale.ts        ← %DV color scale: normal / limit / normal-with-ul behaviors
 │   ├── profileStorage.ts       ← CRUD for user_rda_profiles Supabase table
@@ -76,7 +76,8 @@ nutrition-platform/
 │   ├── schema.sql              ← All 6 base tables, indexes, RLS
 │   ├── seed_all.sql            ← All reference data + 212 foods + 8,268 nutrient rows
 │   ├── seed_amino_acids_gi_antioxidant.sql  ← 9 EAAs + GI + antioxidant (2,332 rows)
-│   └── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
+│   ├── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
+│   └── seed_tortillas.sql      ← Corn Tortilla + Flour Tortilla, all 50 nutrients (100 rows)
 │
 ├── reference/                  ← CSV reference files (food_list, nutrients_list, food_categories)
 ├── .env.local                  ← NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
