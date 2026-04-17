@@ -1,13 +1,13 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-17 (night)  
+**Last updated:** 2026-04-17  
 **Current phase: Phase 2 complete → Phase 3 ready**
 
 ---
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (212 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (216 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
 
 ---
 
@@ -18,8 +18,10 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | Schema (all 6 tables, indexes, RLS) | ✅ Complete |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
+| Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
 | Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
 | Extended seed file (`sql/seed_amino_acids_gi_antioxidant.sql`) | ✅ Complete |
+| Supplements seed file (`sql/seed_supplements.sql`) | ✅ Complete |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
@@ -31,7 +33,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
 | **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
 
-**Total food_nutrients rows: 10,600** (212 foods × 50 nutrients)
+**Total foods: 216** (212 whole foods + 4 supplements)  
+**Total food_nutrients rows: ~10,625** (212 foods × 50 nutrients + 25 supplement nutrient rows)
 
 ---
 
@@ -41,7 +44,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 1. **`sql/schema.sql`** — Creates all 6 base tables, indexes, Row Level Security policies
 2. **`sql/seed_all.sql`** — Inserts all reference data + all 212 foods + original 8,268 nutrient rows
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
-4. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
+5. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
 -- Saved custom RDA profiles
@@ -94,7 +98,7 @@ CREATE POLICY "Users manage their own meal plans"
 ### Human-readable reference
 - **`reference/food_list.csv`** — All 212 foods with category, batch, priority
 - **`reference/nutrients_list.csv`** — All 50 nutrients with units, categories, descriptions
-- **`reference/food_categories.csv`** — All 15 food categories with descriptions
+- **`reference/food_categories.csv`** — All 16 food categories with descriptions (incl. Supplements)
 - **`status_tracker.csv`** — Per-food completion log (all 212 marked complete)
 - **`ideas.md`** — Full visualization roadmap for future features
 
@@ -148,9 +152,9 @@ CREATE POLICY "Users manage their own meal plans"
 ```
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
 nutrients            (50 rows)    — All nutrients with unit, category, description
-food_categories      (15 rows)    — Fruits, Vegetables, Meat, Dairy, etc.
-foods               (212 rows)    — Each food with name, category, USDA FDC ID
-food_nutrients    (10,600 rows)   — food_id × nutrient_id × value_per_100g
+food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
+foods               (216 rows)    — 212 whole foods + 4 supplements
+food_nutrients   (~10,625 rows)   — food_id × nutrient_id × value_per_100g
 food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
