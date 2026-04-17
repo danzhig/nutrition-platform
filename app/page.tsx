@@ -1,5 +1,5 @@
 import { fetchHeatmapData } from '@/lib/fetchHeatmapData'
-import HeatmapTable from '@/components/HeatmapTable'
+import MainView from '@/components/MainView'
 import AuthButton from '@/components/AuthButton'
 
 export const dynamic = 'force-dynamic'
@@ -51,9 +51,9 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Heatmap */}
+      {/* Main content */}
       <section className="px-4 py-5 max-w-screen-2xl mx-auto">
-        <HeatmapTable data={data} />
+        <MainView data={data} />
       </section>
     </main>
   )
