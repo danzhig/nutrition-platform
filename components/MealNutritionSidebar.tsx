@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS } from '@/lib/rdaProfiles'
@@ -28,10 +28,25 @@ function abbr(name: string): string {
 }
 
 export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaProfile }: Props) {
-  // Compute total nutrient values across all meals
+  // 'all' = full plan; meal id = individual meal
+  const [viewId, setViewId] = useState<'all' | string>('all')
+
+  // If the selected meal is deleted, fall back to full plan
+  useEffect(() => {
+    if (viewId !== 'all' && !meals.some((m) => m.id === viewId)) {
+      setViewId('all')
+    }
+  }, [meals, viewId])
+
+  const activeMeals = useMemo(
+    () => (viewId === 'all' ? meals : meals.filter((m) => m.id === viewId)),
+    [meals, viewId]
+  )
+
+  // Compute total nutrient values for the active meal selection
   const totals = useMemo<Record<number, number>>(() => {
     const t: Record<number, number> = {}
-    for (const meal of meals) {
+    for (const meal of activeMeals) {
       for (const item of meal.items) {
         const food = foodsById.get(item.food_id)
         if (!food) continue
@@ -44,9 +59,10 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
       }
     }
     return t
-  }, [meals, foodsById])
+  }, [activeMeals, foodsById])
 
   const hasAnyItems = meals.some((m) => m.items.length > 0)
+  const mealsWithItems = meals.filter((m) => m.items.length > 0)
 
   const grouped = useMemo(() => {
     const groups: Record<string, NutrientMeta[]> = {}
@@ -59,12 +75,45 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
 
   return (
     <div className="w-72 flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg overflow-y-auto max-h-[calc(100vh-130px)] text-xs">
-      <div className="sticky top-0 bg-slate-800 px-3 py-2 border-b border-slate-700 z-10">
-        <p className="text-slate-300 font-semibold text-xs">
-          {rdaProfile ? `% Daily Value — ${rdaProfile.shortLabel}` : 'Total Nutrients'}
-        </p>
-        {!rdaProfile && (
-          <p className="text-slate-500 text-[10px] mt-0.5">Select a profile above to see % daily value</p>
+      <div className="sticky top-0 bg-slate-800 border-b border-slate-700 z-10">
+        {/* Title row */}
+        <div className="px-3 pt-2 pb-1.5">
+          <p className="text-slate-300 font-semibold text-xs">
+            {rdaProfile ? `% Daily Value — ${rdaProfile.shortLabel}` : 'Total Nutrients'}
+          </p>
+          {!rdaProfile && (
+            <p className="text-slate-500 text-[10px] mt-0.5">Select a profile above to see % daily value</p>
+          )}
+        </div>
+
+        {/* Meal selector — only shown when there are multiple meals with items */}
+        {mealsWithItems.length > 1 && (
+          <div className="px-3 pb-2 flex flex-wrap gap-1">
+            <button
+              onClick={() => setViewId('all')}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                viewId === 'all'
+                  ? 'bg-violet-600 text-white'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              Full Plan
+            </button>
+            {mealsWithItems.map((meal) => (
+              <button
+                key={meal.id}
+                onClick={() => setViewId(meal.id)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors max-w-[90px] truncate ${
+                  viewId === meal.id
+                    ? 'bg-violet-600 text-white'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                }`}
+                title={meal.name}
+              >
+                {meal.name}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
