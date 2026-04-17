@@ -77,7 +77,7 @@ nutrition-platform/
 │   ├── seed_all.sql            ← All reference data + 212 foods + 8,268 nutrient rows
 │   ├── seed_amino_acids_gi_antioxidant.sql  ← 9 EAAs + GI + antioxidant (2,332 rows)
 │   ├── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
-│   └── seed_tortillas.sql      ← Corn Tortilla + Flour Tortilla, all 50 nutrients (100 rows)
+│   └── seed_breads_and_tortillas.sql  ← Breads & tortillas (Grains & Cereals); add new bread types here
 │
 ├── reference/                  ← CSV reference files (food_list, nutrients_list, food_categories)
 ├── .env.local                  ← NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY

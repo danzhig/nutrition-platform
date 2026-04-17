@@ -1,8 +1,18 @@
 -- ============================================================
---  TORTILLAS — Seed File
+--  BREADS & TORTILLAS — Seed File
 --  Run AFTER seed_all.sql AND seed_amino_acids_gi_antioxidant.sql
 --
---  Adds 2 foods to the 'Grains & Cereals' category:
+--  Flat breads, leavened breads, wraps, and similar grain-based
+--  baked goods. All go into the 'Grains & Cereals' category.
+--
+--  To add a new bread/tortilla:
+--    1. Add a row to the INSERT INTO foods block (section 1)
+--    2. Add its 39 standard nutrient rows to section 2
+--    3. Add its 11 amino acid/GI/antioxidant rows to section 3
+--    4. Add a portion size entry in lib/portionSizes.ts
+--    5. Update the food count in PROJECT_STATE.md and PLAN.md
+--
+--  Current foods in this file:
 --    217. Corn Tortilla    — USDA SR Legacy FDC 175036
 --    218. Flour Tortilla   — USDA SR Legacy FDC 175037
 --

@@ -23,7 +23,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
 | Extended seed file (`sql/seed_amino_acids_gi_antioxidant.sql`) | ✅ Complete |
 | Supplements seed file (`sql/seed_supplements.sql`) | ✅ Complete |
-| Tortillas seed file (`sql/seed_tortillas.sql`) | ✅ Complete |
+| Breads & Tortillas seed file (`sql/seed_breads_and_tortillas.sql`) | ✅ Complete |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
@@ -47,7 +47,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 2. **`sql/seed_all.sql`** — Inserts all reference data + all 212 foods + original 8,268 nutrient rows
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
 4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
-5. **`sql/seed_tortillas.sql`** — Adds Corn Tortilla + Flour Tortilla to Grains & Cereals (100 nutrient rows)
+5. **`sql/seed_breads_and_tortillas.sql`** — Breads & tortillas in Grains & Cereals; currently Corn + Flour Tortilla (100 nutrient rows; add new bread types here)
 6. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
