@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import type { FoodRow } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
@@ -16,6 +16,19 @@ const ALL_CATEGORIES = ['All', ...FOOD_CATEGORY_LIST] as const
 export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All')
+  const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
+
+  const handleAdd = useCallback((food: FoodRow) => {
+    onAdd(food)
+    setRecentlyAdded((prev) => new Set(prev).add(food.food_id))
+    setTimeout(() => {
+      setRecentlyAdded((prev) => {
+        const next = new Set(prev)
+        next.delete(food.food_id)
+        return next
+      })
+    }, 1200)
+  }, [onAdd])
 
   const filtered = useMemo(() => {
     let list = foods
@@ -37,12 +50,20 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
           <h2 className="text-sm font-semibold text-slate-100">Add Food</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 text-lg leading-none w-6 h-6 flex items-center justify-center"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1 rounded-md bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors"
+            >
+              Done
+            </button>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-200 text-lg leading-none w-6 h-6 flex items-center justify-center"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -87,11 +108,14 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
             <div className="space-y-0.5">
               {filtered.map((food) => {
                 const portion = getPortionSize(food.food_id)
+                const added = recentlyAdded.has(food.food_id)
                 return (
                   <button
                     key={food.food_id}
-                    onClick={() => { onAdd(food); onClose() }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left hover:bg-slate-700 transition-colors group"
+                    onClick={() => handleAdd(food)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
+                      added ? 'bg-violet-900/40' : 'hover:bg-slate-700'
+                    }`}
                   >
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-slate-100">{food.food_name}</span>
@@ -101,8 +125,12 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
                       <span className="text-[11px] text-slate-400">
                         {portion.label} · {portion.grams}g
                       </span>
-                      <span className="text-[11px] text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
-                        + Add
+                      <span className={`text-[11px] font-medium transition-opacity ${
+                        added
+                          ? 'text-green-400 opacity-100'
+                          : 'text-violet-400 opacity-0 group-hover:opacity-100'
+                      }`}>
+                        {added ? '✓ Added' : '+ Add'}
                       </span>
                     </div>
                   </button>
