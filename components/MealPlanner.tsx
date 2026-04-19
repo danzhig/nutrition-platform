@@ -5,6 +5,8 @@ import type { HeatmapData, FoodRow } from '@/types/nutrition'
 import type { ActiveMealPlan, Meal } from '@/types/meals'
 import type { SavedMealPlan } from '@/lib/mealStorage'
 import { loadMealPlans, createMealPlan, updateMealPlan, deleteMealPlan } from '@/lib/mealStorage'
+import type { SavedMeal } from '@/lib/savedMealStorage'
+import { loadSavedMeals, createSavedMeal, deleteSavedMeal } from '@/lib/savedMealStorage'
 import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
@@ -30,9 +32,11 @@ export default function MealPlanner({ data }: Props) {
   const [savedPlans, setSavedPlans] = useState<SavedMealPlan[]>([])
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
+  const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showPlanList, setShowPlanList] = useState(false)
+  const [showSavedMeals, setShowSavedMeals] = useState(false)
 
   // Build food lookup map for sidebar
   const foodsById = useMemo(() => {
@@ -51,6 +55,7 @@ export default function MealPlanner({ data }: Props) {
     }
     loadMealPlans().then(setSavedPlans).catch(console.error)
     loadSavedProfiles().then(setSavedProfiles).catch(console.error)
+    loadSavedMeals().then(setSavedMeals).catch(console.error)
   }, [user])
 
   // Resolve the active RDA profile from rda_selection string
@@ -90,6 +95,32 @@ export default function MealPlanner({ data }: Props) {
 
   function deleteMealFromPlan(mealId: string) {
     setPlan((p) => ({ ...p, meals: p.meals.filter((m) => m.id !== mealId) }))
+  }
+
+  // ── Saved meal templates ──────────────────────────────────────────────────
+
+  async function handleSaveAsTemplate(meal: Meal) {
+    const saved = await createSavedMeal(meal.name, meal.items)
+    setSavedMeals((prev) => [saved, ...prev])
+  }
+
+  function handleLoadSavedMeal(sm: SavedMeal) {
+    const meal: Meal = {
+      id: crypto.randomUUID(),
+      name: sm.name,
+      items: sm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+    }
+    setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setShowSavedMeals(false)
+  }
+
+  async function handleDeleteSavedMeal(id: string) {
+    try {
+      await deleteSavedMeal(id)
+      setSavedMeals((prev) => prev.filter((sm) => sm.id !== id))
+    } catch (e: unknown) {
+      console.error(e)
+    }
   }
 
   // ── Save / load ───────────────────────────────────────────────────────────
@@ -246,18 +277,60 @@ export default function MealPlanner({ data }: Props) {
                 foods={data.foods}
                 onChange={updateMealInPlan}
                 onDelete={() => deleteMealFromPlan(meal.id)}
+                onSaveAsTemplate={handleSaveAsTemplate}
               />
             ))}
           </div>
         )}
 
         {/* Add meal */}
-        <button
-          onClick={addMeal}
-          className="w-full text-sm text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-3 transition-colors"
-        >
-          + Add Meal
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={addMeal}
+            className="flex-1 text-sm text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-3 transition-colors"
+          >
+            + Add Meal
+          </button>
+          {savedMeals.length > 0 && (
+            <button
+              onClick={() => setShowSavedMeals((v) => !v)}
+              className="px-4 text-sm text-slate-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-3 transition-colors whitespace-nowrap"
+            >
+              {showSavedMeals ? 'Hide' : `+ From saved (${savedMeals.length})`}
+            </button>
+          )}
+        </div>
+
+        {/* Saved meal template picker */}
+        {showSavedMeals && savedMeals.length > 0 && (
+          <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700">
+              <span className="text-xs font-semibold text-slate-400">Saved meal templates</span>
+            </div>
+            <div className="divide-y divide-slate-700/60 max-h-52 overflow-y-auto">
+              {savedMeals.map((sm) => (
+                <div key={sm.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-700/40">
+                  <button
+                    onClick={() => handleLoadSavedMeal(sm)}
+                    className="text-xs text-slate-200 hover:text-violet-300 text-left flex-1 min-w-0"
+                  >
+                    <span className="truncate block">{sm.name}</span>
+                    <span className="text-slate-500 text-[10px]">
+                      {sm.items.length} food{sm.items.length !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSavedMeal(sm.id)}
+                    className="text-slate-500 hover:text-red-400 text-xs ml-3 flex-shrink-0"
+                    title="Delete template"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Middle: DV profile panel */}

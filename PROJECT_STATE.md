@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-17  
-**Current phase: Phase 2 complete → Phase 3 ready**
+**Last updated:** 2026-04-19  
+**Current phase: Phase 2 complete → Phase 3 in progress**
 
 ---
 
@@ -34,6 +34,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Supabase Auth + saved RDA profiles** | ✅ Live — email/password sign up/in; saved custom RDA profiles in `user_rda_profiles` |
 | **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
 | **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
+| **Saved meal templates** | ✅ Live — save individual meals as reusable templates; load into any plan |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
@@ -91,6 +92,20 @@ CREATE TABLE meal_plans (
 ALTER TABLE meal_plans ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users manage their own meal plans"
   ON meal_plans FOR ALL
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Saved individual meal templates
+CREATE TABLE saved_meals (
+  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name       text        NOT NULL,
+  items      jsonb       NOT NULL DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE saved_meals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage their own saved meals"
+  ON saved_meals FOR ALL
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 ```
 
@@ -162,6 +177,7 @@ food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
 meal_plans          (per user)    — Saved meal plans (JSONB meals array)
+saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
 ```
 
 ---

@@ -1,7 +1,7 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-17  
-**Phase:** Phase 3 — Polish & Ranking View
+**Last updated:** 2026-04-19  
+**Phase:** Phase 3 — Polish & Ranking View (in progress)
 
 ---
 
@@ -49,8 +49,8 @@ nutrition-platform/
 │   ├── AuthButton.tsx          ← Header button: Sign in → opens modal; logged-in → avatar + dropdown
 │   │
 │   └── — Meal Planner ─────────────────────────────────────────────────────────
-│       ├── MealPlanner.tsx         ← Orchestrator: plan state, save/load, DV profile selector
-│       ├── MealCard.tsx            ← One meal: named, food items with servings/grams controls
+│       ├── MealPlanner.tsx         ← Orchestrator: plan state, save/load, DV profile selector, saved meal templates
+│       ├── MealCard.tsx            ← One meal: named, food items with servings/grams controls, save-as-template
 │       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
 │       └── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV)
 │
@@ -64,7 +64,8 @@ nutrition-platform/
 │   ├── rdaColorScale.ts        ← %DV color scale: normal / limit / normal-with-ul behaviors
 │   ├── profileStorage.ts       ← CRUD for user_rda_profiles Supabase table
 │   ├── filterSetStorage.ts     ← CRUD for user_filter_sets Supabase table
-│   └── mealStorage.ts          ← CRUD for meal_plans Supabase table
+│   ├── mealStorage.ts          ← CRUD for meal_plans Supabase table
+│   └── savedMealStorage.ts     ← CRUD for saved_meals Supabase table (individual meal templates)
 │
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, NutrientCategory
@@ -180,6 +181,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 5. `FoodPickerModal` filters `data.foods` client-side (no extra Supabase query)
 6. `MealNutritionSidebar` computes totals: `Σ (value_per_100g × item.grams / 100)` across all items in all meals
 7. Saved plans stored as JSONB in `meal_plans.meals`; `rda_selection` is `''` | ProfileId | `'saved:uuid'`
+8. Individual meals saved as templates in `saved_meals.items` (JSONB); loading clones items with fresh UUIDs so each use is independent
 
 ---
 
@@ -203,6 +205,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [x] Meal Planner — multi-meal plans, food picker modal, per-item servings/grams, save/load/edit
 - [x] Meal nutrition sidebar — 50-nutrient bar chart, fills to %DV, grouped by category
 - [x] Supplement foods — 4 supplements (Multivitamin, Magnesium Bisglycinate, Fish Oil, Vitamin K2+D3) under new Supplements category; per-serving storage convention (value_per_100g = label value, portion_grams = 100)
+- [x] Saved meal templates — save any MealCard as a reusable template (`saved_meals` table); load templates into any plan via "+ From saved" picker
 
 ### Phase 3 — Polish backlog (next)
 - [ ] Food row click → slide-in detail panel (`FoodDetailPanel.tsx`)

@@ -11,11 +11,26 @@ interface Props {
   foods: FoodRow[]
   onChange: (meal: Meal) => void
   onDelete: () => void
+  onSaveAsTemplate?: (meal: Meal) => Promise<void>
 }
 
-export default function MealCard({ meal, foods, onChange, onDelete }: Props) {
+export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemplate }: Props) {
   const [showPicker, setShowPicker] = useState(false)
   const [nameEditing, setNameEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [savedConfirm, setSavedConfirm] = useState(false)
+
+  async function handleSaveAsTemplate() {
+    if (!onSaveAsTemplate || saving) return
+    setSaving(true)
+    try {
+      await onSaveAsTemplate(meal)
+      setSavedConfirm(true)
+      setTimeout(() => setSavedConfirm(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const totalGrams = meal.items.reduce((sum, item) => sum + item.grams, 0)
 
@@ -78,6 +93,16 @@ export default function MealCard({ meal, foods, onChange, onDelete }: Props) {
             <span className="text-[11px] text-slate-500 flex-shrink-0">
               {Math.round(totalGrams)}g total
             </span>
+          )}
+          {onSaveAsTemplate && meal.items.length > 0 && (
+            <button
+              onClick={handleSaveAsTemplate}
+              disabled={saving}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 hover:bg-violet-700 text-slate-400 hover:text-white transition-colors flex-shrink-0 disabled:opacity-50"
+              title="Save as reusable meal template"
+            >
+              {savedConfirm ? '✓ Saved' : saving ? '…' : 'Save template'}
+            </button>
           )}
           <button
             onClick={onDelete}
