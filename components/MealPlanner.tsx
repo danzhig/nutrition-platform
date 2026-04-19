@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import type { HeatmapData, FoodRow } from '@/types/nutrition'
 import type { ActiveMealPlan, Meal } from '@/types/meals'
 import type { SavedMealPlan } from '@/lib/mealStorage'
@@ -46,6 +46,8 @@ export default function MealPlanner({ data }: Props) {
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set())
+  // Guards plan restore so tab-switch auth refreshes don't overwrite in-progress edits
+  const planRestoredRef = useRef(false)
 
   // Restore view mode from localStorage on mount
   useEffect(() => {
@@ -72,17 +74,23 @@ export default function MealPlanner({ data }: Props) {
       setSavedProfiles([])
       setPlan(newPlan())
       localStorage.removeItem('nutrition-active-plan-id')
+      planRestoredRef.current = false
       return
     }
     loadMealPlans().then((plans) => {
       setSavedPlans(plans)
-      // Restore the last active plan if it still exists
-      const lastId = localStorage.getItem('nutrition-active-plan-id')
-      if (lastId) {
-        const match = plans.find((p) => p.id === lastId)
-        if (match) {
-          setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
-          setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+      // Only restore the active plan on the first load after login.
+      // Tab-switch auth refreshes re-fire this effect but must not overwrite
+      // in-progress edits the user hasn't saved yet.
+      if (!planRestoredRef.current) {
+        planRestoredRef.current = true
+        const lastId = localStorage.getItem('nutrition-active-plan-id')
+        if (lastId) {
+          const match = plans.find((p) => p.id === lastId)
+          if (match) {
+            setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
+            setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+          }
         }
       }
     }).catch(console.error)
