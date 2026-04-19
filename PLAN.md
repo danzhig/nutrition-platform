@@ -59,6 +59,10 @@ nutrition-platform/
 │       └── MealCategoryRadar.tsx  ← Custom SVG pentagonal radar: avg %DV per category, gradient edges, rdaCellColor dots
 │
 ├── lib/
+│   ├── ...
+│   ├── presetMealStorage.ts        ← loadPresetMeals() — public read from preset_meals table
+│
+├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization
 │   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
@@ -82,7 +86,8 @@ nutrition-platform/
 │   ├── seed_all.sql            ← All reference data + 212 foods + 8,268 nutrient rows
 │   ├── seed_amino_acids_gi_antioxidant.sql  ← 9 EAAs + GI + antioxidant (2,332 rows)
 │   ├── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
-│   └── seed_breads_and_tortillas.sql  ← Breads & tortillas (Grains & Cereals); add new bread types here
+│   ├── seed_breads_and_tortillas.sql  ← Breads & tortillas (Grains & Cereals); add new bread types here
+│   └── seed_preset_meals.sql          ← preset_meals table + 29 curated meals (6 categories); add more here
 │
 ├── reference/                  ← CSV reference files (food_list, nutrients_list, food_categories)
 ├── .env.local                  ← NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -218,6 +223,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms (supersedes plain description tooltips)
 - [x] Meal planner chart view — full-width dashboard toggled from sidebar view; bar chart of all 50 nutrients (grouped by category, sorted by %DV desc within category); cap Y-axis at 100% toggle; nutrient labels at 270° vertical angle
 - [x] Category fulfilment radar — custom SVG pentagonal web chart (5 categories, Food Metric excluded); each nutrient capped at 100% before averaging; vertex dots + gradient edges coloured by rdaCellColor; sits below bar chart at half-width square
+- [x] Preset meal templates — 29 curated meals in 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) stored in `preset_meals` table; browsable via "⊞ Presets" button with category filter pills; Add/My templates/Presets buttons moved to top of plan builder
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
 

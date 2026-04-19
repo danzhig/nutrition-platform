@@ -38,6 +38,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
 | **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
 | **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
+| **Preset meal templates** | ✅ Live — 29 curated system meals across 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) in `preset_meals` table; browsable in-app with category filter pills |
+| **Meal planner UX polish** | ✅ Live — Add Meal / My templates / Presets buttons moved to top of builder (below control bar); preset browser shows description + ingredient count; category label fixed on radar SVG viewBox |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
@@ -52,7 +54,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
 4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
 5. **`sql/seed_breads_and_tortillas.sql`** — Breads & tortillas in Grains & Cereals; currently Corn + Flour Tortilla (100 nutrient rows; add new bread types here)
-6. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+6. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals
+7. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
 -- Saved custom RDA profiles

@@ -7,6 +7,8 @@ import type { SavedMealPlan } from '@/lib/mealStorage'
 import { loadMealPlans, createMealPlan, updateMealPlan, deleteMealPlan } from '@/lib/mealStorage'
 import type { SavedMeal } from '@/lib/savedMealStorage'
 import { loadSavedMeals, createSavedMeal, deleteSavedMeal } from '@/lib/savedMealStorage'
+import type { PresetMeal } from '@/lib/presetMealStorage'
+import { loadPresetMeals } from '@/lib/presetMealStorage'
 import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
@@ -34,10 +36,13 @@ export default function MealPlanner({ data }: Props) {
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
+  const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showPlanList, setShowPlanList] = useState(false)
   const [showSavedMeals, setShowSavedMeals] = useState(false)
+  const [showPresets, setShowPresets] = useState(false)
+  const [presetCategory, setPresetCategory] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
 
   // Build food lookup map for sidebar
@@ -47,7 +52,12 @@ export default function MealPlanner({ data }: Props) {
     return map
   }, [data.foods])
 
-  // Load saved data when user logs in, clear on logout
+  // Preset meals are public — load once on mount
+  useEffect(() => {
+    loadPresetMeals().then(setPresetMeals).catch(console.error)
+  }, [])
+
+  // Load user data on login, clear on logout
   useEffect(() => {
     if (!user) {
       setSavedPlans([])
@@ -60,13 +70,11 @@ export default function MealPlanner({ data }: Props) {
     loadSavedMeals().then(setSavedMeals).catch(console.error)
   }, [user])
 
-  // Resolve the active RDA profile from rda_selection string
+  // Resolve the active RDA profile
   const rdaProfile = useMemo<RDAProfile | null>(() => {
     const sel = plan.rda_selection
     if (!sel) return null
-    if (sel === 'custom') {
-      return getProfile('custom', customRdaValues)
-    }
+    if (sel === 'custom') return getProfile('custom', customRdaValues)
     if (sel.startsWith('saved:')) {
       const savedId = sel.slice(6)
       const saved = savedProfiles.find((p) => p.id === savedId)
@@ -79,6 +87,19 @@ export default function MealPlanner({ data }: Props) {
     }
     return getProfile(sel as ProfileId, undefined)
   }, [plan.rda_selection, savedProfiles, customRdaValues])
+
+  // Preset categories derived from loaded data
+  const presetCategories = useMemo(() => {
+    const cats = Array.from(new Set(presetMeals.map((p) => p.category))).sort()
+    return ['All', ...cats]
+  }, [presetMeals])
+
+  const filteredPresets = useMemo(() =>
+    presetCategory === 'All'
+      ? presetMeals
+      : presetMeals.filter((p) => p.category === presetCategory),
+    [presetMeals, presetCategory]
+  )
 
   // ── Plan mutation helpers ──────────────────────────────────────────────────
 
@@ -125,7 +146,19 @@ export default function MealPlanner({ data }: Props) {
     }
   }
 
-  // ── Save / load ───────────────────────────────────────────────────────────
+  // ── Preset meals ──────────────────────────────────────────────────────────
+
+  function handleLoadPreset(pm: PresetMeal) {
+    const meal: Meal = {
+      id: crypto.randomUUID(),
+      name: pm.name,
+      items: pm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+    }
+    setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setShowPresets(false)
+  }
+
+  // ── Save / load plans ─────────────────────────────────────────────────────
 
   async function handleSave() {
     if (!user) return
@@ -179,7 +212,7 @@ export default function MealPlanner({ data }: Props) {
     )
   }
 
-  // ── Chart mode — full width, no meal builder visible ─────────────────────
+  // ── Chart mode ────────────────────────────────────────────────────────────
 
   if (viewMode === 'chart') {
     return (
@@ -229,7 +262,7 @@ export default function MealPlanner({ data }: Props) {
                 onClick={() => setShowPlanList((v) => !v)}
                 className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-md transition-colors"
               >
-                {showPlanList ? 'Hide' : `Load (${savedPlans.length})`}
+                {showPlanList ? 'Hide plans' : `Load (${savedPlans.length})`}
               </button>
             )}
           </div>
@@ -292,40 +325,36 @@ export default function MealPlanner({ data }: Props) {
           )}
         </div>
 
-        {/* Meal cards */}
-        {plan.meals.length === 0 ? (
-          <div className="bg-slate-800 border border-dashed border-slate-600 rounded-lg flex items-center justify-center py-16">
-            <p className="text-slate-500 text-sm">No meals yet — add one below.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {plan.meals.map((meal) => (
-              <MealCard
-                key={meal.id}
-                meal={meal}
-                foods={data.foods}
-                onChange={updateMealInPlan}
-                onDelete={() => deleteMealFromPlan(meal.id)}
-                onSaveAsTemplate={handleSaveAsTemplate}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Add meal */}
+        {/* ── Add meal buttons — sits just below the control bar ── */}
         <div className="flex gap-2">
           <button
             onClick={addMeal}
-            className="flex-1 text-sm text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-3 transition-colors"
+            className="flex-1 text-sm text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-2.5 transition-colors"
           >
             + Add Meal
           </button>
           {savedMeals.length > 0 && (
             <button
-              onClick={() => setShowSavedMeals((v) => !v)}
-              className="px-4 text-sm text-slate-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-3 transition-colors whitespace-nowrap"
+              onClick={() => { setShowSavedMeals((v) => !v); setShowPresets(false) }}
+              className={`px-4 text-sm border border-dashed rounded-lg py-2.5 transition-colors whitespace-nowrap ${
+                showSavedMeals
+                  ? 'text-violet-300 border-violet-500'
+                  : 'text-slate-400 hover:text-violet-300 border-slate-600 hover:border-violet-500'
+              }`}
             >
-              {showSavedMeals ? 'Hide' : `+ From saved (${savedMeals.length})`}
+              {showSavedMeals ? 'Hide saved' : `+ My templates (${savedMeals.length})`}
+            </button>
+          )}
+          {presetMeals.length > 0 && (
+            <button
+              onClick={() => { setShowPresets((v) => !v); setShowSavedMeals(false) }}
+              className={`px-4 text-sm border border-dashed rounded-lg py-2.5 transition-colors whitespace-nowrap ${
+                showPresets
+                  ? 'text-emerald-300 border-emerald-500'
+                  : 'text-slate-400 hover:text-emerald-300 border-slate-600 hover:border-emerald-500'
+              }`}
+            >
+              {showPresets ? 'Hide presets' : `⊞ Presets (${presetMeals.length})`}
             </button>
           )}
         </div>
@@ -334,7 +363,7 @@ export default function MealPlanner({ data }: Props) {
         {showSavedMeals && savedMeals.length > 0 && (
           <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
             <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700">
-              <span className="text-xs font-semibold text-slate-400">Saved meal templates</span>
+              <span className="text-xs font-semibold text-slate-400">My saved meal templates</span>
             </div>
             <div className="divide-y divide-slate-700/60 max-h-52 overflow-y-auto">
               {savedMeals.map((sm) => (
@@ -358,6 +387,86 @@ export default function MealPlanner({ data }: Props) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Preset meal browser */}
+        {showPresets && presetMeals.length > 0 && (
+          <div className="bg-slate-800 border border-emerald-900/50 rounded-lg overflow-hidden">
+            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between">
+              <span className="text-xs font-semibold text-emerald-400">Preset Meals</span>
+              <span className="text-[10px] text-slate-500">Click a meal to add it to your plan</span>
+            </div>
+
+            {/* Category filter pills */}
+            <div className="flex gap-1.5 flex-wrap px-3 py-2 border-b border-slate-700/60">
+              {presetCategories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setPresetCategory(cat)}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                    presetCategory === cat
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Meal list */}
+            <div className="divide-y divide-slate-700/60 max-h-72 overflow-y-auto">
+              {filteredPresets.map((pm) => (
+                <button
+                  key={pm.id}
+                  onClick={() => handleLoadPreset(pm)}
+                  className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-slate-700/40 text-left transition-colors group"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-300 transition-colors truncate">
+                        {pm.name}
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 whitespace-nowrap flex-shrink-0">
+                        {pm.category}
+                      </span>
+                    </div>
+                    {pm.description && (
+                      <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
+                        {pm.description}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-600 mt-0.5">
+                      {pm.items.length} ingredient{pm.items.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <span className="text-emerald-600 group-hover:text-emerald-400 text-xs flex-shrink-0 mt-0.5 transition-colors">
+                    + Add
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Meal cards */}
+        {plan.meals.length === 0 ? (
+          <div className="bg-slate-800 border border-dashed border-slate-600 rounded-lg flex items-center justify-center py-16">
+            <p className="text-slate-500 text-sm">No meals yet — add one above or pick a preset.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {plan.meals.map((meal) => (
+              <MealCard
+                key={meal.id}
+                meal={meal}
+                foods={data.foods}
+                onChange={updateMealInPlan}
+                onDelete={() => deleteMealFromPlan(meal.id)}
+                onSaveAsTemplate={handleSaveAsTemplate}
+              />
+            ))}
           </div>
         )}
       </div>
