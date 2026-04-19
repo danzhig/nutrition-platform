@@ -330,12 +330,11 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
   return (
     <div className="w-full space-y-3">
-      {/* Bar chart card */}
-      <div className="flex gap-3 items-start">
-        <div className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-          {toolbar}
-          <ResponsiveContainer width="100%" height={440}>
-            <BarChart
+      {/* Bar chart — full width */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+        {toolbar}
+        <ResponsiveContainer width="100%" height={440}>
+          <BarChart
           data={displayData}
           margin={{ top: 16, right: 16, left: 0, bottom: 100 }}
           barCategoryGap="20%"
@@ -392,17 +391,16 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
             ))}
           </Bar>
         </BarChart>
-          </ResponsiveContainer>
-        </div>
+        </ResponsiveContainer>
+      </div>
 
-        {/* Radar chart card */}
-        <div className="w-72 flex-shrink-0">
-          <MealCategoryRadar
-            nutrients={nutrients}
-            rdaProfile={rdaProfile}
-            totals={totals}
-          />
-        </div>
+      {/* Radar chart — half width, square */}
+      <div className="w-1/2 aspect-square">
+        <MealCategoryRadar
+          nutrients={nutrients}
+          rdaProfile={rdaProfile}
+          totals={totals}
+        />
       </div>
     </div>
   )

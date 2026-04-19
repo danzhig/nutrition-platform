@@ -68,11 +68,11 @@ export default function MealCategoryRadar({ nutrients, rdaProfile, totals }: Pro
   const dataPolygon = catData.map((d) => `${d.x},${d.y}`).join(' ')
 
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col">
+    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col h-full">
       <p className="text-xs font-semibold text-slate-300 mb-1">Category Fulfilment</p>
       <p className="text-[10px] text-slate-500 mb-3">Average % DV per category — each nutrient capped at 100%</p>
 
-      <svg viewBox="-165 -155 330 320" className="w-full flex-1" style={{ minHeight: 240 }}>
+      <svg viewBox="-165 -155 330 320" className="w-full flex-1">
         <defs>
           {/* Per-edge linear gradients between adjacent vertex colours */}
           {EDGES.map(([i, j]) => {
