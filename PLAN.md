@@ -224,6 +224,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [x] Meal planner chart view — full-width dashboard toggled from sidebar view; bar chart of all 50 nutrients (grouped by category, sorted by %DV desc within category); cap Y-axis at 100% toggle; nutrient labels at 270° vertical angle
 - [x] Category fulfilment radar — custom SVG pentagonal web chart (5 categories, Food Metric excluded); each nutrient capped at 100% before averaging; vertex dots + gradient edges coloured by rdaCellColor; sits below bar chart at half-width square
 - [x] Preset meal templates — 29 curated meals in 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) stored in `preset_meals` table; browsable via "⊞ Presets" button with category filter pills; Add/My templates/Presets buttons moved to top of plan builder
+- [x] Collapsible meal cards — ▸/▾ toggle on each MealCard; presets + saved templates load collapsed; header shows food count + grams when collapsed
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
 
@@ -247,6 +248,33 @@ Same two variables in Vercel dashboard: Project → Settings → Environment Var
 
 ---
 
+## Data Maintenance Checklists
+
+> Full detail is in PROJECT_STATE.md → "Data Maintenance" section. This is the quick reference.
+
+### Adding a new food — touch these in order
+
+1. **Supabase SQL editor** — INSERT into `foods`, then 50 rows into `food_nutrients`
+2. **`lib/portionSizes.ts`** — add `food_id: { grams, label }` to `PORTION_SIZES` ← **CRITICAL; breaks meal planner silently if missing**
+3. **`sql/seed_*.sql`** — add the same INSERT to the appropriate seed file
+4. **`reference/food_list.csv`** — update the reference CSV
+5. *(optional)* **`sql/seed_preset_meals.sql`** — add to a preset if it fits
+
+### Adding a new nutrient — touch these in order
+
+1. **Supabase SQL editor** — INSERT into `nutrients` (with `body_role`, `deficiency_symptoms`, `excess_symptoms`), then `food_nutrients` rows for all applicable foods
+2. **`lib/rdaProfiles.ts`** — add RDA values to all 4 built-in profiles + add to `NUTRIENT_BEHAVIORS` (`'normal'` | `'limit'` | `'normal-with-ul'`) + if `normal-with-ul`, add to `NUTRIENT_UPPER_LIMITS`
+3. **`lib/filterConstants.ts`** → `NUTRIENT_GROUP_LIST` — add to appropriate group
+4. **`reference/nutrients_list.csv`** — update the reference CSV
+
+### Adding a new food category — touch these in order
+
+1. **Supabase SQL editor** — INSERT into `food_categories`
+2. **`lib/filterConstants.ts`** → `FOOD_CATEGORY_LIST` — add the category name string
+3. **`reference/food_categories.csv`** — update the reference CSV
+
+---
+
 ## Cold-Start Prompts
 
 ### General: pick up where we left off
@@ -259,6 +287,22 @@ source at github.com/danzhig/nutrition-platform. The database has 212 foods × 5
 Two features are live: an interactive heatmap and a meal planner. Supabase Auth is live.
 
 Tell me the current phase, what's done, and what's next. Ask before writing code.
+```
+
+### Add a new food
+
+```
+Read PROJECT_STATE.md and PLAN.md before starting. Pay special attention to the
+"Data Maintenance" section — adding a food requires touching multiple files in sync.
+
+I want to add: [FOOD NAME] to the [CATEGORY] category.
+
+1. Write the SQL for foods + food_nutrients inserts
+2. Write the portionSizes.ts entry
+3. Update seed_*.sql and reference/food_list.csv
+4. Tell me if this food belongs in any existing preset meal
+
+Wait for my approval before writing code.
 ```
 
 ### Add a new feature
