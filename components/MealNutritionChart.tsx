@@ -228,7 +228,34 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
   const hasAnyItems = meals.some((m) => m.items.length > 0)
   const mealsWithItems = meals.filter((m) => m.items.length > 0)
 
-  // ── Toolbar (always rendered so toggle is always accessible) ─────────────
+  // ── Sticky meal selector (rendered at top of every return path) ──────────
+  const mealSelector = mealsWithItems.length > 1 ? (
+    <div className="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700/60 px-4 py-2 flex items-center gap-2 flex-wrap">
+      <span className="text-[10px] text-slate-500 flex-shrink-0">Viewing:</span>
+      <button
+        onClick={() => setViewId('all')}
+        className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors ${
+          viewId === 'all' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+        }`}
+      >
+        Full Plan
+      </button>
+      {mealsWithItems.map((meal) => (
+        <button
+          key={meal.id}
+          onClick={() => setViewId(meal.id)}
+          className={`px-2.5 py-1 rounded text-[10px] font-medium transition-colors max-w-[120px] truncate ${
+            viewId === meal.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+          }`}
+          title={meal.name}
+        >
+          {meal.name}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  // ── Toolbar (title + legend + cap + view toggle — no meal selector) ───────
   const toolbar = (
     <div className="flex items-center justify-between flex-wrap gap-2">
       <div className="flex items-center gap-3 flex-wrap">
@@ -250,32 +277,6 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Meal selector */}
-        {mealsWithItems.length > 1 && (
-          <div className="flex gap-1 flex-wrap">
-            <button
-              onClick={() => setViewId('all')}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                viewId === 'all' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-              }`}
-            >
-              Full Plan
-            </button>
-            {mealsWithItems.map((meal) => (
-              <button
-                key={meal.id}
-                onClick={() => setViewId(meal.id)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors max-w-[80px] truncate ${
-                  viewId === meal.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                }`}
-                title={meal.name}
-              >
-                {meal.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Cap toggle */}
         <button
           onClick={() => setCapAt100((v) => !v)}
@@ -296,9 +297,7 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
           >
             ▤ Sidebar
           </button>
-          <button
-            className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default"
-          >
+          <button className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default">
             ▦ Chart
           </button>
         </div>
@@ -308,10 +307,13 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
   if (!hasAnyItems) {
     return (
-      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-        {toolbar}
-        <div className="flex items-center justify-center py-20">
-          <p className="text-slate-500 text-sm">Add foods to your meals to see the nutrition chart.</p>
+      <div className="w-full">
+        {mealSelector}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3 mt-3">
+          {toolbar}
+          <div className="flex items-center justify-center py-20">
+            <p className="text-slate-500 text-sm">Add foods to your meals to see the nutrition chart.</p>
+          </div>
         </div>
       </div>
     )
@@ -319,10 +321,13 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
   if (!rdaProfile) {
     return (
-      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-        {toolbar}
-        <div className="flex items-center justify-center py-20">
-          <p className="text-slate-500 text-sm">Select a daily value profile to see the % DV chart.</p>
+      <div className="w-full">
+        {mealSelector}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3 mt-3">
+          {toolbar}
+          <div className="flex items-center justify-center py-20">
+            <p className="text-slate-500 text-sm">Select a daily value profile to see the % DV chart.</p>
+          </div>
         </div>
       </div>
     )
@@ -330,6 +335,9 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
   return (
     <div className="w-full space-y-3">
+      {/* Sticky meal selector */}
+      {mealSelector}
+
       {/* Bar chart — full width */}
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
         {toolbar}
