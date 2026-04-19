@@ -206,6 +206,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [x] Meal nutrition sidebar — 50-nutrient bar chart, fills to %DV, grouped by category
 - [x] Supplement foods — 4 supplements (Multivitamin, Magnesium Bisglycinate, Fish Oil, Vitamin K2+D3) under new Supplements category; per-serving storage convention (value_per_100g = label value, portion_grams = 100)
 - [x] Saved meal templates — save any MealCard as a reusable template (`saved_meals` table); load templates into any plan via "+ From saved" picker
+- [x] Nutrient info cards — click any nutrient row in the meal sidebar to open a floating card with body role, deficiency symptoms, and excess symptoms; data sourced from NIH ODS and stored in `nutrients` table (`body_role`, `deficiency_symptoms`, `excess_symptoms` columns)
 
 ### Phase 3 — Polish backlog (next)
 - [ ] Food row click → slide-in detail panel (`FoodDetailPanel.tsx`)

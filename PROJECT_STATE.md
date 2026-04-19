@@ -35,6 +35,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
 | **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
 | **Saved meal templates** | ✅ Live — save individual meals as reusable templates; load into any plan |
+| **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
@@ -178,6 +179,11 @@ user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB v
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
 meal_plans          (per user)    — Saved meal plans (JSONB meals array)
 saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
+
+nutrients table now has 3 additional columns:
+  body_role             — broad thematic function in the body
+  deficiency_symptoms   — clinical symptoms of too little
+  excess_symptoms       — symptoms of too much / toxicity notes
 ```
 
 ---
