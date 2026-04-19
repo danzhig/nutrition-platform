@@ -10,6 +10,7 @@ import type { RDAProfile } from '@/lib/rdaProfiles'
 import { NUTRIENT_BEHAVIORS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import type { Meal } from '@/types/meals'
+import MealCategoryRadar from './MealCategoryRadar'
 
 interface Props {
   nutrients: NutrientMeta[]
@@ -328,11 +329,13 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
   }
 
   return (
-    <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-      {toolbar}
-
-      <ResponsiveContainer width="100%" height={440}>
-        <BarChart
+    <div className="w-full space-y-3">
+      {/* Bar chart card */}
+      <div className="flex gap-3 items-start">
+        <div className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+          {toolbar}
+          <ResponsiveContainer width="100%" height={440}>
+            <BarChart
           data={displayData}
           margin={{ top: 16, right: 16, left: 0, bottom: 100 }}
           barCategoryGap="20%"
@@ -389,7 +392,18 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Radar chart card */}
+        <div className="w-72 flex-shrink-0">
+          <MealCategoryRadar
+            nutrients={nutrients}
+            rdaProfile={rdaProfile}
+            totals={totals}
+          />
+        </div>
+      </div>
     </div>
   )
 }
