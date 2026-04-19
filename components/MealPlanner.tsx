@@ -112,6 +112,7 @@ export default function MealPlanner({ data }: Props) {
       `Meal ${plan.meals.length + 1}`
     const meal: Meal = { id: crypto.randomUUID(), name: nextName, items: [] }
     setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
   }
 
   function updateMealInPlan(updated: Meal) {
@@ -225,6 +226,7 @@ export default function MealPlanner({ data }: Props) {
 
   function handleLoadPlan(sp: SavedMealPlan) {
     setPlan({ id: sp.id, name: sp.name, meals: sp.meals, rda_selection: sp.rda_selection })
+    setCollapsedMeals(new Set(sp.meals.map((m) => m.id)))
     setShowPlanList(false)
   }
 
