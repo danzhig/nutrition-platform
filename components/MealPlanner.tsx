@@ -47,6 +47,12 @@ export default function MealPlanner({ data }: Props) {
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set())
 
+  // Restore view mode from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('nutrition-view-mode')
+    if (saved === 'sidebar' || saved === 'chart') setViewMode(saved)
+  }, [])
+
   // Build food lookup map for sidebar
   const foodsById = useMemo(() => {
     const map = new Map<number, FoodRow>()
@@ -65,9 +71,21 @@ export default function MealPlanner({ data }: Props) {
       setSavedPlans([])
       setSavedProfiles([])
       setPlan(newPlan())
+      localStorage.removeItem('nutrition-active-plan-id')
       return
     }
-    loadMealPlans().then(setSavedPlans).catch(console.error)
+    loadMealPlans().then((plans) => {
+      setSavedPlans(plans)
+      // Restore the last active plan if it still exists
+      const lastId = localStorage.getItem('nutrition-active-plan-id')
+      if (lastId) {
+        const match = plans.find((p) => p.id === lastId)
+        if (match) {
+          setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
+          setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+        }
+      }
+    }).catch(console.error)
     loadSavedProfiles().then(setSavedProfiles).catch(console.error)
     loadSavedMeals().then(setSavedMeals).catch(console.error)
   }, [user])
@@ -102,6 +120,11 @@ export default function MealPlanner({ data }: Props) {
       : presetMeals.filter((p) => p.category === presetCategory),
     [presetMeals, presetCategory]
   )
+
+  function switchView(mode: 'sidebar' | 'chart') {
+    setViewMode(mode)
+    localStorage.setItem('nutrition-view-mode', mode)
+  }
 
   // ── Plan mutation helpers ──────────────────────────────────────────────────
 
@@ -206,6 +229,7 @@ export default function MealPlanner({ data }: Props) {
         const saved = await createMealPlan(plan.name, plan.meals, plan.rda_selection)
         setSavedPlans((prev) => [saved, ...prev])
         setPlan((p) => ({ ...p, id: saved.id }))
+        localStorage.setItem('nutrition-active-plan-id', saved.id)
       }
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
@@ -218,7 +242,10 @@ export default function MealPlanner({ data }: Props) {
     try {
       await deleteMealPlan(id)
       setSavedPlans((prev) => prev.filter((sp) => sp.id !== id))
-      if (plan.id === id) setPlan(newPlan())
+      if (plan.id === id) {
+        setPlan(newPlan())
+        localStorage.removeItem('nutrition-active-plan-id')
+      }
     } catch (e: unknown) {
       console.error(e)
     }
@@ -227,6 +254,7 @@ export default function MealPlanner({ data }: Props) {
   function handleLoadPlan(sp: SavedMealPlan) {
     setPlan({ id: sp.id, name: sp.name, meals: sp.meals, rda_selection: sp.rda_selection })
     setCollapsedMeals(new Set(sp.meals.map((m) => m.id)))
+    localStorage.setItem('nutrition-active-plan-id', sp.id)
     setShowPlanList(false)
   }
 
@@ -250,7 +278,7 @@ export default function MealPlanner({ data }: Props) {
         meals={plan.meals}
         foodsById={foodsById}
         rdaProfile={rdaProfile}
-        onSwitchToSidebar={() => setViewMode('sidebar')}
+        onSwitchToSidebar={() => switchView('sidebar')}
       />
     )
   }
@@ -281,7 +309,7 @@ export default function MealPlanner({ data }: Props) {
               {saving ? 'Saving…' : plan.id ? 'Update' : 'Save'}
             </button>
             <button
-              onClick={() => { setPlan(newPlan()); setShowPlanList(false) }}
+              onClick={() => { setPlan(newPlan()); setShowPlanList(false); localStorage.removeItem('nutrition-active-plan-id') }}
               className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-md transition-colors"
             >
               New
@@ -302,7 +330,7 @@ export default function MealPlanner({ data }: Props) {
               ▤ Sidebar
             </button>
             <button
-              onClick={() => setViewMode('chart')}
+              onClick={() => switchView('chart')}
               className="px-2.5 py-1 text-[10px] font-medium bg-slate-700 text-slate-400 hover:bg-slate-600 transition-colors"
             >
               ▦ Chart
