@@ -16,6 +16,7 @@ interface Props {
   meals: Meal[]
   foodsById: Map<number, FoodRow>
   rdaProfile: RDAProfile | null
+  onSwitchToSidebar: () => void
 }
 
 const CATEGORY_ORDER = ['Macronutrient', 'Vitamin', 'Mineral', 'Fatty Acid', 'Amino Acid', 'Food Metric']
@@ -57,10 +58,11 @@ function abbr(name: string): string {
 }
 
 interface ChartBar {
-  key: string        // unique x-axis key
-  label: string      // abbreviated name for x-axis tick
+  key: string
+  label: string
   fullName: string
-  pct: number        // %DV (may exceed 100)
+  pct: number        // true %DV — used in tooltip
+  displayPct: number // clamped to 100 when cap is on — used for bar height
   rawVal: number
   unit: string
   category: string
@@ -69,7 +71,6 @@ interface ChartBar {
   isLastInCategory: boolean
 }
 
-// Custom tooltip content
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const d: ChartBar = payload[0].payload
@@ -90,7 +91,6 @@ function CustomTooltip({ active, payload }: any) {
   )
 }
 
-// Custom x-axis tick — angled for readability
 function CustomXTick({ x, y, payload }: any) {
   return (
     <g transform={`translate(${x},${y})`}>
@@ -107,7 +107,7 @@ function CustomXTick({ x, y, payload }: any) {
   )
 }
 
-export default function MealNutritionChart({ nutrients, meals, foodsById, rdaProfile }: Props) {
+export default function MealNutritionChart({ nutrients, meals, foodsById, rdaProfile, onSwitchToSidebar }: Props) {
   const [capAt100, setCapAt100] = useState(false)
   const [viewId, setViewId] = useState<'all' | string>('all')
 
@@ -125,7 +125,6 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
     [nutrients]
   )
 
-  // Sum totals (excluding GI)
   const totals = useMemo<Record<number, number>>(() => {
     const t: Record<number, number> = {}
     for (const meal of activeMeals) {
@@ -144,7 +143,6 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
     return t
   }, [activeMeals, foodsById, giNutrientId])
 
-  // Weighted GI
   const weightedGI = useMemo<number | null>(() => {
     if (giNutrientId === null || carbsNutrientId === null) return null
     let sumGIxCarbs = 0, sumCarbs = 0
@@ -163,11 +161,10 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
     return sumCarbs > 0 ? Math.round(sumGIxCarbs / sumCarbs) : null
   }, [activeMeals, foodsById, giNutrientId, carbsNutrientId])
 
-  // Build chart data — only nutrients with a %DV target, grouped by category, sorted by pct desc
-  const chartData = useMemo<ChartBar[]>(() => {
+  // Base chart data (true pct values, not yet clamped)
+  const chartData = useMemo<Omit<ChartBar, 'displayPct'>[]>(() => {
     if (!rdaProfile) return []
-
-    const bars: ChartBar[] = []
+    const bars: Omit<ChartBar, 'displayPct'>[] = []
 
     for (const cat of CATEGORY_ORDER) {
       const group = nutrients.filter((n) => n.nutrient_category === cat)
@@ -175,16 +172,13 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
       const withPct = group.map((n) => {
         const isGI = n.nutrient_id === giNutrientId
-        const rawVal = isGI
-          ? (weightedGI ?? 0)
-          : (totals[n.nutrient_id] ?? 0)
+        const rawVal = isGI ? (weightedGI ?? 0) : (totals[n.nutrient_id] ?? 0)
         const rdaTarget = rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null
         const pct = rdaTarget != null ? (rawVal / rdaTarget) * 100 : null
         return { n, rawVal, pct }
       }).filter((x) => x.pct !== null) as { n: NutrientMeta; rawVal: number; pct: number }[]
 
       if (!withPct.length) continue
-
       withPct.sort((a, b) => b.pct - a.pct)
 
       withPct.forEach(({ n, rawVal, pct }, i) => {
@@ -204,15 +198,19 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
         })
       })
     }
-
     return bars
   }, [nutrients, rdaProfile, totals, weightedGI, giNutrientId])
 
-  // Category boundary spans for ReferenceArea shading
+  // Apply cap — separate from chartData so tooltip always shows the true value
+  const displayData = useMemo<ChartBar[]>(
+    () => chartData.map((b) => ({ ...b, displayPct: capAt100 ? Math.min(b.pct, 100) : b.pct })),
+    [chartData, capAt100]
+  )
+
   const categorySpans = useMemo(() => {
     const spans: { cat: string; first: string; last: string }[] = []
     let current: typeof spans[0] | null = null
-    for (const bar of chartData) {
+    for (const bar of displayData) {
       if (bar.isFirstInCategory) {
         if (current) spans.push(current)
         current = { cat: bar.category, first: bar.key, last: bar.key }
@@ -222,40 +220,23 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
     }
     if (current) spans.push(current)
     return spans
-  }, [chartData])
+  }, [displayData])
 
+  const yAxisMax = capAt100 ? 100 : ('auto' as const)
   const hasAnyItems = meals.some((m) => m.items.length > 0)
   const mealsWithItems = meals.filter((m) => m.items.length > 0)
-  const yMax = capAt100 ? 100 : undefined
 
-  if (!hasAnyItems) {
-    return (
-      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center py-20">
-        <p className="text-slate-500 text-sm">Add foods to your meals to see the nutrition chart.</p>
-      </div>
-    )
-  }
-
-  if (!rdaProfile) {
-    return (
-      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center py-20">
-        <p className="text-slate-500 text-sm">Select a daily value profile to see the % DV chart.</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
-      {/* Chart toolbar */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-slate-300">
-            % Daily Value — {rdaProfile.shortLabel}
-          </span>
-          {/* Category legend */}
+  // ── Toolbar (always rendered so toggle is always accessible) ─────────────
+  const toolbar = (
+    <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-xs font-semibold text-slate-300">
+          {rdaProfile ? `% Daily Value — ${rdaProfile.shortLabel}` : '% Daily Value'}
+        </span>
+        {rdaProfile && displayData.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             {CATEGORY_ORDER.map((cat) =>
-              chartData.some((b) => b.category === cat) ? (
+              displayData.some((b) => b.category === cat) ? (
                 <span key={cat} className="flex items-center gap-1 text-[10px]" style={{ color: CATEGORY_LABEL_COLOR[cat] }}>
                   <span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: CATEGORY_LABEL_COLOR[cat] }} />
                   {cat}
@@ -263,60 +244,100 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
               ) : null
             )}
           </div>
-        </div>
+        )}
+      </div>
 
-        <div className="flex items-center gap-2">
-          {/* Meal selector */}
-          {mealsWithItems.length > 1 && (
-            <div className="flex gap-1 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Meal selector */}
+        {mealsWithItems.length > 1 && (
+          <div className="flex gap-1 flex-wrap">
+            <button
+              onClick={() => setViewId('all')}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                viewId === 'all' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              Full Plan
+            </button>
+            {mealsWithItems.map((meal) => (
               <button
-                onClick={() => setViewId('all')}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                  viewId === 'all' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                key={meal.id}
+                onClick={() => setViewId(meal.id)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors max-w-[80px] truncate ${
+                  viewId === meal.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                 }`}
+                title={meal.name}
               >
-                Full Plan
+                {meal.name}
               </button>
-              {mealsWithItems.map((meal) => (
-                <button
-                  key={meal.id}
-                  onClick={() => setViewId(meal.id)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors max-w-[80px] truncate ${
-                    viewId === meal.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                  }`}
-                  title={meal.name}
-                >
-                  {meal.name}
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
+        )}
 
-          {/* Cap toggle */}
+        {/* Cap toggle */}
+        <button
+          onClick={() => setCapAt100((v) => !v)}
+          className={`px-3 py-1 text-[10px] font-medium rounded transition-colors border ${
+            capAt100
+              ? 'bg-violet-700 border-violet-500 text-white'
+              : 'bg-slate-700 border-slate-600 text-slate-400 hover:bg-slate-600'
+          }`}
+        >
+          Cap Y at 100%
+        </button>
+
+        {/* View toggle */}
+        <div className="flex items-center rounded-md border border-slate-600 overflow-hidden">
           <button
-            onClick={() => setCapAt100((v) => !v)}
-            className={`px-3 py-1 text-[10px] font-medium rounded transition-colors border ${
-              capAt100
-                ? 'bg-violet-700 border-violet-500 text-white'
-                : 'bg-slate-700 border-slate-600 text-slate-400 hover:bg-slate-600'
-            }`}
-            title={capAt100 ? 'Showing Y-axis capped at 100%' : 'Y-axis uncapped — showing true values above 100%'}
+            onClick={onSwitchToSidebar}
+            className="px-2.5 py-1 text-[10px] font-medium bg-slate-700 text-slate-400 hover:bg-slate-600 transition-colors"
           >
-            Cap Y at 100%
+            ▤ Sidebar
+          </button>
+          <button
+            className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default"
+          >
+            ▦ Chart
           </button>
         </div>
       </div>
+    </div>
+  )
 
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={420}>
+  if (!hasAnyItems) {
+    return (
+      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+        {toolbar}
+        <div className="flex items-center justify-center py-20">
+          <p className="text-slate-500 text-sm">Add foods to your meals to see the nutrition chart.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!rdaProfile) {
+    return (
+      <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+        {toolbar}
+        <div className="flex items-center justify-center py-20">
+          <p className="text-slate-500 text-sm">Select a daily value profile to see the % DV chart.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+      {toolbar}
+
+      <ResponsiveContainer width="100%" height={440}>
         <BarChart
-          data={chartData}
+          data={displayData}
           margin={{ top: 16, right: 16, left: 0, bottom: 80 }}
           barCategoryGap="20%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
 
-          {/* Category background shading */}
           {categorySpans.map(({ cat, first, last }) => (
             <ReferenceArea
               key={cat}
@@ -338,25 +359,32 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
           <XAxis
             dataKey="key"
-            tickFormatter={(key) => chartData.find((b) => b.key === key)?.label ?? key}
+            tickFormatter={(key) => displayData.find((b) => b.key === key)?.label ?? key}
             tick={<CustomXTick />}
             interval={0}
             axisLine={{ stroke: '#475569' }}
             tickLine={false}
           />
           <YAxis
-            domain={[0, yMax ?? 'auto']}
-            tickFormatter={(v) => `${v}%`}
+            domain={[0, yAxisMax]}
+            allowDataOverflow={true}
+            tickFormatter={(v) => `${Math.round(v)}%`}
             tick={{ fontSize: 10, fill: '#94a3b8' }}
             axisLine={false}
             tickLine={false}
             width={42}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-          <ReferenceLine y={100} stroke="#6d28d9" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: '100% DV', fontSize: 9, fill: '#7c3aed', position: 'insideTopRight' }} />
+          <ReferenceLine
+            y={100}
+            stroke="#6d28d9"
+            strokeDasharray="4 3"
+            strokeWidth={1.5}
+            label={{ value: '100% DV', fontSize: 9, fill: '#7c3aed', position: 'insideTopRight' }}
+          />
 
-          <Bar dataKey="pct" radius={[3, 3, 0, 0]} maxBarSize={28}>
-            {chartData.map((bar) => (
+          <Bar dataKey="displayPct" radius={[3, 3, 0, 0]} maxBarSize={28}>
+            {displayData.map((bar) => (
               <Cell key={bar.key} fill={bar.color} fillOpacity={0.85} />
             ))}
           </Bar>

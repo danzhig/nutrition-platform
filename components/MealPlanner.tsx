@@ -179,12 +179,25 @@ export default function MealPlanner({ data }: Props) {
     )
   }
 
-  // ── Main UI ───────────────────────────────────────────────────────────────
+  // ── Chart mode — full width, no meal builder visible ─────────────────────
+
+  if (viewMode === 'chart') {
+    return (
+      <MealNutritionChart
+        nutrients={data.nutrients}
+        meals={plan.meals}
+        foodsById={foodsById}
+        rdaProfile={rdaProfile}
+        onSwitchToSidebar={() => setViewMode('sidebar')}
+      />
+    )
+  }
+
+  // ── Sidebar mode ──────────────────────────────────────────────────────────
 
   return (
-    <div className={viewMode === 'chart' ? 'flex flex-col gap-4' : 'flex gap-4 items-start'}>
-      {/* Top / Left: plan builder + DV panel */}
-      <div className={viewMode === 'chart' ? 'flex gap-4 items-start' : 'contents'}>
+    <div className="flex gap-4 items-start">
+      {/* Left: plan builder */}
       <div className="flex-1 min-w-0 space-y-3">
 
         {/* Plan control bar */}
@@ -223,19 +236,12 @@ export default function MealPlanner({ data }: Props) {
 
           {/* View toggle */}
           <div className="flex items-center gap-1 rounded-md border border-slate-600 overflow-hidden self-start">
-            <button
-              onClick={() => setViewMode('sidebar')}
-              className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                viewMode === 'sidebar' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-              }`}
-            >
+            <button className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default">
               ▤ Sidebar
             </button>
             <button
               onClick={() => setViewMode('chart')}
-              className={`px-2.5 py-1 text-[10px] font-medium transition-colors ${
-                viewMode === 'chart' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-              }`}
+              className="px-2.5 py-1 text-[10px] font-medium bg-slate-700 text-slate-400 hover:bg-slate-600 transition-colors"
             >
               ▦ Chart
             </button>
@@ -368,26 +374,13 @@ export default function MealPlanner({ data }: Props) {
         onSavedProfilesChange={setSavedProfiles}
       />
 
-      {/* Right: nutrition sidebar (sidebar mode only) */}
-      {viewMode === 'sidebar' && (
-        <MealNutritionSidebar
-          nutrients={data.nutrients}
-          meals={plan.meals}
-          foodsById={foodsById}
-          rdaProfile={rdaProfile}
-        />
-      )}
-      </div>{/* end top row wrapper (chart mode) */}
-
-      {/* Full-width chart (chart mode only) */}
-      {viewMode === 'chart' && (
-        <MealNutritionChart
-          nutrients={data.nutrients}
-          meals={plan.meals}
-          foodsById={foodsById}
-          rdaProfile={rdaProfile}
-        />
-      )}
+      {/* Right: nutrition sidebar */}
+      <MealNutritionSidebar
+        nutrients={data.nutrients}
+        meals={plan.meals}
+        foodsById={foodsById}
+        rdaProfile={rdaProfile}
+      />
     </div>
   )
 }
