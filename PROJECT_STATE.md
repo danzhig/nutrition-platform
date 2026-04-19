@@ -190,4 +190,4 @@ nutrients table now has 3 additional columns:
 
 ## How to Hand This Off to a New LLM
 
-> "This is a nutrition web app. Read PROJECT_STATE.md first, then PLAN.md for full architecture and build phases. The database is fully built — sql/schema.sql and sql/seed_all.sql are the deploy files. Three additional user tables are documented in PROJECT_STATE.md. The app is Next.js 16 + Supabase + Vercel, source on GitHub (danzhig/nutrition-platform). Current phase: Phase 3. See PLAN.md for the next steps."
+> "This is a nutrition web app. Read PROJECT_STATE.md first, then PLAN.md for full architecture and build phases. The database is fully built — sql/schema.sql and sql/seed_all.sql are the deploy files. Four additional user tables (user_rda_profiles, user_filter_sets, meal_plans, saved_meals) are documented in PROJECT_STATE.md. The nutrients table has also been extended with body_role, deficiency_symptoms, and excess_symptoms columns. The app is Next.js 16 + Supabase + Vercel, source on GitHub (danzhig/nutrition-platform). Current phase: Phase 3. See PLAN.md for the next steps."

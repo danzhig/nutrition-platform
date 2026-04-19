@@ -52,7 +52,8 @@ nutrition-platform/
 │       ├── MealPlanner.tsx         ← Orchestrator: plan state, save/load, DV profile selector, saved meal templates
 │       ├── MealCard.tsx            ← One meal: named, food items with servings/grams controls, save-as-template
 │       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
-│       └── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV)
+│       ├── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV); click row → NutrientInfoCard
+│       └── NutrientInfoCard.tsx    ← Floating info card: body role, deficiency symptoms, excess symptoms
 │
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
@@ -211,7 +212,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 ### Phase 3 — Polish backlog (next)
 - [ ] Food row click → slide-in detail panel (`FoodDetailPanel.tsx`)
 - [ ] % RDA values in hover tooltips on heatmap cells
-- [ ] Nutrient name tooltips (plain-English description from `nutrients.description`)
+- [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms (supersedes plain description tooltips)
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
 
