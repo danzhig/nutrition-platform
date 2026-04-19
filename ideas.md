@@ -65,11 +65,9 @@ Pick 2–4 foods → side-by-side grouped bar chart of their full nutrient profi
 
 ---
 
-### 4. Macro Split Donut
+### 4. Macro Split Donut ✅ Shipped
 
-For the active meal plan: a donut chart showing % of total calories from carbohydrates, protein, and fat. Inner ring = macro split; outer ring = which foods contribute to each macro.
-
-**Complexity:** Low — pure calculation from existing meal totals, one Recharts PieChart.
+Dual-ring Recharts PieChart in chart view, right of the radar: inner ring = caloric % from carbs / protein / fat; outer ring = top 5 foods per macro + Other in shades of the macro color. Legend row shows kcal per macro. Hover tooltip shows food name, macro, % of total calories, and kcal.
 
 ---
 

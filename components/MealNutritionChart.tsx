@@ -11,6 +11,7 @@ import { NUTRIENT_BEHAVIORS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import type { Meal } from '@/types/meals'
 import MealCategoryRadar from './MealCategoryRadar'
+import MacroDonutChart from './MacroDonutChart'
 
 interface Props {
   nutrients: NutrientMeta[]
@@ -402,13 +403,22 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
         </ResponsiveContainer>
       </div>
 
-      {/* Radar chart — half width, square */}
-      <div className="w-1/2 aspect-square">
-        <MealCategoryRadar
-          nutrients={nutrients}
-          rdaProfile={rdaProfile}
-          totals={totals}
-        />
+      {/* Bottom row: radar + donut — each half width, square */}
+      <div className="flex gap-3">
+        <div className="w-1/2 aspect-square">
+          <MealCategoryRadar
+            nutrients={nutrients}
+            rdaProfile={rdaProfile}
+            totals={totals}
+          />
+        </div>
+        <div className="w-1/2 aspect-square">
+          <MacroDonutChart
+            nutrients={nutrients}
+            meals={activeMeals}
+            foodsById={foodsById}
+          />
+        </div>
       </div>
     </div>
   )

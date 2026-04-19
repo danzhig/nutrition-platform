@@ -225,6 +225,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [x] Category fulfilment radar — custom SVG pentagonal web chart (5 categories, Food Metric excluded); each nutrient capped at 100% before averaging; vertex dots + gradient edges coloured by rdaCellColor; sits below bar chart at half-width square
 - [x] Preset meal templates — 29 curated meals in 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) stored in `preset_meals` table; browsable via "⊞ Presets" button with category filter pills; Add/My templates/Presets buttons moved to top of plan builder
 - [x] Collapsible meal cards — ▸/▾ toggle on each MealCard; presets + saved templates load collapsed; header shows food count + grams when collapsed
+- [x] Macro split donut — dual-ring PieChart: inner ring = caloric % from carbs/protein/fat; outer ring = top 5 foods per macro + Other; sits to the right of the radar completing a full-width bottom row
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
 
