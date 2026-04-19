@@ -31,6 +31,31 @@ const MACROS: MacroName[] = ['Carbohydrates', 'Protein', 'Total Fat']
 type InnerSlice = { name: MacroName; value: number; color: string }
 type OuterSlice = { name: string; macroName: MacroName; value: number; color: string }
 
+const RADIAN = Math.PI / 180
+
+// Rendered as SVG <text> — positions the macro name just outside the outer ring.
+// outerRadius received here is the inner ring's outerRadius (48% of half-dimension).
+// The outer ring goes to 70%, so we scale by (70/48) and add a small gap.
+function MacroLabel({ cx, cy, midAngle, outerRadius, name }: any) {
+  const r = outerRadius * (70 / 48) + 16
+  const x = cx + r * Math.cos(-midAngle * RADIAN)
+  const y = cy + r * Math.sin(-midAngle * RADIAN)
+  const display = name === 'Carbohydrates' ? 'Carbs' : name === 'Total Fat' ? 'Fat' : 'Protein'
+  const color = MACRO_BASE[name as MacroName] ?? '#94a3b8'
+  return (
+    <text
+      x={x} y={y}
+      fill={color}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={700}
+    >
+      {display}
+    </text>
+  )
+}
+
 function DonutTooltip({ active, payload, totalKcal }: any) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload as InnerSlice | OuterSlice
@@ -179,8 +204,8 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
         </div>
 
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            {/* Inner ring — macro split */}
+          <PieChart margin={{ top: 28, right: 40, bottom: 28, left: 40 }}>
+            {/* Inner ring — macro split + outer labels */}
             <Pie
               data={data.innerData}
               dataKey="value"
@@ -190,6 +215,8 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               endAngle={-270}
               strokeWidth={0}
               isAnimationActive={false}
+              label={MacroLabel}
+              labelLine={false}
             >
               {data.innerData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} fillOpacity={0.9} />
@@ -201,7 +228,7 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               data={data.outerData}
               dataKey="value"
               innerRadius="52%"
-              outerRadius="74%"
+              outerRadius="70%"
               startAngle={90}
               endAngle={-270}
               strokeWidth={1.5}
