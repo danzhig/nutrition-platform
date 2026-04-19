@@ -134,8 +134,10 @@ export default function MealPlanner({ data }: Props) {
       DEFAULT_MEAL_NAMES.find((n) => !usedNames.has(n)) ??
       `Meal ${plan.meals.length + 1}`
     const meal: Meal = { id: crypto.randomUUID(), name: nextName, items: [] }
-    setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
-    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
+    // Prepend so new meal appears at the top
+    setPlan((p) => ({ ...p, meals: [meal, ...p.meals] }))
+    // Collapse all existing meals; new meal stays expanded (its id is not added)
+    setCollapsedMeals(new Set(plan.meals.map((m) => m.id)))
   }
 
   function updateMealInPlan(updated: Meal) {
@@ -170,7 +172,7 @@ export default function MealPlanner({ data }: Props) {
       items: sm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
     }
     setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
-    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
+    setCollapsedMeals(new Set([...plan.meals.map((m) => m.id), meal.id]))
     setShowSavedMeals(false)
   }
 
@@ -205,7 +207,7 @@ export default function MealPlanner({ data }: Props) {
       }),
     }
     setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
-    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
+    setCollapsedMeals(new Set([...plan.meals.map((m) => m.id), meal.id]))
     setShowPresets(false)
   }
 
