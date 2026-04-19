@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-19  
-**Current phase: Phase 2 complete → Phase 3 in progress**
+**Last updated:** 2026-04-19 (session 2)
+**Current phase: Phase 3 in progress**
 
 ---
 
@@ -36,6 +36,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
 | **Saved meal templates** | ✅ Live — save individual meals as reusable templates; load into any plan |
 | **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
+| **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
+| **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)

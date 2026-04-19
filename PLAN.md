@@ -17,6 +17,7 @@ A public-facing nutrition web app backed by Supabase PostgreSQL (218 foods × 50
 |---|---|---|
 | Frontend framework | Next.js 16 (App Router) | React-based, built for Vercel; `use client` components for interactivity |
 | Styling | Tailwind CSS v4 | Utility-first; slate-900 dark mode base throughout |
+| Charting | Recharts + custom SVG | Recharts for bar chart; custom SVG for radar (per-vertex gradient edges not possible in Recharts) |
 | Data layer | Supabase (PostgreSQL) | Auto-generated REST API + `@supabase/supabase-js` v2 |
 | Auth | Supabase Auth | Email/password; session in localStorage; `onAuthStateChange` reactive |
 | Hosting | Vercel | Deploy on push to `main`; preview deploys on PRs |
@@ -53,7 +54,9 @@ nutrition-platform/
 │       ├── MealCard.tsx            ← One meal: named, food items with servings/grams controls, save-as-template
 │       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
 │       ├── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV); click row → NutrientInfoCard
-│       └── NutrientInfoCard.tsx    ← Floating info card: body role, deficiency symptoms, excess symptoms
+│       ├── NutrientInfoCard.tsx    ← Floating info card: body role, deficiency symptoms, excess symptoms
+│       ├── MealNutritionChart.tsx  ← Full-width chart dashboard (chart view mode); bar chart + radar side-by-side
+│       └── MealCategoryRadar.tsx  ← Custom SVG pentagonal radar: avg %DV per category, gradient edges, rdaCellColor dots
 │
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
@@ -213,6 +216,8 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 - [ ] Food row click → slide-in detail panel (`FoodDetailPanel.tsx`)
 - [ ] % RDA values in hover tooltips on heatmap cells
 - [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms (supersedes plain description tooltips)
+- [x] Meal planner chart view — full-width dashboard toggled from sidebar view; bar chart of all 50 nutrients (grouped by category, sorted by %DV desc within category); cap Y-axis at 100% toggle; nutrient labels at 270° vertical angle
+- [x] Category fulfilment radar — custom SVG pentagonal web chart (5 categories, Food Metric excluded); each nutrient capped at 100% before averaging; vertex dots + gradient edges coloured by rdaCellColor; sits below bar chart at half-width square
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
 
