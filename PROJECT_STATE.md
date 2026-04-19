@@ -42,6 +42,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; presets and saved templates load collapsed by default; header shows food count + total grams when collapsed |
 | **Preset item enrichment fix** | ✅ Live — preset items now resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
 | **Macro split donut** | ✅ Live — dual-ring Recharts PieChart: inner = caloric % (carbs amber / protein violet / fat emerald); outer = top 5 foods per macro + Other in shades; sits right of radar in chart view |
+| **Low Carb & Keto preset meals** | ✅ SQL ready (`sql/seed_preset_meals_lowcarb_keto.sql`) — 6 Low Carb + 6 Keto meals; run in Supabase SQL editor to activate |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
@@ -56,8 +57,9 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
 4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
 5. **`sql/seed_breads_and_tortillas.sql`** — Breads & tortillas in Grains & Cereals; currently Corn + Flour Tortilla (100 nutrient rows; add new bread types here)
-6. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals
-7. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+6. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals (Juices, Salads, Pastas, Bowls, High Protein, Breakfast)
+7. **`sql/seed_preset_meals_lowcarb_keto.sql`** — Adds 12 more preset meals: 6 Low Carb + 6 Keto (run after step 6)
+8. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
 -- Saved custom RDA profiles

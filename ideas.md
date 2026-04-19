@@ -16,7 +16,7 @@
 | %DV bar chart (50 nutrients, grouped, sorted, cap toggle) | Chart view |
 | Category fulfilment radar (5-vertex SVG pentagon) | Chart view |
 | Nutrient info cards (function, deficiency, excess) | Meal sidebar |
-| Preset meal templates (29 meals, 6 categories) | Meal Planner tab |
+| Preset meal templates (41 meals, 8 categories) | Meal Planner tab |
 | Saved meal templates (per user) | Meal Planner tab |
 | Collapsible meal cards | Meal Planner tab |
 
