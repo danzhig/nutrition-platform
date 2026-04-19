@@ -95,9 +95,9 @@ function CustomXTick({ x, y, payload }: any) {
   return (
     <g transform={`translate(${x},${y})`}>
       <text
-        x={0} y={0} dy={8}
+        x={0} y={0} dx={-4}
         textAnchor="end"
-        transform="rotate(-45)"
+        transform="rotate(-90)"
         fontSize={10}
         fill="#94a3b8"
       >
@@ -184,9 +184,10 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
       withPct.forEach(({ n, rawVal, pct }, i) => {
         const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
         const color = rdaCellColor(pct, behavior, undefined)
+        const label = abbr(n.nutrient_name)
         bars.push({
-          key: `${n.nutrient_id}`,
-          label: abbr(n.nutrient_name),
+          key: label,   // use label as the x-axis key so tick receives the name directly
+          label,
           fullName: n.nutrient_name,
           pct,
           rawVal,
@@ -333,7 +334,7 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
       <ResponsiveContainer width="100%" height={440}>
         <BarChart
           data={displayData}
-          margin={{ top: 16, right: 16, left: 0, bottom: 80 }}
+          margin={{ top: 16, right: 16, left: 0, bottom: 100 }}
           barCategoryGap="20%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
@@ -359,7 +360,6 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
           <XAxis
             dataKey="key"
-            tickFormatter={(key) => displayData.find((b) => b.key === key)?.label ?? key}
             tick={<CustomXTick />}
             interval={0}
             axisLine={{ stroke: '#475569' }}
