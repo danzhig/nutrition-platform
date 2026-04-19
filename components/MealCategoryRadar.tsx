@@ -72,7 +72,7 @@ export default function MealCategoryRadar({ nutrients, rdaProfile, totals }: Pro
       <p className="text-xs font-semibold text-slate-300 mb-1">Category Fulfilment</p>
       <p className="text-[10px] text-slate-500 mb-3">Average % DV per category — each nutrient capped at 100%</p>
 
-      <svg viewBox="-165 -155 330 320" className="w-full flex-1">
+      <svg viewBox="-220 -175 460 380" className="w-full flex-1">
         <defs>
           {/* Per-edge linear gradients between adjacent vertex colours */}
           {EDGES.map(([i, j]) => {
