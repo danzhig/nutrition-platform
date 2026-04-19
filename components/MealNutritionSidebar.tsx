@@ -234,7 +234,7 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                         className={`flex items-center gap-1.5 px-1 rounded transition-colors ${
                           isClickable ? 'cursor-pointer hover:bg-slate-700/60' : ''
                         } ${isSelected ? 'bg-slate-700/60 ring-1 ring-violet-500/40' : ''}`}
-                        onClick={isClickable ? (e) => handleNutrientClick(n, e) : undefined}
+                        onMouseDown={isClickable ? (e) => handleNutrientClick(n, e) : undefined}
                         title={isClickable ? `Click to learn about ${n.nutrient_name}` : undefined}
                       >
                         <div
