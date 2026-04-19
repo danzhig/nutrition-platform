@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import type { Meal } from '@/types/meals'
+import NutrientInfoCard from './NutrientInfoCard'
 
 interface Props {
   nutrients: NutrientMeta[]
@@ -30,6 +31,19 @@ function abbr(name: string): string {
 export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaProfile }: Props) {
   // 'all' = full plan; meal id = individual meal
   const [viewId, setViewId] = useState<'all' | string>('all')
+  const [infoNutrient, setInfoNutrient] = useState<NutrientMeta | null>(null)
+  const [infoAnchor, setInfoAnchor] = useState<DOMRect | null>(null)
+
+  const handleNutrientClick = useCallback((n: NutrientMeta, e: React.MouseEvent) => {
+    if (!n.body_role) return
+    if (infoNutrient?.nutrient_id === n.nutrient_id) {
+      setInfoNutrient(null)
+      setInfoAnchor(null)
+    } else {
+      setInfoNutrient(n)
+      setInfoAnchor((e.currentTarget as HTMLElement).getBoundingClientRect())
+    }
+  }, [infoNutrient])
 
   // If the selected meal is deleted, fall back to full plan
   useEffect(() => {
@@ -110,6 +124,7 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
   }, [nutrients])
 
   return (
+    <>
     <div className="w-72 flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg overflow-y-auto max-h-[calc(100vh-130px)] text-xs">
       <div className="sticky top-0 bg-slate-800 border-b border-slate-700 z-10">
         {/* Title row */}
@@ -210,8 +225,18 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                             ? rawVal.toFixed(1)
                             : Math.round(rawVal).toString()
 
+                    const isSelected = infoNutrient?.nutrient_id === n.nutrient_id
+                    const isClickable = !!n.body_role
+
                     return (
-                      <div key={n.nutrient_id} className="flex items-center gap-1.5 px-1">
+                      <div
+                        key={n.nutrient_id}
+                        className={`flex items-center gap-1.5 px-1 rounded transition-colors ${
+                          isClickable ? 'cursor-pointer hover:bg-slate-700/60' : ''
+                        } ${isSelected ? 'bg-slate-700/60 ring-1 ring-violet-500/40' : ''}`}
+                        onClick={isClickable ? (e) => handleNutrientClick(n, e) : undefined}
+                        title={isClickable ? `Click to learn about ${n.nutrient_name}` : undefined}
+                      >
                         <div
                           className="flex items-center gap-0.5 flex-shrink-0"
                           style={{ width: 110 }}
@@ -228,9 +253,15 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                               ⚠
                             </span>
                           )}
-                          <span className="text-slate-300 truncate" title={n.nutrient_name}>
+                          <span
+                            className={`truncate ${isClickable ? 'text-slate-200' : 'text-slate-300'}`}
+                            title={n.nutrient_name}
+                          >
                             {abbr(n.nutrient_name)}
                           </span>
+                          {isClickable && (
+                            <span className="text-slate-600 text-[8px] flex-shrink-0 ml-0.5">ⓘ</span>
+                          )}
                         </div>
                         <div className="flex-1 h-3.5 bg-slate-700 rounded-sm overflow-hidden relative">
                           {pct !== null && (
@@ -274,5 +305,14 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
         </div>
       )}
     </div>
+
+    {infoNutrient && infoAnchor && (
+      <NutrientInfoCard
+        nutrient={infoNutrient}
+        anchorRect={infoAnchor}
+        onClose={() => { setInfoNutrient(null); setInfoAnchor(null) }}
+      />
+    )}
+    </>
   )
 }

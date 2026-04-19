@@ -23,6 +23,9 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
           id,
           name,
           unit,
+          body_role,
+          deficiency_symptoms,
+          excess_symptoms,
           nutrient_categories ( name )
         )
       `)
@@ -60,6 +63,9 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
         nutrient_name: nutrient.name,
         unit: nutrient.unit,
         nutrient_category: nutrient.nutrient_categories?.name ?? 'Other',
+        body_role: nutrient.body_role ?? null,
+        deficiency_symptoms: nutrient.deficiency_symptoms ?? null,
+        excess_symptoms: nutrient.excess_symptoms ?? null,
       })
     }
 

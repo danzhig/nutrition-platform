@@ -24,6 +24,9 @@ export interface NutrientMeta {
   nutrient_name: string
   unit: string
   nutrient_category: string
+  body_role?: string | null
+  deficiency_symptoms?: string | null
+  excess_symptoms?: string | null
 }
 
 // Fully shaped data ready for the heatmap component
