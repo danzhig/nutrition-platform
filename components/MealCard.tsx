@@ -12,9 +12,11 @@ interface Props {
   onChange: (meal: Meal) => void
   onDelete: () => void
   onSaveAsTemplate?: (meal: Meal) => Promise<void>
+  isCollapsed: boolean
+  onToggleCollapse: () => void
 }
 
-export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemplate }: Props) {
+export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemplate, isCollapsed, onToggleCollapse }: Props) {
   const [showPicker, setShowPicker] = useState(false)
   const [nameEditing, setNameEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -71,6 +73,15 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
       <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
         {/* Meal header */}
         <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/40 border-b border-slate-700">
+          {/* Collapse toggle */}
+          <button
+            onClick={onToggleCollapse}
+            className="text-slate-400 hover:text-slate-200 flex-shrink-0 w-4 text-xs transition-colors"
+            title={isCollapsed ? 'Expand' : 'Collapse'}
+          >
+            {isCollapsed ? '▸' : '▾'}
+          </button>
+
           {nameEditing ? (
             <input
               autoFocus
@@ -89,11 +100,19 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
               {meal.name}
             </button>
           )}
-          {totalGrams > 0 && (
+
+          {/* Summary shown when collapsed */}
+          {isCollapsed && meal.items.length > 0 && (
+            <span className="text-[10px] text-slate-500 flex-shrink-0">
+              {meal.items.length} food{meal.items.length !== 1 ? 's' : ''} · {Math.round(totalGrams)}g
+            </span>
+          )}
+          {!isCollapsed && totalGrams > 0 && (
             <span className="text-[11px] text-slate-500 flex-shrink-0">
               {Math.round(totalGrams)}g total
             </span>
           )}
+
           {onSaveAsTemplate && meal.items.length > 0 && (
             <button
               onClick={handleSaveAsTemplate}
@@ -113,105 +132,110 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
           </button>
         </div>
 
-        {/* Food items */}
-        {meal.items.length === 0 ? (
-          <p className="text-slate-600 text-xs text-center py-4">No foods added yet.</p>
-        ) : (
-          <div className="divide-y divide-slate-700/60">
-            {meal.items.map((item) => (
-              <div key={item.id} className="flex items-center gap-2 px-3 py-1.5">
-                {/* Food name */}
-                <span
-                  className="text-xs text-slate-200 flex-1 min-w-0 truncate"
-                  title={item.food_name}
-                >
-                  {item.food_name}
-                </span>
-
-                {/* Mode toggle: srv | g */}
-                <div className="flex rounded overflow-hidden border border-slate-600 flex-shrink-0 text-[10px]">
-                  <button
-                    onClick={() => updateItem(item.id, { mode: 'servings' })}
-                    className={`px-1.5 py-0.5 transition-colors ${
-                      item.mode === 'servings'
-                        ? 'bg-violet-700 text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                    }`}
-                  >
-                    srv
-                  </button>
-                  <button
-                    onClick={() => updateItem(item.id, { mode: 'grams' })}
-                    className={`px-1.5 py-0.5 transition-colors ${
-                      item.mode === 'grams'
-                        ? 'bg-violet-700 text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-                    }`}
-                  >
-                    g
-                  </button>
-                </div>
-
-                {/* Quantity input */}
-                {item.mode === 'servings' ? (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <input
-                      type="number"
-                      min="0.25"
-                      step="0.25"
-                      value={item.servings}
-                      onChange={(e) => {
-                        const s = Math.max(0.25, parseFloat(e.target.value) || 0.25)
-                        updateItem(item.id, { servings: s, grams: Math.round(s * item.portion_grams * 100) / 100 })
-                      }}
-                      className="w-14 bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-slate-100 text-center focus:outline-none focus:border-violet-500"
-                    />
+        {/* Body — hidden when collapsed */}
+        {!isCollapsed && (
+          <>
+            {/* Food items */}
+            {meal.items.length === 0 ? (
+              <p className="text-slate-600 text-xs text-center py-4">No foods added yet.</p>
+            ) : (
+              <div className="divide-y divide-slate-700/60">
+                {meal.items.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 px-3 py-1.5">
+                    {/* Food name */}
                     <span
-                      className="text-[10px] text-slate-400 truncate max-w-[72px]"
-                      title={item.portion_label}
+                      className="text-xs text-slate-200 flex-1 min-w-0 truncate"
+                      title={item.food_name}
                     >
-                      {item.portion_label}
+                      {item.food_name}
                     </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.grams}
-                      onChange={(e) => {
-                        const g = Math.max(1, parseInt(e.target.value) || 1)
-                        updateItem(item.id, { grams: g })
-                      }}
-                      className="w-16 bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-slate-100 text-center focus:outline-none focus:border-violet-500"
-                    />
-                    <span className="text-[10px] text-slate-400">g</span>
-                  </div>
-                )}
 
-                {/* Delete item */}
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="text-slate-500 hover:text-red-400 text-xs leading-none flex-shrink-0 w-4 h-4 flex items-center justify-center"
-                  title="Remove food"
-                >
-                  ✕
-                </button>
+                    {/* Mode toggle: srv | g */}
+                    <div className="flex rounded overflow-hidden border border-slate-600 flex-shrink-0 text-[10px]">
+                      <button
+                        onClick={() => updateItem(item.id, { mode: 'servings' })}
+                        className={`px-1.5 py-0.5 transition-colors ${
+                          item.mode === 'servings'
+                            ? 'bg-violet-700 text-white'
+                            : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                        }`}
+                      >
+                        srv
+                      </button>
+                      <button
+                        onClick={() => updateItem(item.id, { mode: 'grams' })}
+                        className={`px-1.5 py-0.5 transition-colors ${
+                          item.mode === 'grams'
+                            ? 'bg-violet-700 text-white'
+                            : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                        }`}
+                      >
+                        g
+                      </button>
+                    </div>
+
+                    {/* Quantity input */}
+                    {item.mode === 'servings' ? (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <input
+                          type="number"
+                          min="0.25"
+                          step="0.25"
+                          value={item.servings}
+                          onChange={(e) => {
+                            const s = Math.max(0.25, parseFloat(e.target.value) || 0.25)
+                            updateItem(item.id, { servings: s, grams: Math.round(s * item.portion_grams * 100) / 100 })
+                          }}
+                          className="w-14 bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-slate-100 text-center focus:outline-none focus:border-violet-500"
+                        />
+                        <span
+                          className="text-[10px] text-slate-400 truncate max-w-[72px]"
+                          title={item.portion_label}
+                        >
+                          {item.portion_label}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={item.grams}
+                          onChange={(e) => {
+                            const g = Math.max(1, parseInt(e.target.value) || 1)
+                            updateItem(item.id, { grams: g })
+                          }}
+                          className="w-16 bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-slate-100 text-center focus:outline-none focus:border-violet-500"
+                        />
+                        <span className="text-[10px] text-slate-400">g</span>
+                      </div>
+                    )}
+
+                    {/* Delete item */}
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-slate-500 hover:text-red-400 text-xs leading-none flex-shrink-0 w-4 h-4 flex items-center justify-center"
+                      title="Remove food"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            )}
 
-        {/* Add food */}
-        <div className="px-3 py-2 border-t border-slate-700/60">
-          <button
-            onClick={() => setShowPicker(true)}
-            className="w-full text-xs text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded py-1.5 transition-colors"
-          >
-            + Add food
-          </button>
-        </div>
+            {/* Add food */}
+            <div className="px-3 py-2 border-t border-slate-700/60">
+              <button
+                onClick={() => setShowPicker(true)}
+                className="w-full text-xs text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded py-1.5 transition-colors"
+              >
+                + Add food
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {showPicker && (

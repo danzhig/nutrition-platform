@@ -11,6 +11,7 @@ import type { PresetMeal } from '@/lib/presetMealStorage'
 import { loadPresetMeals } from '@/lib/presetMealStorage'
 import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
+import { getPortionSize } from '@/lib/portionSizes'
 import type { SavedProfile } from '@/lib/profileStorage'
 import { loadSavedProfiles } from '@/lib/profileStorage'
 import { useAuth } from './AuthProvider'
@@ -44,6 +45,7 @@ export default function MealPlanner({ data }: Props) {
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
+  const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set())
 
   // Build food lookup map for sidebar
   const foodsById = useMemo(() => {
@@ -118,6 +120,16 @@ export default function MealPlanner({ data }: Props) {
 
   function deleteMealFromPlan(mealId: string) {
     setPlan((p) => ({ ...p, meals: p.meals.filter((m) => m.id !== mealId) }))
+    setCollapsedMeals((prev) => { const next = new Set(prev); next.delete(mealId); return next })
+  }
+
+  function toggleMealCollapsed(mealId: string) {
+    setCollapsedMeals((prev) => {
+      const next = new Set(prev)
+      if (next.has(mealId)) next.delete(mealId)
+      else next.add(mealId)
+      return next
+    })
   }
 
   // ── Saved meal templates ──────────────────────────────────────────────────
@@ -134,6 +146,7 @@ export default function MealPlanner({ data }: Props) {
       items: sm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
     }
     setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
     setShowSavedMeals(false)
   }
 
@@ -152,9 +165,23 @@ export default function MealPlanner({ data }: Props) {
     const meal: Meal = {
       id: crypto.randomUUID(),
       name: pm.name,
-      items: pm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+      items: pm.items.map((item) => {
+        const food = foodsById.get(item.food_id)
+        const portion = getPortionSize(item.food_id)
+        return {
+          id: crypto.randomUUID(),
+          food_id: item.food_id,
+          food_name: food?.food_name ?? `Unknown food (${item.food_id})`,
+          grams: item.grams,
+          mode: 'grams' as const,
+          servings: Math.round((item.grams / portion.grams) * 100) / 100,
+          portion_grams: portion.grams,
+          portion_label: portion.label,
+        }
+      }),
     }
     setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setCollapsedMeals((prev) => new Set([...prev, meal.id]))
     setShowPresets(false)
   }
 
@@ -465,6 +492,8 @@ export default function MealPlanner({ data }: Props) {
                 onChange={updateMealInPlan}
                 onDelete={() => deleteMealFromPlan(meal.id)}
                 onSaveAsTemplate={handleSaveAsTemplate}
+                isCollapsed={collapsedMeals.has(meal.id)}
+                onToggleCollapse={() => toggleMealCollapsed(meal.id)}
               />
             ))}
           </div>
