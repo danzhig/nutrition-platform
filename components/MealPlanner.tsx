@@ -197,7 +197,7 @@ export default function MealPlanner({ data }: Props) {
       name: sm.name,
       items: sm.items.map((item) => ({ ...item, id: crypto.randomUUID() })),
     }
-    setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setPlan((p) => ({ ...p, meals: [meal, ...p.meals] }))
     setCollapsedMeals(new Set(plan.meals.map((m) => m.id)))
     setShowSavedMeals(false)
   }
@@ -232,7 +232,7 @@ export default function MealPlanner({ data }: Props) {
         }
       }),
     }
-    setPlan((p) => ({ ...p, meals: [...p.meals, meal] }))
+    setPlan((p) => ({ ...p, meals: [meal, ...p.meals] }))
     setCollapsedMeals(new Set(plan.meals.map((m) => m.id)))
     setShowPresets(false)
   }
