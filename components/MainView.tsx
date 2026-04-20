@@ -2,21 +2,21 @@
 
 import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
-import HeatmapTable from './HeatmapTable'
+import DataView from './DataView'
 import MealPlanner from './MealPlanner'
 
 interface Props {
   data: HeatmapData
 }
 
-type Tab = 'heatmap' | 'meals'
+type Tab = 'data' | 'meals'
 
 export default function MainView({ data }: Props) {
   const [tab, setTab] = useState<Tab>('meals')
 
   return (
     <div>
-      {/* Tab bar */}
+      {/* Top-level tab bar */}
       <div className="flex gap-0 mb-5 border-b border-slate-700">
         <TabButton
           label="Meal Planner"
@@ -24,14 +24,14 @@ export default function MainView({ data }: Props) {
           onClick={() => setTab('meals')}
         />
         <TabButton
-          label="Nutrient Heatmap"
-          active={tab === 'heatmap'}
-          onClick={() => setTab('heatmap')}
+          label="Data View"
+          active={tab === 'data'}
+          onClick={() => setTab('data')}
         />
       </div>
 
-      {tab === 'heatmap' && <HeatmapTable data={data} />}
-      {tab === 'meals'   && <MealPlanner  data={data} />}
+      {tab === 'meals' && <MealPlanner data={data} />}
+      {tab === 'data'  && <DataView   data={data} />}
     </div>
   )
 }

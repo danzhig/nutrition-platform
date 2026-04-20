@@ -28,6 +28,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
+| **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts); Charts tab is a placeholder for future data visualizations |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 | **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
 | **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |

@@ -35,7 +35,8 @@ nutrition-platform/
 │   ├── page.tsx                ← Home: fetches heatmap data, renders <MainView>
 │   └── globals.css
 ├── components/
-│   ├── MainView.tsx            ← Tab switcher: Nutrient Heatmap | Meal Planner
+│   ├── MainView.tsx            ← Top-level tab switcher: Meal Planner | Data View
+│   ├── DataView.tsx            ← Data View orchestrator: second-level tabs (Nutrient Heatmap | Charts)
 │   │
 │   ├── — Heatmap ──────────────────────────────────────────────────────────────
 │   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving, DV profile
@@ -252,9 +253,8 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
-- **Week Builder** — tab alongside Day Builder; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
-- Bubble/scatter plot (two-nutrient axes, food as bubbles)
-- Radar / spider chart (nutritional fingerprint per food)
+- **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
+- **Data View → Charts tab** — currently a placeholder; candidates: Nutrient Ranking View (ranked bar chart per nutrient), Scatter/Bubble Plot (two-nutrient axes), Food Comparison Chart (2–4 foods side-by-side)
 - Nutrient co-occurrence matrix
 - Before & After plate comparison
 
