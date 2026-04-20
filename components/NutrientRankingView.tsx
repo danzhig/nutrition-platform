@@ -40,7 +40,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const DEFAULT_COLOR = '#94a3b8' // slate-400
 
-const TOP_N_OPTIONS = [10, 20, 50, 100] as const
+const TOP_N_OPTIONS = [50, 100] as const
 type TopN = (typeof TOP_N_OPTIONS)[number]
 type RankDir = 'top' | 'bottom'
 
@@ -88,7 +88,7 @@ export default function NutrientRankingView({ data }: Props) {
   const [selectedNutrientId, setSelectedNutrientId] = useState<number>(
     data.nutrients[0]?.nutrient_id ?? 0
   )
-  const [topN, setTopN] = useState<TopN>(20)
+  const [topN, setTopN] = useState<TopN>(50)
   const [rankDir, setRankDir] = useState<RankDir>('top')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [perServing, setPerServing] = useState(false)
