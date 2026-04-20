@@ -11,8 +11,19 @@ interface Props {
 
 type Tab = 'data' | 'meals'
 
+const TAB_KEY = 'np:mainTab'
+
 export default function MainView({ data }: Props) {
-  const [tab, setTab] = useState<Tab>('meals')
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'meals'
+    const saved = localStorage.getItem(TAB_KEY)
+    return saved === 'data' || saved === 'meals' ? saved : 'meals'
+  })
+
+  function handleTabChange(next: Tab) {
+    setTab(next)
+    localStorage.setItem(TAB_KEY, next)
+  }
 
   return (
     <div>
@@ -21,12 +32,12 @@ export default function MainView({ data }: Props) {
         <TabButton
           label="Day Planner"
           active={tab === 'meals'}
-          onClick={() => setTab('meals')}
+          onClick={() => handleTabChange('meals')}
         />
         <TabButton
           label="Data View"
           active={tab === 'data'}
-          onClick={() => setTab('data')}
+          onClick={() => handleTabChange('data')}
         />
       </div>
 
