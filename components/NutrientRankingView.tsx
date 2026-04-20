@@ -42,6 +42,7 @@ const DEFAULT_COLOR = '#94a3b8' // slate-400
 
 const TOP_N_OPTIONS = [10, 20, 50, 218] as const
 type TopN = (typeof TOP_N_OPTIONS)[number]
+type RankDir = 'top' | 'bottom'
 
 interface TooltipPayload {
   value: number
@@ -88,6 +89,7 @@ export default function NutrientRankingView({ data }: Props) {
     data.nutrients[0]?.nutrient_id ?? 0
   )
   const [topN, setTopN] = useState<TopN>(20)
+  const [rankDir, setRankDir] = useState<RankDir>('top')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [perServing, setPerServing] = useState(false)
 
@@ -122,10 +124,15 @@ export default function NutrientRankingView({ data }: Props) {
         }
       })
       .filter((d) => d.hasData)
-      .sort((a, b) => b.value - a.value)
+      .sort((a, b) => b.value - a.value) // always sort descending first
 
-    return rows.slice(0, topN === 218 ? rows.length : topN)
-  }, [data.foods, selectedNutrientId, topN, categoryFilter, perServing, selectedNutrient])
+    const limit = topN === 218 ? rows.length : topN
+    if (rankDir === 'bottom') {
+      // Take the last `limit` entries (lowest values) and reverse so lowest is at top
+      return rows.slice(-limit).reverse()
+    }
+    return rows.slice(0, limit)
+  }, [data.foods, selectedNutrientId, topN, rankDir, categoryFilter, perServing, selectedNutrient])
 
   const barHeight = 28
   const minChartHeight = 300
@@ -165,9 +172,32 @@ export default function NutrientRankingView({ data }: Props) {
           </select>
         </div>
 
-        {/* Top-N filter */}
+        {/* Top / Bottom toggle */}
+        <div className="flex items-center rounded border border-slate-600 overflow-hidden">
+          <button
+            onClick={() => setRankDir('top')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+              rankDir === 'top'
+                ? 'bg-violet-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Top
+          </button>
+          <button
+            onClick={() => setRankDir('bottom')}
+            className={`px-3 py-1.5 text-xs font-medium transition-colors border-l border-slate-600 ${
+              rankDir === 'bottom'
+                ? 'bg-violet-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Bottom
+          </button>
+        </div>
+
+        {/* N filter */}
         <div className="flex items-center gap-1">
-          <span className="text-xs text-slate-400">Show</span>
           {TOP_N_OPTIONS.map((n) => (
             <button
               key={n}
@@ -178,7 +208,7 @@ export default function NutrientRankingView({ data }: Props) {
                   : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-200'
               }`}
             >
-              {n === 218 ? 'All' : `Top ${n}`}
+              {n === 218 ? 'All' : n}
             </button>
           ))}
         </div>
@@ -217,7 +247,11 @@ export default function NutrientRankingView({ data }: Props) {
       <p className="text-sm text-slate-400 mb-3">
         <span className="text-slate-200 font-medium">{selectedNutrient?.nutrient_name}</span>
         {' — '}
-        {chartData.length} food{chartData.length !== 1 ? 's' : ''} ranked
+        <span className={rankDir === 'bottom' ? 'text-amber-400' : 'text-violet-400'}>
+          {rankDir === 'top' ? 'highest' : 'lowest'}
+        </span>
+        {' '}
+        {chartData.length} food{chartData.length !== 1 ? 's' : ''}
         {categoryFilter !== 'All' ? ` in ${categoryFilter}` : ''}
         {' · '}
         {perServing ? 'per serving' : 'per 100g'}
@@ -233,8 +267,18 @@ export default function NutrientRankingView({ data }: Props) {
             <BarChart
               layout="vertical"
               data={chartData}
-              margin={{ top: 4, right: 60, left: 4, bottom: 4 }}
+              margin={{ top: 4, right: 64, left: 8, bottom: 4 }}
             >
+              {/* YAxis = category axis (food names on left) */}
+              <YAxis
+                type="category"
+                dataKey="food_name"
+                width={168}
+                tick={{ fill: '#cbd5e1', fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+              />
+              {/* XAxis = value axis (numbers along bottom) */}
               <XAxis
                 type="number"
                 tick={{ fill: '#94a3b8', fontSize: 11 }}
@@ -244,18 +288,11 @@ export default function NutrientRankingView({ data }: Props) {
                   v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
                 }
               />
-              <YAxis
-                type="category"
-                dataKey="food_name"
-                width={160}
-                tick={{ fill: '#cbd5e1', fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
               <Tooltip
                 content={<CustomTooltip perServing={perServing} />}
                 cursor={{ fill: 'rgba(148,163,184,0.07)' }}
               />
+              {/* radius=[0,3,3,0] rounds the right (trailing) end of each horizontal bar */}
               <Bar dataKey="value" radius={[0, 3, 3, 0]} maxBarSize={22}>
                 {chartData.map((entry, i) => (
                   <Cell
