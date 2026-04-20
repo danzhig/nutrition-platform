@@ -134,9 +134,9 @@ export default function NutrientRankingView({ data }: Props) {
     return rows.slice(0, limit)
   }, [data.foods, selectedNutrientId, topN, rankDir, categoryFilter, perServing, selectedNutrient])
 
-  const barHeight = 28
-  const minChartHeight = 300
-  const chartHeight = Math.max(minChartHeight, chartData.length * barHeight + 60)
+  const barWidth = 42
+  const minChartWidth = 400
+  const chartWidth = Math.max(minChartWidth, chartData.length * barWidth + 80)
 
   // Group nutrients by category for the dropdown
   const nutrientGroups = useMemo(() => {
@@ -262,47 +262,49 @@ export default function NutrientRankingView({ data }: Props) {
           <p className="text-slate-500 text-sm">No data for selected filters.</p>
         </div>
       ) : (
-        <div style={{ width: '100%', height: chartHeight }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              layout="vertical"
-              data={chartData}
-              margin={{ top: 4, right: 64, left: 8, bottom: 4 }}
-            >
-              {/* YAxis = category axis (food names on left) */}
-              <YAxis
-                type="category"
-                dataKey="food_name"
-                width={168}
-                tick={{ fill: '#cbd5e1', fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              {/* XAxis = value axis (numbers along bottom) */}
-              <XAxis
-                type="number"
-                tick={{ fill: '#94a3b8', fontSize: 11 }}
-                tickLine={false}
-                axisLine={{ stroke: '#334155' }}
-                tickFormatter={(v: number) =>
-                  v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
-                }
-              />
-              <Tooltip
-                content={<CustomTooltip perServing={perServing} />}
-                cursor={{ fill: 'rgba(148,163,184,0.07)' }}
-              />
-              {/* radius=[0,3,3,0] rounds the right (trailing) end of each horizontal bar */}
-              <Bar dataKey="value" radius={[0, 3, 3, 0]} maxBarSize={22}>
-                {chartData.map((entry, i) => (
-                  <Cell
-                    key={i}
-                    fill={CATEGORY_COLORS[entry.category] ?? DEFAULT_COLOR}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+          <div style={{ width: chartWidth, height: 380 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={chartData}
+                margin={{ top: 8, right: 16, left: 8, bottom: 120 }}
+              >
+                <XAxis
+                  type="category"
+                  dataKey="food_name"
+                  tick={{ fill: '#cbd5e1', fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  interval={0}
+                  angle={-55}
+                  textAnchor="end"
+                />
+                <YAxis
+                  type="number"
+                  tick={{ fill: '#94a3b8', fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) =>
+                    v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
+                  }
+                  width={52}
+                />
+                <Tooltip
+                  content={<CustomTooltip perServing={perServing} />}
+                  cursor={{ fill: 'rgba(148,163,184,0.07)' }}
+                />
+                {/* radius=[0,0,3,3] rounds the top corners of each vertical bar */}
+                <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={32}>
+                  {chartData.map((entry, i) => (
+                    <Cell
+                      key={i}
+                      fill={CATEGORY_COLORS[entry.category] ?? DEFAULT_COLOR}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
