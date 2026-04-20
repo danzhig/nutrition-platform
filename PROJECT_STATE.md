@@ -44,7 +44,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Macro split donut** | ✅ Live — dual-ring Recharts PieChart: inner = caloric % (carbs amber / protein violet / fat emerald); outer = top 5 foods per macro + Other in shades; macro labels outside outer ring; sits right of radar in chart view |
 | **Low Carb & Keto preset meals** | ✅ SQL ready (`sql/seed_preset_meals_lowcarb_keto.sql`) — 6 Low Carb + 6 Keto meals; run in Supabase SQL editor to activate |
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
-| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
+| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  

@@ -309,7 +309,7 @@ export default function MealPlanner({ data }: Props) {
             : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
         }`}
       >
-        ▤ Builder
+        ▤ Day Builder
       </button>
       <button
         onClick={() => switchView('chart')}

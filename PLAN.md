@@ -201,10 +201,10 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewTabBar`):
 
 ```
-[▤ Builder] [▦ Charts]  |  [Plan: name ▾]  [DV Profile: label ▾]
+[▤ Day Builder] [▦ Charts]  |  [Plan: name ▾]  [DV Profile: label ▾]
 ```
 
-- **Builder / Charts** — underline tabs (same style as main Heatmap/Meal Planner tabs); switch between the build-and-edit layout and the full-width chart dashboard
+- **Day Builder / Charts** — underline tabs (same style as main Heatmap/Meal Planner tabs); switch between the build-and-edit layout and the full-width chart dashboard
 - **Plan ▾** — dropdown; contains inline plan name input, Save/Update button, list of saved plans (load/delete), and New Plan
 - **DV Profile ▾** — dropdown; lists saved profiles first, then built-in profiles (Male Avg, Female Avg, etc.), then Custom; selecting Custom shows `DVProfilePanel` (editorOnly mode) as a collapsible panel below the tab bar
 - Both dropdowns close on outside click via `useRef` + `mousedown` listener
@@ -251,7 +251,8 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category
 
-### Phase 4 — Advanced Visualizations (from ideas.md)
+### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
+- **Week Builder** — tab alongside Day Builder; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
 - Bubble/scatter plot (two-nutrient axes, food as bubbles)
 - Radar / spider chart (nutritional fingerprint per food)
 - Nutrient co-occurrence matrix
