@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
 import HeatmapTable from './HeatmapTable'
 import NutrientRankingView from './NutrientRankingView'
+import NutrientScatterPlot from './NutrientScatterPlot'
 
 interface Props {
   data: HeatmapData
@@ -55,6 +56,7 @@ export default function DataView({ data }: Props) {
       {tab === 'charts' && (
         <div className="px-1">
           <NutrientRankingView data={data} />
+          <NutrientScatterPlot data={data} />
         </div>
       )}
     </div>
