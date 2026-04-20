@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import type { HeatmapData, FoodRow } from '@/types/nutrition'
 import type { ActiveMealPlan, Meal } from '@/types/meals'
 import type { SavedMealPlan } from '@/lib/mealStorage'
@@ -49,6 +49,17 @@ export default function MealPlanner({ data }: Props) {
       if (draft) return JSON.parse(draft) as RDAValues
     } catch { /* corrupt draft — ignore */ }
     return {}
+  })
+  // Snapshot of plan at last save/load — used to detect unsaved changes
+  const [savedSnapshot, setSavedSnapshot] = useState<string>(() => {
+    if (typeof window === 'undefined') return JSON.stringify(newPlan())
+    try {
+      const snap = localStorage.getItem('np:draft-snapshot')
+      if (snap) return snap
+      // No snapshot yet: treat draft as clean baseline
+      const draft = localStorage.getItem('np:draft-plan')
+      return draft ?? JSON.stringify(newPlan())
+    } catch { return JSON.stringify(newPlan()) }
   })
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
@@ -118,6 +129,7 @@ export default function MealPlanner({ data }: Props) {
       setPlan(newPlan())
       localStorage.removeItem('np:draft-plan')
       localStorage.removeItem('np:draft-custom-rda')
+      localStorage.removeItem('np:draft-snapshot')
       localStorage.removeItem('nutrition-active-plan-id')
       planRestoredRef.current = false
       return
@@ -176,6 +188,17 @@ export default function MealPlanner({ data }: Props) {
       : presetMeals.filter((p) => p.category === presetCategory),
     [presetMeals, presetCategory]
   )
+
+  const hasUnsavedChanges = useMemo(
+    () => JSON.stringify(plan) !== savedSnapshot,
+    [plan, savedSnapshot]
+  )
+
+  const updateSnapshot = useCallback((p: ActiveMealPlan) => {
+    const s = JSON.stringify(p)
+    setSavedSnapshot(s)
+    localStorage.setItem('np:draft-snapshot', s)
+  }, [])
 
   function switchView(mode: 'sidebar' | 'chart') {
     setViewMode(mode)
@@ -283,11 +306,14 @@ export default function MealPlanner({ data }: Props) {
               : sp
           )
         )
+        updateSnapshot(plan)
       } else {
         const saved = await createMealPlan(plan.name, plan.meals, plan.rda_selection)
         setSavedPlans((prev) => [saved, ...prev])
-        setPlan((p) => ({ ...p, id: saved.id }))
+        const savedPlan = { ...plan, id: saved.id }
+        setPlan(savedPlan)
         localStorage.setItem('nutrition-active-plan-id', saved.id)
+        updateSnapshot(savedPlan)
       }
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
@@ -310,9 +336,11 @@ export default function MealPlanner({ data }: Props) {
   }
 
   function handleLoadPlan(sp: SavedMealPlan) {
-    setPlan({ id: sp.id, name: sp.name, meals: sp.meals, rda_selection: sp.rda_selection })
+    const loaded = { id: sp.id, name: sp.name, meals: sp.meals, rda_selection: sp.rda_selection }
+    setPlan(loaded)
     setCollapsedMeals(new Set(sp.meals.map((m) => m.id)))
     localStorage.setItem('nutrition-active-plan-id', sp.id)
+    updateSnapshot(loaded)
   }
 
   // ── Not logged in ─────────────────────────────────────────────────────────
@@ -356,7 +384,7 @@ export default function MealPlanner({ data }: Props) {
       <div className="w-px h-4 bg-slate-600 mx-2 self-center flex-shrink-0" />
 
       {/* Plan picker */}
-      <div className="flex items-center gap-1 pb-px">
+      <div className="flex items-center gap-2 pb-px">
         <div className="relative" ref={planDropdownRef}>
           <button
             onClick={() => setShowPlanDropdown((v) => !v)}
@@ -369,8 +397,8 @@ export default function MealPlanner({ data }: Props) {
 
           {showPlanDropdown && (
             <div className="absolute left-0 top-full mt-1 w-72 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden text-xs">
-              {/* Name + save */}
-              <div className="px-3 pt-3 pb-2 space-y-2 border-b border-slate-700">
+              {/* Name editor */}
+              <div className="px-3 pt-3 pb-2 border-b border-slate-700">
                 <input
                   type="text"
                   value={plan.name}
@@ -378,14 +406,7 @@ export default function MealPlanner({ data }: Props) {
                   className="w-full bg-slate-700 border border-slate-600 rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-violet-500"
                   placeholder="Plan name…"
                 />
-                <button
-                  onClick={() => { handleSave(); setShowPlanDropdown(false) }}
-                  disabled={saving}
-                  className="w-full py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[11px] font-semibold rounded-md transition-colors"
-                >
-                  {saving ? 'Saving…' : plan.id ? 'Update plan' : 'Save plan'}
-                </button>
-                {saveError && <p className="text-[10px] text-red-400">{saveError}</p>}
+                {saveError && <p className="text-[10px] text-red-400 mt-1">{saveError}</p>}
               </div>
 
               {/* Saved plans list */}
@@ -414,19 +435,38 @@ export default function MealPlanner({ data }: Props) {
                   ))}
                 </div>
               )}
-
-              {/* New plan */}
-              <div className="border-t border-slate-700">
-                <button
-                  onClick={() => { setPlan(newPlan()); localStorage.removeItem('nutrition-active-plan-id'); localStorage.removeItem('np:draft-plan'); localStorage.removeItem('np:draft-custom-rda'); setShowPlanDropdown(false) }}
-                  className="w-full text-left px-3 py-2.5 text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
-                >
-                  + New plan
-                </button>
-              </div>
             </div>
           )}
         </div>
+
+        {/* Save / Update button — purple when unsaved changes, grey when clean */}
+        <button
+          onClick={hasUnsavedChanges && !saving ? handleSave : undefined}
+          disabled={saving}
+          className={`px-3 py-1.5 text-[11px] font-semibold rounded-md border transition-colors ${
+            hasUnsavedChanges
+              ? 'bg-violet-600 hover:bg-violet-500 border-violet-500 text-white cursor-pointer'
+              : 'bg-slate-800 border-slate-700 text-slate-600 cursor-default'
+          }`}
+        >
+          {saving ? 'Saving…' : plan.id ? 'Update Plan' : 'Save Plan'}
+        </button>
+
+        {/* New Plan button */}
+        <button
+          onClick={() => {
+            const p = newPlan()
+            setPlan(p)
+            updateSnapshot(p)
+            localStorage.removeItem('nutrition-active-plan-id')
+            localStorage.removeItem('np:draft-plan')
+            localStorage.removeItem('np:draft-custom-rda')
+            localStorage.removeItem('np:draft-snapshot')
+          }}
+          className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors"
+        >
+          New Plan
+        </button>
       </div>
 
       {/* DV profile picker */}
