@@ -161,6 +161,48 @@ export default function DVProfilePanel({
 
       <div className="px-3 py-3 space-y-4">
 
+        {/* ── Saved profiles — shown first when logged in ── */}
+        {isLoggedIn && savedProfiles.length > 0 && (
+          <div>
+            <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              My saved profiles
+            </p>
+            <div className="space-y-1">
+              {savedProfiles.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border transition-colors ${
+                    rdaSelection === `saved:${p.id}`
+                      ? 'bg-violet-700 border-violet-600 text-white'
+                      : 'bg-slate-700 border-slate-600 text-slate-300'
+                  }`}
+                >
+                  <button
+                    onClick={() => handleSelectSaved(p.id)}
+                    className="flex-1 text-left text-[11px] font-medium truncate"
+                  >
+                    {p.name}
+                  </button>
+                  <button
+                    onClick={() => handleEditSaved(p)}
+                    title="Edit profile"
+                    className="shrink-0 text-[11px] text-slate-400 hover:text-violet-400 transition-colors px-1"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p)}
+                    title="Delete profile"
+                    className="shrink-0 text-[11px] text-slate-400 hover:text-red-400 transition-colors px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Built-in profiles ── */}
         <div className="space-y-1">
           <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
@@ -193,50 +235,9 @@ export default function DVProfilePanel({
           ))}
         </div>
 
-        {/* ── Saved profiles ── */}
-        {isLoggedIn && (
-          <div>
-            <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-              My saved profiles
-            </p>
-            {savedProfiles.length === 0 ? (
-              <p className="text-[10px] text-slate-600 italic">None saved yet.</p>
-            ) : (
-              <div className="space-y-1">
-                {savedProfiles.map((p) => (
-                  <div
-                    key={p.id}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border transition-colors ${
-                      rdaSelection === `saved:${p.id}`
-                        ? 'bg-violet-700 border-violet-600 text-white'
-                        : 'bg-slate-700 border-slate-600 text-slate-300'
-                    }`}
-                  >
-                    <button
-                      onClick={() => handleSelectSaved(p.id)}
-                      className="flex-1 text-left text-[11px] font-medium truncate"
-                    >
-                      {p.name}
-                    </button>
-                    <button
-                      onClick={() => handleEditSaved(p)}
-                      title="Edit profile"
-                      className="shrink-0 text-[11px] text-slate-400 hover:text-violet-400 transition-colors px-1"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p)}
-                      title="Delete profile"
-                      className="shrink-0 text-[11px] text-slate-400 hover:text-red-400 transition-colors px-1"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* ── Saved profiles placeholder when none exist yet ── */}
+        {isLoggedIn && savedProfiles.length === 0 && (
+          <p className="text-[10px] text-slate-600 italic">No saved profiles yet.</p>
         )}
 
         {/* ── Custom profile ── */}
