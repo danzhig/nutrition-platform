@@ -47,11 +47,11 @@ export function computeComplementScore(
 
   // ── 3. Score per nutrient ──────────────────────────────────────────────────
   let totalBenefit     = 0
+  let maxBenefit       = 0  // sum of all remaining gaps / 100 — the true ceiling
   let totalHardPenalty = 0
   let totalSoftPenalty = 0
-  let nWithGap = 0  // nutrients currently below 100% DV (benefit denominator)
-  let nHard    = 0  // normal-with-ul nutrients with an RDA (penalty denominator)
-  let nSoft    = 0  // limit nutrients with an RDA (penalty denominator)
+  let nHard = 0  // normal-with-ul nutrients with an RDA (penalty denominator)
+  let nSoft = 0  // limit nutrients with an RDA (penalty denominator)
 
   for (const nutrient of nutrients) {
     const rda = rdaProfile.values[nutrient.nutrient_name]
@@ -66,10 +66,10 @@ export function computeComplementScore(
 
     // BENEFIT — only for nutrients where more is better
     if (behavior === 'normal' || behavior === 'normal-with-ul') {
-      const gap  = Math.max(0, 100 - currentPct)       // % points still needed
-      const fill = Math.min(addedPct, gap) / 100        // 0..1 (capped at gap)
+      const gap  = Math.max(0, 100 - currentPct)  // % points still needed
+      const fill = Math.min(addedPct, gap) / 100   // 0..gap/100
       totalBenefit += fill
-      if (gap > 0) nWithGap++
+      maxBenefit   += gap / 100  // accumulate the max fillable amount per nutrient
     }
 
     // HARD PENALTY — for UL nutrients pushed past 150% DV
@@ -89,7 +89,7 @@ export function computeComplementScore(
   }
 
   // ── 4. Normalize each component to 0..1 ───────────────────────────────────
-  const benefitScore = nWithGap > 0 ? totalBenefit / nWithGap : 0
+  const benefitScore = maxBenefit > 0 ? totalBenefit / maxBenefit : 0
   const hardScore    = nHard   > 0 ? totalHardPenalty / nHard : 0
   const softScore    = nSoft   > 0 ? totalSoftPenalty / nSoft : 0
 
