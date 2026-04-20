@@ -40,7 +40,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const DEFAULT_COLOR = '#94a3b8' // slate-400
 
-const TOP_N_OPTIONS = [10, 20, 50, 218] as const
+const TOP_N_OPTIONS = [10, 20, 50, 100] as const
 type TopN = (typeof TOP_N_OPTIONS)[number]
 type RankDir = 'top' | 'bottom'
 
@@ -126,7 +126,7 @@ export default function NutrientRankingView({ data }: Props) {
       .filter((d) => d.hasData)
       .sort((a, b) => b.value - a.value) // always sort descending first
 
-    const limit = topN === 218 ? rows.length : topN
+    const limit = topN
     if (rankDir === 'bottom') {
       // Take the last `limit` entries (lowest values) and reverse so lowest is at top
       return rows.slice(-limit).reverse()
@@ -135,8 +135,7 @@ export default function NutrientRankingView({ data }: Props) {
   }, [data.foods, selectedNutrientId, topN, rankDir, categoryFilter, perServing, selectedNutrient])
 
   const barWidth = 42
-  const minChartWidth = 400
-  const chartWidth = Math.max(minChartWidth, chartData.length * barWidth + 80)
+  const chartWidth = chartData.length * barWidth + 80
 
   // Group nutrients by category for the dropdown
   const nutrientGroups = useMemo(() => {
@@ -208,7 +207,7 @@ export default function NutrientRankingView({ data }: Props) {
                   : 'bg-slate-800 border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-200'
               }`}
             >
-              {n === 218 ? 'All' : n}
+              {n}
             </button>
           ))}
         </div>
