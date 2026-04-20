@@ -72,12 +72,12 @@ export function computeComplementScore(
       if (gap > 0) nWithGap++
     }
 
-    // HARD PENALTY — for UL nutrients pushed past 100% DV
+    // HARD PENALTY — for UL nutrients pushed past 150% DV
+    // 0–150% is considered safe; penalty grows smoothly from 150% to 250%
     if (behavior === 'normal-with-ul') {
       nHard++
-      if (newPct > 100) {
-        // 0 at exactly 100%, 1 at 200% DV — smooth gradient, never catastrophic alone
-        totalHardPenalty += Math.min((newPct - 100) / 100, 1)
+      if (newPct > 150) {
+        totalHardPenalty += Math.min((newPct - 150) / 100, 1)
       }
     }
 
