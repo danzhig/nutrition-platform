@@ -82,6 +82,8 @@ export default function MealPlanner({ data }: Props) {
   const [showSavedMeals, setShowSavedMeals] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
+  const [sortPresetsByScore, setSortPresetsByScore] = useState(false)
+  const [sortSavedByScore, setSortSavedByScore] = useState(false)
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(() => {
     if (typeof window === 'undefined') return new Set()
@@ -205,13 +207,6 @@ export default function MealPlanner({ data }: Props) {
     return ['All', ...cats]
   }, [presetMeals])
 
-  const filteredPresets = useMemo(() =>
-    presetCategory === 'All'
-      ? presetMeals
-      : presetMeals.filter((p) => p.category === presetCategory),
-    [presetMeals, presetCategory]
-  )
-
   // Complement scores — recompute whenever the current plan or profile changes
   const presetScores = useMemo<Map<string, number>>(() => {
     const map = new Map<string, number>()
@@ -230,6 +225,23 @@ export default function MealPlanner({ data }: Props) {
     }
     return map
   }, [plan.meals, rdaProfile, savedMeals, data.nutrients, foodsById])
+
+  const filteredPresets = useMemo(() => {
+    let list = presetCategory === 'All'
+      ? presetMeals
+      : presetMeals.filter((p) => p.category === presetCategory)
+    if (sortPresetsByScore && presetScores.size > 0) {
+      list = [...list].sort((a, b) => (presetScores.get(b.id) ?? 0) - (presetScores.get(a.id) ?? 0))
+    }
+    return list
+  }, [presetMeals, presetCategory, sortPresetsByScore, presetScores])
+
+  const sortedSavedMeals = useMemo(() => {
+    if (sortSavedByScore && savedMealScores.size > 0) {
+      return [...savedMeals].sort((a, b) => (savedMealScores.get(b.id) ?? 0) - (savedMealScores.get(a.id) ?? 0))
+    }
+    return savedMeals
+  }, [savedMeals, sortSavedByScore, savedMealScores])
 
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(plan) !== savedSnapshot,
@@ -671,11 +683,23 @@ export default function MealPlanner({ data }: Props) {
         {/* Saved meal template picker */}
         {showSavedMeals && savedMeals.length > 0 && (
           <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700">
+            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400">My saved meal templates</span>
+              {savedMealScores.size > 0 && (
+                <button
+                  onClick={() => setSortSavedByScore((v) => !v)}
+                  className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                    sortSavedByScore
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                  }`}
+                >
+                  Sort by rank
+                </button>
+              )}
             </div>
             <div className="divide-y divide-slate-700/60 max-h-52 overflow-y-auto">
-              {savedMeals.map((sm) => (
+              {sortedSavedMeals.map((sm) => (
                 <div key={sm.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-700/40">
                   <button
                     onClick={() => handleLoadSavedMeal(sm)}
@@ -709,7 +733,21 @@ export default function MealPlanner({ data }: Props) {
           <div className="bg-slate-800 border border-emerald-900/50 rounded-lg overflow-hidden">
             <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between">
               <span className="text-xs font-semibold text-emerald-400">Preset Meals</span>
-              <span className="text-[10px] text-slate-500">Click a meal to add it to your plan</span>
+              <div className="flex items-center gap-2">
+                {presetScores.size > 0 && (
+                  <button
+                    onClick={() => setSortPresetsByScore((v) => !v)}
+                    className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                      sortPresetsByScore
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                    }`}
+                  >
+                    Sort by rank
+                  </button>
+                )}
+                <span className="text-[10px] text-slate-500">Click a meal to add it to your plan</span>
+              </div>
             </div>
 
             {/* Category filter pills */}
