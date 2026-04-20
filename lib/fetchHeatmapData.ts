@@ -3,41 +3,49 @@ import type { HeatmapData, FoodRow, NutrientMeta } from '@/types/nutrition'
 
 const PAGE_SIZE = 1000
 
+const NUTRIENT_SELECT = `
+  food_id,
+  value_per_100g,
+  foods (
+    id,
+    name,
+    food_categories ( name )
+  ),
+  nutrients (
+    id,
+    name,
+    unit,
+    body_role,
+    deficiency_symptoms,
+    excess_symptoms,
+    nutrient_categories ( name )
+  )
+` as const
+
 export async function fetchHeatmapData(): Promise<HeatmapData> {
-  // Supabase defaults to 1,000 rows per request. Paginate to fetch all 8,268 rows.
-  let allRows: any[] = []
-  let from = 0
+  // Get total row count first, then fetch all pages in parallel
+  const { count, error: countError } = await supabase
+    .from('food_nutrients')
+    .select('*', { count: 'exact', head: true })
 
-  while (true) {
-    const { data, error } = await supabase
-      .from('food_nutrients')
-      .select(`
-        food_id,
-        value_per_100g,
-        foods (
-          id,
-          name,
-          food_categories ( name )
-        ),
-        nutrients (
-          id,
-          name,
-          unit,
-          body_role,
-          deficiency_symptoms,
-          excess_symptoms,
-          nutrient_categories ( name )
-        )
-      `)
-      .order('food_id')
-      .range(from, from + PAGE_SIZE - 1)
+  if (countError || count === null) throw new Error(`Supabase count failed: ${countError?.message}`)
 
+  const pageCount = Math.ceil(count / PAGE_SIZE)
+
+  const pages = await Promise.all(
+    Array.from({ length: pageCount }, (_, i) =>
+      supabase
+        .from('food_nutrients')
+        .select(NUTRIENT_SELECT)
+        .order('food_id')
+        .range(i * PAGE_SIZE, (i + 1) * PAGE_SIZE - 1)
+    )
+  )
+
+  const allRows: any[] = []
+  for (const { data, error } of pages) {
     if (error) throw new Error(`Supabase query failed: ${error.message}`)
-    if (!data || data.length === 0) break
-
-    allRows = allRows.concat(data)
-    if (data.length < PAGE_SIZE) break
-    from += PAGE_SIZE
+    if (data) allRows.push(...data)
   }
 
   const data = allRows

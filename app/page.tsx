@@ -2,7 +2,7 @@ import { fetchHeatmapData } from '@/lib/fetchHeatmapData'
 import MainView from '@/components/MainView'
 import AuthButton from '@/components/AuthButton'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300 // re-render at most every 5 minutes
 
 export default async function Home() {
   const data = await fetchHeatmapData()
