@@ -81,7 +81,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
   }, [foods, category, search, rdaProfile, foodScores])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh]">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
