@@ -19,7 +19,7 @@ export default function MainView({ data }: Props) {
       {/* Top-level tab bar */}
       <div className="flex gap-0 mb-5 border-b border-slate-700">
         <TabButton
-          label="Meal Planner"
+          label="Day Planner"
           active={tab === 'meals'}
           onClick={() => setTab('meals')}
         />

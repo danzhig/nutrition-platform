@@ -35,7 +35,7 @@ nutrition-platform/
 │   ├── page.tsx                ← Home: fetches heatmap data, renders <MainView>
 │   └── globals.css
 ├── components/
-│   ├── MainView.tsx            ← Top-level tab switcher: Meal Planner | Data View
+│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View
 │   ├── DataView.tsx            ← Data View orchestrator: second-level tabs (Nutrient Heatmap | Charts)
 │   │
 │   ├── — Heatmap ──────────────────────────────────────────────────────────────

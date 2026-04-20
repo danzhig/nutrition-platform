@@ -34,7 +34,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |
 | **Supabase Auth + saved RDA profiles** | ✅ Live — email/password sign up/in; saved custom RDA profiles in `user_rda_profiles` |
 | **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
-| **Meal Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit |
+| **Day Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit (top-level tab renamed from "Meal Planner" to "Day Planner") |
 | **Saved meal templates** | ✅ Live — save individual meals as reusable templates; load into any plan |
 | **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
 | **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
