@@ -14,6 +14,7 @@ import { RDA_PROFILES, getProfile } from '@/lib/rdaProfiles'
 import { getPortionSize } from '@/lib/portionSizes'
 import type { SavedProfile } from '@/lib/profileStorage'
 import { loadSavedProfiles } from '@/lib/profileStorage'
+import { computeComplementScore } from '@/lib/complementScore'
 import { useAuth } from './AuthProvider'
 import MealCard from './MealCard'
 import MealNutritionSidebar from './MealNutritionSidebar'
@@ -28,6 +29,18 @@ const DEFAULT_MEAL_NAMES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Pre-workou
 
 function newPlan(): ActiveMealPlan {
   return { id: null, name: 'My Meal Plan', meals: [], rda_selection: 'male-avg' }
+}
+
+function ScoreBadge({ score }: { score: number }) {
+  const color =
+    score >= 65 ? 'text-emerald-400 border-emerald-700/60 bg-emerald-900/30' :
+    score >= 35 ? 'text-amber-400 border-amber-700/60 bg-amber-900/20' :
+                  'text-slate-500 border-slate-600 bg-slate-800'
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold tabular-nums flex-shrink-0 ${color}`}>
+      {score}
+    </span>
+  )
 }
 
 export default function MealPlanner({ data }: Props) {
@@ -198,6 +211,25 @@ export default function MealPlanner({ data }: Props) {
       : presetMeals.filter((p) => p.category === presetCategory),
     [presetMeals, presetCategory]
   )
+
+  // Complement scores — recompute whenever the current plan or profile changes
+  const presetScores = useMemo<Map<string, number>>(() => {
+    const map = new Map<string, number>()
+    if (!rdaProfile) return map
+    for (const pm of presetMeals) {
+      map.set(pm.id, computeComplementScore(pm.items, plan.meals, data.nutrients, rdaProfile, foodsById))
+    }
+    return map
+  }, [plan.meals, rdaProfile, presetMeals, data.nutrients, foodsById])
+
+  const savedMealScores = useMemo<Map<string, number>>(() => {
+    const map = new Map<string, number>()
+    if (!rdaProfile) return map
+    for (const sm of savedMeals) {
+      map.set(sm.id, computeComplementScore(sm.items, plan.meals, data.nutrients, rdaProfile, foodsById))
+    }
+    return map
+  }, [plan.meals, rdaProfile, savedMeals, data.nutrients, foodsById])
 
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(plan) !== savedSnapshot,
@@ -649,7 +681,12 @@ export default function MealPlanner({ data }: Props) {
                     onClick={() => handleLoadSavedMeal(sm)}
                     className="text-xs text-slate-200 hover:text-violet-300 text-left flex-1 min-w-0"
                   >
-                    <span className="truncate block">{sm.name}</span>
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="truncate">{sm.name}</span>
+                      {savedMealScores.has(sm.id) && (
+                        <ScoreBadge score={savedMealScores.get(sm.id)!} />
+                      )}
+                    </span>
                     <span className="text-slate-500 text-[10px]">
                       {sm.items.length} food{sm.items.length !== 1 ? 's' : ''}
                     </span>
@@ -708,6 +745,9 @@ export default function MealPlanner({ data }: Props) {
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 whitespace-nowrap flex-shrink-0">
                         {pm.category}
                       </span>
+                      {presetScores.has(pm.id) && (
+                        <ScoreBadge score={presetScores.get(pm.id)!} />
+                      )}
                     </div>
                     {pm.description && (
                       <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
