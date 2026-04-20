@@ -299,7 +299,7 @@ export default function NutrientScatterPlot({ data }: Props) {
               dataKey="z"
               range={zId ? [30, 500] : [55, 55]}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', stroke: '#475569' }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', stroke: '#475569' }} isAnimationActive={false} />
             {FOOD_CATEGORY_LIST.map((cat) => {
               const catDots = dotsByCategory[cat]
               if (!catDots?.length) return null
