@@ -240,7 +240,7 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               ))}
             </Pie>
 
-            <Tooltip content={<DonutTooltip totalKcal={data.totalKcal} />} />
+            <Tooltip content={<DonutTooltip totalKcal={data.totalKcal} />} isAnimationActive={false} />
           </PieChart>
         </ResponsiveContainer>
       </div>
