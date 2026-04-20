@@ -62,8 +62,9 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
     () => nutrients.find((n) => n.nutrient_name === 'Glycemic Index')?.nutrient_id ?? null,
     [nutrients]
   )
+  // GI weighting uses Net Carbohydrates (not total carbs) — fibre doesn't raise blood glucose
   const carbsNutrientId = useMemo(
-    () => nutrients.find((n) => n.nutrient_name === 'Carbohydrates')?.nutrient_id ?? null,
+    () => nutrients.find((n) => n.nutrient_name === 'Net Carbohydrates')?.nutrient_id ?? null,
     [nutrients]
   )
 

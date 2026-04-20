@@ -11,36 +11,50 @@ interface Props {
   foodsById: Map<number, FoodRow>
 }
 
-// Caloric conversion per gram
-const KCAL_PER_G = { Carbohydrates: 4, Protein: 4, 'Total Fat': 9 } as const
+// Caloric conversion per gram (4 kcal/g for all carb fractions matches USDA labeling
+// convention, keeping the macro sum consistent with the stored Calories column).
+const KCAL_PER_G = {
+  'Net Carbohydrates': 4,
+  'Dietary Fibre':     4,
+  'Protein':           4,
+  'Total Fat':         9,
+} as const
 type MacroName = keyof typeof KCAL_PER_G
 
-// Base color and 6 shades (top 5 foods + Other) per macro
-const MACRO_SHADES: Record<MacroName, string[]> = {
-  'Carbohydrates': ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f', '#3b1a00'],
-  'Protein':       ['#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#270f5c'],
-  'Total Fat':     ['#10b981', '#059669', '#047857', '#065f46', '#064e3b', '#01201a'],
-}
 const MACRO_BASE: Record<MacroName, string> = {
-  'Carbohydrates': '#f59e0b',
-  'Protein':       '#8b5cf6',
-  'Total Fat':     '#10b981',
+  'Net Carbohydrates': '#f59e0b',  // amber
+  'Dietary Fibre':     '#84cc16',  // lime
+  'Protein':           '#8b5cf6',  // violet
+  'Total Fat':         '#10b981',  // emerald
 }
-const MACROS: MacroName[] = ['Carbohydrates', 'Protein', 'Total Fat']
+
+// 6 shades per macro (top 5 foods + Other)
+const MACRO_SHADES: Record<MacroName, string[]> = {
+  'Net Carbohydrates': ['#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f', '#3b1a00'],
+  'Dietary Fibre':     ['#84cc16', '#65a30d', '#4d7c0f', '#3f6212', '#365314', '#1a2e05'],
+  'Protein':           ['#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#270f5c'],
+  'Total Fat':         ['#10b981', '#059669', '#047857', '#065f46', '#064e3b', '#01201a'],
+}
+
+const MACROS: MacroName[] = ['Net Carbohydrates', 'Dietary Fibre', 'Protein', 'Total Fat']
+
+const DISPLAY_LABEL: Record<MacroName, string> = {
+  'Net Carbohydrates': 'Net Carbs',
+  'Dietary Fibre':     'Fibre',
+  'Protein':           'Protein',
+  'Total Fat':         'Fat',
+}
 
 type InnerSlice = { name: MacroName; value: number; color: string }
 type OuterSlice = { name: string; macroName: MacroName; value: number; color: string }
 
 const RADIAN = Math.PI / 180
 
-// Rendered as SVG <text> — positions the macro name just outside the outer ring.
-// outerRadius received here is the inner ring's outerRadius (48% of half-dimension).
-// The outer ring goes to 70%, so we scale by (70/48) and add a small gap.
-function MacroLabel({ cx, cy, midAngle, outerRadius, name }: any) {
+function MacroLabel({ cx, cy, midAngle, outerRadius, name, value, totalKcal }: any) {
+  if (!value || value / totalKcal < 0.04) return null  // hide label on tiny slices
   const r = outerRadius * (70 / 48) + 16
   const x = cx + r * Math.cos(-midAngle * RADIAN)
   const y = cy + r * Math.sin(-midAngle * RADIAN)
-  const display = name === 'Carbohydrates' ? 'Carbs' : name === 'Total Fat' ? 'Fat' : 'Protein'
   const color = MACRO_BASE[name as MacroName] ?? '#94a3b8'
   return (
     <text
@@ -51,7 +65,7 @@ function MacroLabel({ cx, cy, midAngle, outerRadius, name }: any) {
       fontSize={11}
       fontWeight={700}
     >
-      {display}
+      {DISPLAY_LABEL[name as MacroName] ?? name}
     </text>
   )
 }
@@ -63,12 +77,19 @@ function DonutTooltip({ active, payload, totalKcal }: any) {
   const isMacroSlice = !('macroName' in d)
   return (
     <div className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl max-w-[200px]">
-      <p className="text-slate-100 font-semibold leading-tight">{d.name}</p>
+      <p className="text-slate-100 font-semibold leading-tight">
+        {isMacroSlice ? DISPLAY_LABEL[d.name as MacroName] ?? d.name : d.name}
+      </p>
       {'macroName' in d && (
-        <p className="text-slate-500 text-[10px] mt-0.5">{d.macroName}</p>
+        <p className="text-slate-500 text-[10px] mt-0.5">
+          {DISPLAY_LABEL[(d as OuterSlice).macroName]}
+        </p>
       )}
       <p className="mt-1.5">
-        <span className="font-semibold text-sm" style={{ color: isMacroSlice ? (d as InnerSlice).color : MACRO_BASE[(d as OuterSlice).macroName] }}>
+        <span
+          className="font-semibold text-sm"
+          style={{ color: isMacroSlice ? (d as InnerSlice).color : MACRO_BASE[(d as OuterSlice).macroName] }}
+        >
           {pct < 1 ? '<1' : Math.round(pct)}%
         </span>
         <span className="text-slate-400 ml-1">of calories</span>
@@ -80,13 +101,22 @@ function DonutTooltip({ active, payload, totalKcal }: any) {
 
 export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) {
   const data = useMemo(() => {
+    const netCarbsId = nutrients.find((n) => n.nutrient_name === 'Net Carbohydrates')?.nutrient_id
+    const fibreId    = nutrients.find((n) => n.nutrient_name === 'Dietary Fibre')?.nutrient_id
     const proteinId  = nutrients.find((n) => n.nutrient_name === 'Protein')?.nutrient_id
-    const carbsId    = nutrients.find((n) => n.nutrient_name === 'Carbohydrates')?.nutrient_id
     const fatId      = nutrients.find((n) => n.nutrient_name === 'Total Fat')?.nutrient_id
-    if (!proteinId || !carbsId || !fatId) return null
 
-    // Per-food gram totals across all active meals
-    const contribs = new Map<number, { name: string; protein_g: number; carbs_g: number; fat_g: number }>()
+    if (!netCarbsId || !fibreId || !proteinId || !fatId) return null
+
+    // Accumulate per-food gram totals across all meals
+    const contribs = new Map<number, {
+      name: string
+      netCarbs_g: number
+      fibre_g:    number
+      protein_g:  number
+      fat_g:      number
+    }>()
+
     for (const meal of meals) {
       for (const item of meal.items) {
         const food = foodsById.get(item.food_id)
@@ -94,38 +124,42 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
         const mult = item.grams / 100
         const prev = contribs.get(item.food_id) ?? {
           name: item.food_name || food.food_name,
-          protein_g: 0, carbs_g: 0, fat_g: 0,
+          netCarbs_g: 0, fibre_g: 0, protein_g: 0, fat_g: 0,
         }
-        prev.protein_g += ((food.nutrients[proteinId] as number) ?? 0) * mult
-        prev.carbs_g   += ((food.nutrients[carbsId]   as number) ?? 0) * mult
-        prev.fat_g     += ((food.nutrients[fatId]     as number) ?? 0) * mult
+        prev.netCarbs_g += ((food.nutrients[netCarbsId] as number) ?? 0) * mult
+        prev.fibre_g    += ((food.nutrients[fibreId]    as number) ?? 0) * mult
+        prev.protein_g  += ((food.nutrients[proteinId]  as number) ?? 0) * mult
+        prev.fat_g      += ((food.nutrients[fatId]      as number) ?? 0) * mult
         contribs.set(item.food_id, prev)
       }
     }
 
     // Convert grams → kcal per food
-    type FoodKcal = { name: string; Carbohydrates: number; Protein: number; 'Total Fat': number }
+    type FoodKcal = Record<MacroName, number> & { name: string }
     const foodList: FoodKcal[] = Array.from(contribs.values()).map((f) => ({
       name: f.name,
-      Carbohydrates: f.carbs_g   * KCAL_PER_G.Carbohydrates,
-      Protein:       f.protein_g * KCAL_PER_G.Protein,
-      'Total Fat':   f.fat_g     * KCAL_PER_G['Total Fat'],
+      'Net Carbohydrates': f.netCarbs_g * KCAL_PER_G['Net Carbohydrates'],
+      'Dietary Fibre':     f.fibre_g    * KCAL_PER_G['Dietary Fibre'],
+      'Protein':           f.protein_g  * KCAL_PER_G['Protein'],
+      'Total Fat':         f.fat_g      * KCAL_PER_G['Total Fat'],
     }))
 
-    const totalCarbs   = foodList.reduce((s, f) => s + f.Carbohydrates, 0)
-    const totalProtein = foodList.reduce((s, f) => s + f.Protein,       0)
-    const totalFat     = foodList.reduce((s, f) => s + f['Total Fat'],   0)
-    const totalKcal    = totalCarbs + totalProtein + totalFat
+    const totals = MACROS.reduce((acc, m) => {
+      acc[m] = foodList.reduce((s, f) => s + f[m], 0)
+      return acc
+    }, {} as Record<MacroName, number>)
+
+    const totalKcal = MACROS.reduce((s, m) => s + totals[m], 0)
     if (totalKcal === 0) return null
 
-    // Inner ring — 3 macro slices
+    // Inner ring — 4 macro slices
     const innerData: InnerSlice[] = MACROS.map((m) => ({
-      name: m,
-      value: m === 'Carbohydrates' ? totalCarbs : m === 'Protein' ? totalProtein : totalFat,
+      name:  m,
+      value: totals[m],
       color: MACRO_BASE[m],
     }))
 
-    // Outer ring — top 5 foods + Other per macro, ordered to match inner slices
+    // Outer ring — top 5 foods + Other per macro, ordered to match inner
     const outerData: OuterSlice[] = []
     for (const macro of MACROS) {
       const sorted = [...foodList].sort((a, b) => b[macro] - a[macro])
@@ -141,12 +175,8 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
 
     return {
       innerData, outerData, totalKcal,
-      carbsPct:   (totalCarbs   / totalKcal) * 100,
-      proteinPct: (totalProtein / totalKcal) * 100,
-      fatPct:     (totalFat     / totalKcal) * 100,
-      carbsKcal:   Math.round(totalCarbs),
-      proteinKcal: Math.round(totalProtein),
-      fatKcal:     Math.round(totalFat),
+      pct:  Object.fromEntries(MACROS.map((m) => [m, (totals[m] / totalKcal) * 100])) as Record<MacroName, number>,
+      kcal: Object.fromEntries(MACROS.map((m) => [m, Math.round(totals[m])])) as Record<MacroName, number>,
     }
   }, [nutrients, meals, foodsById])
 
@@ -166,32 +196,26 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
     <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col h-full">
       <p className="text-xs font-semibold text-slate-300 mb-1">Macro Split</p>
       <p className="text-[10px] text-slate-500 mb-2">
-        Inner: carb / protein / fat share · Outer: top 5 foods per macro
+        Inner: macro calorie share · Outer: top 5 foods per macro
       </p>
 
-      {/* Legend row */}
-      <div className="flex items-center gap-4 mb-3">
-        {(
-          [
-            { label: 'Carbs',   color: MACRO_BASE.Carbohydrates, pct: data.carbsPct,   kcal: data.carbsKcal   },
-            { label: 'Protein', color: MACRO_BASE.Protein,       pct: data.proteinPct, kcal: data.proteinKcal },
-            { label: 'Fat',     color: MACRO_BASE['Total Fat'],  pct: data.fatPct,     kcal: data.fatKcal     },
-          ] as const
-        ).map(({ label, color, pct, kcal }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: color }} />
+      {/* Legend — 2×2 grid to fit 4 macros */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
+        {MACROS.map((m) => (
+          <div key={m} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: MACRO_BASE[m] }} />
             <span className="text-[10px] text-slate-400">
-              {label}{' '}
-              <span className="font-semibold" style={{ color }}>
-                {Math.round(pct)}%
+              {DISPLAY_LABEL[m]}{' '}
+              <span className="font-semibold" style={{ color: MACRO_BASE[m] }}>
+                {Math.round(data.pct[m])}%
               </span>
-              <span className="text-slate-600 ml-1">{kcal} kcal</span>
+              <span className="text-slate-600 ml-1">{data.kcal[m]} kcal</span>
             </span>
           </div>
         ))}
       </div>
 
-      {/* Chart — relative wrapper for center label overlay */}
+      {/* Chart */}
       <div className="flex-1 relative min-h-0">
         {/* Center label */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -205,7 +229,6 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
 
         <ResponsiveContainer width="100%" height="100%">
           <PieChart margin={{ top: 28, right: 40, bottom: 28, left: 40 }}>
-            {/* Inner ring — macro split + outer labels */}
             <Pie
               data={data.innerData}
               dataKey="value"
@@ -215,7 +238,7 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               endAngle={-270}
               strokeWidth={0}
               isAnimationActive={false}
-              label={MacroLabel}
+              label={(props) => <MacroLabel {...props} totalKcal={data.totalKcal} />}
               labelLine={false}
             >
               {data.innerData.map((entry, i) => (
@@ -223,7 +246,6 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               ))}
             </Pie>
 
-            {/* Outer ring — top foods per macro */}
             <Pie
               data={data.outerData}
               dataKey="value"
@@ -244,6 +266,11 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
           </PieChart>
         </ResponsiveContainer>
       </div>
+
+      <p className="text-[9px] text-slate-600 mt-1 leading-relaxed">
+        Net Carbs &amp; Fibre both at 4 kcal/g (USDA label convention).
+        Fibre shown separately for low-carb planning.
+      </p>
     </div>
   )
 }
