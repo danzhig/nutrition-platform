@@ -116,7 +116,6 @@ export default function FilterPanel({
 
   function toggleFood(cat: string) {
     if (selectedFoods.includes(cat)) {
-      if (selectedFoods.length === 1) return
       onFoodsChange(selectedFoods.filter((c) => c !== cat))
     } else {
       onFoodsChange([...selectedFoods, cat])
@@ -125,7 +124,6 @@ export default function FilterPanel({
 
   function toggleNutrient(cat: NutrientCategory) {
     if (selectedNutrients.includes(cat)) {
-      if (selectedNutrients.length === 1) return
       onNutrientsChange(selectedNutrients.filter((c) => c !== cat))
     } else {
       onNutrientsChange([...selectedNutrients, cat])
@@ -737,8 +735,8 @@ export default function FilterPanel({
                 Select all
               </button>
               <button
-                onClick={() => onFoodsChange([FOOD_CATEGORY_LIST[0]])}
-                disabled={selectedFoods.length === 1}
+                onClick={() => onFoodsChange([])}
+                disabled={selectedFoods.length === 0}
                 className="flex-1 py-1 text-[10px] font-medium rounded bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 Deselect all
@@ -783,8 +781,8 @@ export default function FilterPanel({
                 Select all
               </button>
               <button
-                onClick={() => onNutrientsChange([ALL_NUTRIENT_CATEGORIES[0]])}
-                disabled={selectedNutrients.length === 1}
+                onClick={() => onNutrientsChange([])}
+                disabled={selectedNutrients.length === 0}
                 className="flex-1 py-1 text-[10px] font-medium rounded bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 Deselect all
