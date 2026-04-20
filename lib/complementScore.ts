@@ -50,6 +50,7 @@ export function computeComplementScore(
   let maxBenefit       = 0  // sum of all remaining gaps / 100 — the true ceiling
   let totalHardPenalty = 0
   let totalSoftPenalty = 0
+  let extremePenaltyPts = 0  // flat −5 pts per UL nutrient crossing 200% DV
   let nHard = 0  // normal-with-ul nutrients with an RDA (penalty denominator)
   let nSoft = 0  // limit nutrients with an RDA (penalty denominator)
 
@@ -74,11 +75,13 @@ export function computeComplementScore(
 
     // HARD PENALTY — for UL nutrients pushed past 125% DV
     // 0–125% is considered safe; penalty grows smoothly from 125% to 225%
+    // Extra flat −5 pts per nutrient crossing 200% DV (applied to final score)
     if (behavior === 'normal-with-ul') {
       nHard++
       if (newPct > 125) {
         totalHardPenalty += Math.min((newPct - 125) / 100, 1)
       }
+      if (newPct > 200) extremePenaltyPts += 5
     }
 
     // SOFT PENALTY — for limit nutrients (sodium, sat fat, sugars, etc.)
@@ -98,5 +101,5 @@ export function computeComplementScore(
     - HARD_PENALTY_WEIGHT * hardScore
     - SOFT_PENALTY_WEIGHT * softScore
 
-  return Math.max(0, Math.min(100, Math.round(raw * 100)))
+  return Math.max(0, Math.min(100, Math.round(raw * 100) - extremePenaltyPts))
 }
