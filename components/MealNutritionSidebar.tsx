@@ -311,6 +311,8 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
         nutrient={infoNutrient}
         anchorRect={infoAnchor}
         onClose={() => { setInfoNutrient(null); setInfoAnchor(null) }}
+        meals={activeMeals}
+        foodsById={foodsById}
       />
     )}
     </>
