@@ -32,6 +32,11 @@ export interface RDAProfile {
 export type NutrientBehavior = 'normal' | 'limit' | 'normal-with-ul'
 
 export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
+  // Net Carbs — treated as 'normal' so the RDA target is what you're aiming for.
+  // On a low-carb profile the RDA is 50g, making high-net-carb foods visually red,
+  // which is exactly the signal a keto user needs.
+  'Net Carbohydrates': 'normal',
+
   // Lower is better — the target is an upper limit
   'Saturated Fat':  'limit',
   'Trans Fat':      'limit',
@@ -92,7 +97,8 @@ const MALE_AVG: RDAValues = {
   'Water':             null,   // food water contribution is too variable to target
   'Protein':           56,
   'Total Fat':         83,     // ~30% of 2500 kcal
-  'Carbohydrates':     325,    // ~52% of 2500 kcal
+  'Carbohydrates':     325,    // ~52% of 2500 kcal (kept for reference; not displayed)
+  'Net Carbohydrates': 287,   // 325 total − 38 fibre
   'Dietary Fibre':     38,
   'Total Sugars':      50,     // WHO: <10% of calories → limit
 
@@ -155,7 +161,8 @@ const FEMALE_AVG: RDAValues = {
   'Water':             null,
   'Protein':           46,
   'Total Fat':         65,
-  'Carbohydrates':     260,
+  'Carbohydrates':     260,   // kept for reference; not displayed
+  'Net Carbohydrates': 235,   // 260 total − 25 fibre
   'Dietary Fibre':     25,
   'Total Sugars':      50,
   'Saturated Fat':     22,
@@ -205,12 +212,13 @@ const FEMALE_AVG: RDAValues = {
 }
 
 const MALE_LOWCARB: RDAValues = {
-  // Higher protein and fat, very low carb (keto-adjacent, ~50g net carbs)
+  // Higher protein and fat, very low carb (keto-adjacent, ~50g net carbs/day)
   'Calories':          2200,
   'Water':             null,
   'Protein':           130,   // ~1.6 g/kg for active male
   'Total Fat':         160,   // ~65% of calories
-  'Carbohydrates':     50,
+  'Carbohydrates':     75,    // ~50 net + 25 fibre; kept for reference, not displayed
+  'Net Carbohydrates': 50,    // strict keto ceiling for ketosis
   'Dietary Fibre':     25,
   'Total Sugars':      25,
   'Saturated Fat':     35,    // higher on low-carb; remains a limit
@@ -263,7 +271,8 @@ const FEMALE_LOWCARB: RDAValues = {
   'Water':             null,
   'Protein':           100,
   'Total Fat':         125,
-  'Carbohydrates':     50,
+  'Carbohydrates':     70,    // ~50 net + 20 fibre; kept for reference, not displayed
+  'Net Carbohydrates': 50,    // strict keto ceiling for ketosis
   'Dietary Fibre':     20,
   'Total Sugars':      20,
   'Saturated Fat':     27,

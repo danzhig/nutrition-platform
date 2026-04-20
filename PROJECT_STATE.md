@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-20 (session 5)
+**Last updated:** 2026-04-20 (session 5 — Net Carbohydrates)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -30,6 +30,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
 | **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → horizontal ranked bar chart of all 218 foods; top-N filter (10/20/50/All); category filter; per-100g vs per-serving toggle; bars colored by food category with legend |
+| **Net Carbohydrates** | ✅ App ready — `Carbohydrates` hidden from display; `Net Carbohydrates` nutrient added to all 4 RDA profiles; SQL in `sql/seed_net_carbs.sql` must be run in Supabase to activate |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 | **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
 | **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |
@@ -63,9 +64,10 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
 4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
 5. **`sql/seed_breads_and_tortillas.sql`** — Breads & tortillas in Grains & Cereals; currently Corn + Flour Tortilla (100 nutrient rows; add new bread types here)
-6. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals (Juices, Salads, Pastas, Bowls, High Protein, Breakfast)
-7. **`sql/seed_preset_meals_lowcarb_keto.sql`** — Adds 12 more preset meals: 6 Low Carb + 6 Keto (run after step 6)
-8. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+6. **`sql/seed_net_carbs.sql`** — Inserts `Net Carbohydrates` nutrient + computes values for all 218 foods (Formula: MAX(0, Carbohydrates − Dietary Fibre); safe to re-run via ON CONFLICT DO NOTHING/UPDATE)
+8. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals (Juices, Salads, Pastas, Bowls, High Protein, Breakfast)
+9. **`sql/seed_preset_meals_lowcarb_keto.sql`** — Adds 12 more preset meals: 6 Low Carb + 6 Keto (run after step 8)
+10. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
 -- Saved custom RDA profiles

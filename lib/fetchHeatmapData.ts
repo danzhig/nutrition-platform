@@ -48,6 +48,11 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
   const nutrientMap = new Map<number, NutrientMeta>()
   const columnValues = new Map<number, number[]>() // all non-null values per nutrient column
 
+  // 'Carbohydrates' (total) is kept in the DB for cross-checking against
+  // Dietary Fibre and Net Carbohydrates, but hidden from display to avoid
+  // misleading users (high-fibre foods like flaxseed look high-carb otherwise).
+  const HIDDEN_NUTRIENTS = new Set(['Carbohydrates'])
+
   for (const row of data as any[]) {
     const food = row.foods
     const nutrient = row.nutrients
@@ -55,6 +60,8 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
 
     const foodId: number = row.food_id
     const nutrientId: number = nutrient.id
+
+    if (HIDDEN_NUTRIENTS.has(nutrient.name)) continue
 
     // Build nutrient metadata map
     if (!nutrientMap.has(nutrientId)) {
