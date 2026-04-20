@@ -1,19 +1,39 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
-import type { FoodRow } from '@/types/nutrition'
+import type { FoodRow, NutrientMeta } from '@/types/nutrition'
+import type { Meal } from '@/types/meals'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import { FOOD_CATEGORY_LIST } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
+import { computeComplementScore } from '@/lib/complementScore'
 
 interface Props {
   foods: FoodRow[]
   onAdd: (food: FoodRow) => void
   onClose: () => void
+  currentMeals: Meal[]
+  nutrients: NutrientMeta[]
+  rdaProfile: RDAProfile | null
+  foodsById: Map<number, FoodRow>
 }
 
 const ALL_CATEGORIES = ['All', ...FOOD_CATEGORY_LIST] as const
 
-export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
+function ScoreBadge({ score }: { score: number }) {
+  const color = score >= 65
+    ? 'text-emerald-400 border-emerald-700/60 bg-emerald-900/30'
+    : score >= 35
+    ? 'text-amber-400 border-amber-700/60 bg-amber-900/20'
+    : 'text-slate-500 border-slate-600 bg-slate-800'
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-semibold tabular-nums flex-shrink-0 ${color}`}>
+      {score}
+    </span>
+  )
+}
+
+export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, nutrients, rdaProfile, foodsById }: Props) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All')
   const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
@@ -30,6 +50,23 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
     }, 1200)
   }, [onAdd])
 
+  const foodScores = useMemo<Map<number, number>>(() => {
+    const map = new Map<number, number>()
+    if (!rdaProfile) return map
+    for (const food of foods) {
+      const portion = getPortionSize(food.food_id)
+      const score = computeComplementScore(
+        [{ food_id: food.food_id, grams: portion.grams }],
+        currentMeals,
+        nutrients,
+        rdaProfile,
+        foodsById,
+      )
+      map.set(food.food_id, score)
+    }
+    return map
+  }, [foods, currentMeals, nutrients, rdaProfile, foodsById])
+
   const filtered = useMemo(() => {
     let list = foods
     if (category !== 'All') list = list.filter((f) => f.category === category)
@@ -37,8 +74,11 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
       const q = search.trim().toLowerCase()
       list = list.filter((f) => f.food_name.toLowerCase().includes(q))
     }
+    if (rdaProfile) {
+      list = [...list].sort((a, b) => (foodScores.get(b.food_id) ?? 0) - (foodScores.get(a.food_id) ?? 0))
+    }
     return list
-  }, [foods, category, search])
+  }, [foods, category, search, rdaProfile, foodScores])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -121,10 +161,13 @@ export default function FoodPickerModal({ foods, onAdd, onClose }: Props) {
                       <span className="text-sm text-slate-100">{food.food_name}</span>
                       <span className="text-[11px] text-slate-500 ml-2">{food.category}</span>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-[11px] text-slate-400">
                         {portion.label} · {portion.grams}g
                       </span>
+                      {rdaProfile && foodScores.has(food.food_id) && (
+                        <ScoreBadge score={foodScores.get(food.food_id)!} />
+                      )}
                       <span className={`text-[11px] font-medium transition-opacity ${
                         added
                           ? 'text-green-400 opacity-100'

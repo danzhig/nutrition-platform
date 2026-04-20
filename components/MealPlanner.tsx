@@ -784,6 +784,10 @@ export default function MealPlanner({ data }: Props) {
                 onSaveAsTemplate={handleSaveAsTemplate}
                 isCollapsed={collapsedMeals.has(meal.id)}
                 onToggleCollapse={() => toggleMealCollapsed(meal.id)}
+                currentMeals={plan.meals}
+                nutrients={data.nutrients}
+                rdaProfile={rdaProfile}
+                foodsById={foodsById}
               />
             ))}
           </div>

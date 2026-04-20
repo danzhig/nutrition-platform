@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import type { Meal, MealItem } from '@/types/meals'
-import type { FoodRow } from '@/types/nutrition'
+import type { FoodRow, NutrientMeta } from '@/types/nutrition'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import { getPortionSize } from '@/lib/portionSizes'
 import FoodPickerModal from './FoodPickerModal'
 
@@ -14,9 +15,13 @@ interface Props {
   onSaveAsTemplate?: (meal: Meal) => Promise<void>
   isCollapsed: boolean
   onToggleCollapse: () => void
+  currentMeals: Meal[]
+  nutrients: NutrientMeta[]
+  rdaProfile: RDAProfile | null
+  foodsById: Map<number, FoodRow>
 }
 
-export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemplate, isCollapsed, onToggleCollapse }: Props) {
+export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemplate, isCollapsed, onToggleCollapse, currentMeals, nutrients, rdaProfile, foodsById }: Props) {
   const [showPicker, setShowPicker] = useState(false)
   const [nameEditing, setNameEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -243,6 +248,10 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
           foods={foods}
           onAdd={handleAddFood}
           onClose={() => setShowPicker(false)}
+          currentMeals={currentMeals}
+          nutrients={nutrients}
+          rdaProfile={rdaProfile}
+          foodsById={foodsById}
         />
       )}
     </>
