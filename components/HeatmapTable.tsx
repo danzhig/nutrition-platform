@@ -231,32 +231,55 @@ export default function HeatmapTable({ data }: Props) {
       />
 
       {/* Thin status bar */}
-      <p className="text-xs text-slate-500 mb-2">
-        {visibleFoods.length} food{visibleFoods.length !== 1 ? 's' : ''} ·{' '}
-        {visibleNutrients.length} nutrient{visibleNutrients.length !== 1 ? 's' : ''}
-        {perServing && <span className="ml-2 text-emerald-500">· per serving</span>}
-        {activeRdaProfile && (
-          <span className="ml-2 text-violet-400">
-            · % DV — {activeRdaProfile.label}
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs text-slate-500">
+          {visibleFoods.length} food{visibleFoods.length !== 1 ? 's' : ''} ·{' '}
+          {visibleNutrients.length} nutrient{visibleNutrients.length !== 1 ? 's' : ''}
+          {perServing && <span className="ml-2 text-emerald-500">· per serving</span>}
+          {activeRdaProfile && (
+            <span className="ml-2 text-violet-400">
+              · % DV — {activeRdaProfile.label}
+            </span>
+          )}
+          {sortNutrientId !== null && (
+            <span className="ml-2">
+              · sorted by{' '}
+              <span className="font-medium text-slate-300">
+                {data.nutrients.find((n) => n.nutrient_id === sortNutrientId)?.nutrient_name}
+              </span>{' '}
+              ({sortAsc ? 'low → high' : 'high → low'})
+              <button
+                onClick={() => { setSortNutrientId(null); setSortAsc(false) }}
+                className="ml-1 text-slate-500 hover:text-slate-300"
+                title="Clear sort"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+        </p>
+        {/* Colour scale legend */}
+        <span className="flex items-center gap-3 text-xs text-slate-500">
+          <span className="text-slate-600 font-medium">Colour scale:</span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(142,76%,28%)' }} />
+            High
           </span>
-        )}
-        {sortNutrientId !== null && (
-          <span className="ml-2">
-            · sorted by{' '}
-            <span className="font-medium text-slate-300">
-              {data.nutrients.find((n) => n.nutrient_id === sortNutrientId)?.nutrient_name}
-            </span>{' '}
-            ({sortAsc ? 'low → high' : 'high → low'})
-            <button
-              onClick={() => { setSortNutrientId(null); setSortAsc(false) }}
-              className="ml-1 text-slate-500 hover:text-slate-300"
-              title="Clear sort"
-            >
-              ✕
-            </button>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm bg-slate-600" />
+            Mid
           </span>
-        )}
-      </p>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(0,72%,42%)' }} />
+            Low
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-sm bg-slate-600 opacity-40" />
+            No data
+          </span>
+          <span className="text-slate-600">· normalised per column</span>
+        </span>
+      </div>
 
       {/* Table + nutrient profile sidebar */}
       <div className="flex gap-2 items-start">

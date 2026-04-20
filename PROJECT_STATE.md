@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-19 (session 3)
+**Last updated:** 2026-04-19 (session 4)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -39,10 +39,13 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
 | **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
 | **Preset meal templates** | ✅ Live — 29 curated system meals across 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) in `preset_meals` table; browsable in-app with category filter pills |
-| **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; presets and saved templates load collapsed by default; header shows food count + total grams when collapsed |
-| **Preset item enrichment fix** | ✅ Live — preset items now resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
-| **Macro split donut** | ✅ Live — dual-ring Recharts PieChart: inner = caloric % (carbs amber / protein violet / fat emerald); outer = top 5 foods per macro + Other in shades; sits right of radar in chart view |
+| **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; loaded presets/templates appear at top, expanded; other meals collapse; header shows food count + total grams when collapsed |
+| **Preset item enrichment fix** | ✅ Live — preset items resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
+| **Macro split donut** | ✅ Live — dual-ring Recharts PieChart: inner = caloric % (carbs amber / protein violet / fat emerald); outer = top 5 foods per macro + Other in shades; macro labels outside outer ring; sits right of radar in chart view |
 | **Low Carb & Keto preset meals** | ✅ SQL ready (`sql/seed_preset_meals_lowcarb_keto.sql`) — 6 Low Carb + 6 Keto meals; run in Supabase SQL editor to activate |
+| **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
+| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
+| **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)

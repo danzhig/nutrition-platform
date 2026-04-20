@@ -1,6 +1,6 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-19  
+**Last updated:** 2026-04-19 (session 4)
 **Phase:** Phase 3 — Polish & Ranking View (in progress)
 
 ---
@@ -50,17 +50,18 @@ nutrition-platform/
 │   ├── AuthButton.tsx          ← Header button: Sign in → opens modal; logged-in → avatar + dropdown
 │   │
 │   └── — Meal Planner ─────────────────────────────────────────────────────────
-│       ├── MealPlanner.tsx         ← Orchestrator: plan state, save/load, DV profile selector, saved meal templates
-│       ├── MealCard.tsx            ← One meal: named, food items with servings/grams controls, save-as-template
+│       ├── MealPlanner.tsx         ← Orchestrator: plan state, tab bar (Builder/Charts/Plan▾/DV▾),
+│       │                              save/load plans, preset & saved meal loading, collapse state
+│       ├── MealCard.tsx            ← One meal: named, collapsible, food items with servings/grams, save-as-template
 │       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
+│       ├── DVProfilePanel.tsx      ← DV profile editor; normal mode = sidebar column (unused);
+│       │                              editorOnly mode = embedded below tab bar when Custom is active
 │       ├── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV); click row → NutrientInfoCard
-│       ├── NutrientInfoCard.tsx    ← Floating info card: body role, deficiency symptoms, excess symptoms
-│       ├── MealNutritionChart.tsx  ← Full-width chart dashboard (chart view mode); bar chart + radar side-by-side
-│       └── MealCategoryRadar.tsx  ← Custom SVG pentagonal radar: avg %DV per category, gradient edges, rdaCellColor dots
-│
-├── lib/
-│   ├── ...
-│   ├── presetMealStorage.ts        ← loadPresetMeals() — public read from preset_meals table
+│       ├── NutrientInfoCard.tsx    ← Floating info card: viewport-clamped position (useLayoutEffect);
+│       │                              body role, deficiency/excess symptoms; stacked food-source bar
+│       ├── MealNutritionChart.tsx  ← Full-width chart dashboard (chart view mode); bar chart + radar + donut
+│       ├── MealCategoryRadar.tsx   ← Custom SVG pentagonal radar: avg %DV per category, gradient edges
+│       └── MacroDonutChart.tsx     ← Dual-ring Recharts PieChart: inner = macro caloric %; outer = top-5 foods per macro
 │
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
@@ -73,7 +74,8 @@ nutrition-platform/
 │   ├── profileStorage.ts       ← CRUD for user_rda_profiles Supabase table
 │   ├── filterSetStorage.ts     ← CRUD for user_filter_sets Supabase table
 │   ├── mealStorage.ts          ← CRUD for meal_plans Supabase table
-│   └── savedMealStorage.ts     ← CRUD for saved_meals Supabase table (individual meal templates)
+│   ├── savedMealStorage.ts     ← CRUD for saved_meals Supabase table (individual meal templates)
+│   └── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
 │
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, NutrientCategory
@@ -86,8 +88,9 @@ nutrition-platform/
 │   ├── seed_all.sql            ← All reference data + 212 foods + 8,268 nutrient rows
 │   ├── seed_amino_acids_gi_antioxidant.sql  ← 9 EAAs + GI + antioxidant (2,332 rows)
 │   ├── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
-│   ├── seed_breads_and_tortillas.sql  ← Breads & tortillas (Grains & Cereals); add new bread types here
-│   └── seed_preset_meals.sql          ← preset_meals table + 29 curated meals (6 categories); add more here
+│   ├── seed_breads_and_tortillas.sql       ← Breads & tortillas (Grains & Cereals); add new bread types here
+│   ├── seed_preset_meals.sql               ← preset_meals table + 29 curated meals (6 categories)
+│   └── seed_preset_meals_lowcarb_keto.sql  ← 12 more preset meals: 6 Low Carb + 6 Keto (run after seed_preset_meals)
 │
 ├── reference/                  ← CSV reference files (food_list, nutrients_list, food_categories)
 ├── .env.local                  ← NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -189,8 +192,24 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 4. `MealCard` owns per-meal item state via callbacks to `MealPlanner`
 5. `FoodPickerModal` filters `data.foods` client-side (no extra Supabase query)
 6. `MealNutritionSidebar` computes totals: `Σ (value_per_100g × item.grams / 100)` across all items in all meals
-7. Saved plans stored as JSONB in `meal_plans.meals`; `rda_selection` is `''` | ProfileId | `'saved:uuid'`
+7. Saved plans stored as JSONB in `meal_plans.meals`; `rda_selection` is `''` | ProfileId | `'custom'` | `'saved:uuid'`
 8. Individual meals saved as templates in `saved_meals.items` (JSONB); loading clones items with fresh UUIDs so each use is independent
+9. Preset meals are public-read from `preset_meals` table; items stored as minimal JSONB (`{id, food_id, grams, servings}`) and enriched to full `MealItem` at load time using `foodsById` + `portionSizes.ts`
+
+### Meal Planner — tab bar layout
+
+The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewTabBar`):
+
+```
+[▤ Builder] [▦ Charts]  |  [Plan: name ▾]  [DV Profile: label ▾]
+```
+
+- **Builder / Charts** — underline tabs (same style as main Heatmap/Meal Planner tabs); switch between the build-and-edit layout and the full-width chart dashboard
+- **Plan ▾** — dropdown; contains inline plan name input, Save/Update button, list of saved plans (load/delete), and New Plan
+- **DV Profile ▾** — dropdown; lists saved profiles first, then built-in profiles (Male Avg, Female Avg, etc.), then Custom; selecting Custom shows `DVProfilePanel` (editorOnly mode) as a collapsible panel below the tab bar
+- Both dropdowns close on outside click via `useRef` + `mousedown` listener
+- Active plan ID and view mode (sidebar/chart) are persisted to `localStorage` and restored on page load
+- Tab-switch auth refreshes (Supabase fires `onAuthStateChange` on tab focus) are guarded by `planRestoredRef` so they never overwrite an in-progress edit
 
 ---
 
@@ -220,14 +239,17 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 ### Phase 3 — Polish backlog (next)
 - [ ] Food row click → slide-in detail panel (`FoodDetailPanel.tsx`)
 - [ ] % RDA values in hover tooltips on heatmap cells
-- [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms (supersedes plain description tooltips)
-- [x] Meal planner chart view — full-width dashboard toggled from sidebar view; bar chart of all 50 nutrients (grouped by category, sorted by %DV desc within category); cap Y-axis at 100% toggle; nutrient labels at 270° vertical angle
-- [x] Category fulfilment radar — custom SVG pentagonal web chart (5 categories, Food Metric excluded); each nutrient capped at 100% before averaging; vertex dots + gradient edges coloured by rdaCellColor; sits below bar chart at half-width square
-- [x] Preset meal templates — 29 curated meals in 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) stored in `preset_meals` table; browsable via "⊞ Presets" button with category filter pills; Add/My templates/Presets buttons moved to top of plan builder
-- [x] Collapsible meal cards — ▸/▾ toggle on each MealCard; presets + saved templates load collapsed; header shows food count + grams when collapsed
-- [x] Macro split donut — dual-ring PieChart: inner ring = caloric % from carbs/protein/fat; outer ring = top 5 foods per macro + Other; sits to the right of the radar completing a full-width bottom row
+- [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms; viewport-clamped position; stacked food-source bar showing top-5 contributors from active plan
+- [x] Meal planner chart view — full-width dashboard; bar chart of all 50 nutrients by %DV; cap Y-axis toggle; nutrient labels vertical
+- [x] Category fulfilment radar — custom SVG pentagonal web chart; sits below bar chart at half-width square
+- [x] Preset meal templates — 41 curated meals across 8 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto) in `preset_meals` table; category filter pills
+- [x] Collapsible meal cards — ▸/▾ toggle; loaded preset/template appears at top expanded, existing meals collapse; header shows food count + grams when collapsed
+- [x] Macro split donut — dual-ring PieChart; inner = macro caloric %; outer = top 5 foods per macro + Other; macro labels outside outer ring
+- [x] Tab bar UI — single bar at top of Meal Planner: Builder | Charts | Plan ▾ | DV Profile ▾; all grouped left; plan picker has inline name + save; DV picker lists saved first
+- [x] localStorage persistence — active plan ID and view mode survive page refresh; tab-switch auth refreshes guarded by `planRestoredRef`
+- [x] Header cleanup — removed stale heatmap hints and global colour-scale legend from page header; legend moved inline into heatmap status bar
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
-- [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 212 foods, color by category
+- [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category
 
 ### Phase 4 — Advanced Visualizations (from ideas.md)
 - Bubble/scatter plot (two-nutrient axes, food as bubbles)
