@@ -74,6 +74,8 @@ export default function NutrientScatterPlot({ data }: Props) {
   const [zId, setZId] = useState<number | null>(null)
   const [highlightCat, setHighlightCat] = useState<string>('All')
   const [perServing, setPerServing] = useState(false)
+  const [maxX, setMaxX] = useState<string>('')
+  const [maxY, setMaxY] = useState<string>('')
 
   const xNutrient = useMemo(() => data.nutrients.find((n) => n.nutrient_id === xId), [data.nutrients, xId])
   const yNutrient = useMemo(() => data.nutrients.find((n) => n.nutrient_id === yId), [data.nutrients, yId])
@@ -127,6 +129,9 @@ export default function NutrientScatterPlot({ data }: Props) {
 
   const tickFmt = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))
 
+  function handleXChange(id: number) { setXId(id); setMaxX('') }
+  function handleYChange(id: number) { setYId(id); setMaxY('') }
+
   const NutrientSelect = ({ label, value, onChange }: { label: string; value: number; onChange: (id: number) => void }) => (
     <div className="flex items-center gap-2">
       <label className="text-xs text-slate-400 whitespace-nowrap">{label}</label>
@@ -157,8 +162,8 @@ export default function NutrientScatterPlot({ data }: Props) {
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        <NutrientSelect label="X axis" value={xId} onChange={setXId} />
-        <NutrientSelect label="Y axis" value={yId} onChange={setYId} />
+        <NutrientSelect label="X axis" value={xId} onChange={handleXChange} />
+        <NutrientSelect label="Y axis" value={yId} onChange={handleYChange} />
 
         {/* Bubble size */}
         <div className="flex items-center gap-2">
@@ -207,6 +212,30 @@ export default function NutrientScatterPlot({ data }: Props) {
         >
           {perServing ? 'Per serving' : 'Per 100g'}
         </button>
+
+        {/* Max axis caps */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400 whitespace-nowrap">Max X</label>
+          <input
+            type="number"
+            min={0}
+            placeholder="auto"
+            value={maxX}
+            onChange={(e) => setMaxX(e.target.value)}
+            className="w-20 bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-violet-500"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-slate-400 whitespace-nowrap">Max Y</label>
+          <input
+            type="number"
+            min={0}
+            placeholder="auto"
+            value={maxY}
+            onChange={(e) => setMaxY(e.target.value)}
+            className="w-20 bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-violet-500"
+          />
+        </div>
       </div>
 
       {/* Subtitle */}
@@ -233,6 +262,7 @@ export default function NutrientScatterPlot({ data }: Props) {
               type="number"
               dataKey="x"
               name={xNutrient?.nutrient_name}
+              domain={[0, maxX ? Number(maxX) : 'auto']}
               tick={{ fill: '#94a3b8', fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: '#334155' }}
@@ -249,6 +279,7 @@ export default function NutrientScatterPlot({ data }: Props) {
               type="number"
               dataKey="y"
               name={yNutrient?.nutrient_name}
+              domain={[0, maxY ? Number(maxY) : 'auto']}
               tick={{ fill: '#94a3b8', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
