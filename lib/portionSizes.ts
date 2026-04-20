@@ -180,14 +180,18 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   144: { grams: 85,  label: '3 oz' },           // Chicken Liver
 
   // ── Fish & Seafood ────────────────────────────────────────────────────────
+  // Dinner fillets (salmon, tuna, cod, halibut, trout): 6 oz — full meal portion
+  // Smaller/oily fish (sardines, mackerel, herring): 3 oz — rich, eaten in smaller amounts
+  // Shellfish: 3 oz — typically a component, not a main
+  // Tilapia: 4 oz — smaller fish, standard fillet weight
   145: { grams: 170, label: '6 oz fillet' },    // Salmon (Atlantic)
-  146: { grams: 85,  label: '3 oz' },           // Tuna (yellowfin)
+  146: { grams: 170, label: '6 oz fillet' },    // Tuna (yellowfin)
   147: { grams: 85,  label: '3 oz (~2 fish)' }, // Sardines (canned)
   148: { grams: 85,  label: '3 oz' },           // Mackerel (Atlantic)
-  149: { grams: 85,  label: '3 oz' },           // Cod
-  150: { grams: 113, label: '4 oz' },           // Tilapia
-  151: { grams: 85,  label: '3 oz' },           // Halibut
-  152: { grams: 85,  label: '3 oz' },           // Rainbow Trout
+  149: { grams: 170, label: '6 oz fillet' },    // Cod
+  150: { grams: 113, label: '4 oz fillet' },    // Tilapia
+  151: { grams: 170, label: '6 oz fillet' },    // Halibut
+  152: { grams: 170, label: '6 oz fillet' },    // Rainbow Trout
   153: { grams: 85,  label: '3 oz' },           // Herring
   154: { grams: 20,  label: '5 anchovies' },    // Anchovies
   155: { grams: 85,  label: '3 oz' },           // Shrimp
