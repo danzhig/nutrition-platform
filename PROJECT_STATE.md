@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-20 (session 5 — Net Carbohydrates)
+**Last updated:** 2026-04-20 (session 5)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -30,8 +30,12 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
 | **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → horizontal ranked bar chart of all 218 foods; top-N filter (10/20/50/All); category filter; per-100g vs per-serving toggle; bars colored by food category with legend |
-| **Net Carbohydrates** | ✅ App ready — `Carbohydrates` hidden from display; `Net Carbohydrates` nutrient added to all 4 RDA profiles; SQL in `sql/seed_net_carbs.sql` must be run in Supabase to activate |
-| **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
+| **Net Carbohydrates** | ✅ Live — `Carbohydrates` hidden from display (kept in DB); `Net Carbohydrates` (= Carbs − Fibre) added as nutrient; all 4 RDA profiles updated; `sql/seed_net_carbs.sql` deployed |
+| **Macro split donut (updated)** | ✅ Live — inner ring now shows 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald); both at 4 kcal/g (USDA convention); GI weighting in sidebar uses Net Carbs |
+| **Filter Deselect All fix** | ✅ Live — Food Category and Nutrient Group "Deselect all" now truly clears to empty (previous bug kept last item selected) |
+| **Tab persistence** | ✅ Live — active top-level tab and Data View sub-tab saved to localStorage; page reopens to last-visited tab on reload |
+| **Seed serving sizes** | ✅ Live — Flaxseeds and Hemp Seeds standardised to 2 tbsp (matching Chia Seeds) for consistent per-serving comparison; Sunflower/Pumpkin stay at 1 oz (snack use); Sesame/Poppy stay at 1 tbsp (condiment use) |
+| **MVP Heatmap Table** | ✅ Live — all 218 foods, dark mode, column sort, filters, search |
 | **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
 | **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |
 | **Supabase Auth + saved RDA profiles** | ✅ Live — email/password sign up/in; saved custom RDA profiles in `user_rda_profiles` |
@@ -44,7 +48,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Preset meal templates** | ✅ Live — 29 curated system meals across 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) in `preset_meals` table; browsable in-app with category filter pills |
 | **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; loaded presets/templates appear at top, expanded; other meals collapse; header shows food count + total grams when collapsed |
 | **Preset item enrichment fix** | ✅ Live — preset items resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
-| **Macro split donut** | ✅ Live — dual-ring Recharts PieChart: inner = caloric % (carbs amber / protein violet / fat emerald); outer = top 5 foods per macro + Other in shades; macro labels outside outer ring; sits right of radar in chart view |
+| **Macro split donut** | ✅ Live (superseded — see updated entry above) |
 | **Low Carb & Keto preset meals** | ✅ SQL ready (`sql/seed_preset_meals_lowcarb_keto.sql`) — 6 Low Carb + 6 Keto meals; run in Supabase SQL editor to activate |
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
 | **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
@@ -165,6 +169,11 @@ CREATE POLICY "Users manage their own saved meals"
 - [ ] Mobile-responsive collapse
 - [ ] Nutrient name tooltips from `nutrients.description`
 - [x] Nutrient Ranking View — pick a nutrient, ranked bar chart of all 218 foods (`NutrientRankingView.tsx` in Charts sub-tab)
+- [x] Net Carbohydrates — replaces Carbohydrates in display; formula Carbs − Fibre; all RDA profiles updated
+- [x] Macro split donut — updated: 4 slices (Net Carbs + Fibre + Protein + Fat); GI weighting fixed
+- [x] Deselect All filter bug — truly clears to empty selection
+- [x] Tab persistence — localStorage saves active tab + sub-tab across reloads
+- [x] Seed serving size audit — Flaxseeds + Hemp Seeds standardised to 2 tbsp
 
 ---
 

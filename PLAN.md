@@ -1,6 +1,6 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-19 (session 4)
+**Last updated:** 2026-04-20 (session 5)
 **Phase:** Phase 3 — Polish & Ranking View (in progress)
 
 ---
@@ -252,6 +252,11 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [x] Custom DV editor multi-column — nutrient groups rendered as cards in a 3-column grid in inline/editorOnly mode; sidebar mode keeps single-column layout
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
 - [x] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category (`NutrientRankingView.tsx`; Charts sub-tab in Data View)
+- [x] **Net Carbohydrates** — new nutrient (Carbs − Fibre); `Carbohydrates` hidden from display; `sql/seed_net_carbs.sql`; all 4 RDA profiles updated
+- [x] **Macro donut fix** — 4-slice inner ring (Net Carbs + Fibre + Protein + Fat); GI weighting uses Net Carbs
+- [x] **Deselect All fix** — FilterPanel empty-selection now works correctly
+- [x] **Tab persistence** — `np:mainTab` + `np:dataTab` in localStorage
+- [x] **Serving size audit** — Seeds: Flaxseeds + Hemp standardised to 2 tbsp
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
 - **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days

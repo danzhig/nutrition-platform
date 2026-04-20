@@ -126,11 +126,15 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   102: { grams: 28, label: '3 chestnuts' },     // Chestnuts
 
   // ── Seeds ─────────────────────────────────────────────────────────────────
-  103: { grams: 28, label: '2 tbsp' },          // Chia Seeds
-  104: { grams: 14, label: '1 tbsp' },          // Flaxseeds
+  // "Add to food" seeds (smoothies, yogurt, oatmeal) standardised to 2 tbsp
+  // so per-serving comparisons are apples-to-apples.
+  // Snack/trail seeds (sunflower, pumpkin) kept at 1 oz — different use case.
+  // Condiment seeds (sesame, poppy) kept at 1 tbsp — sprinkled in small amounts.
+  103: { grams: 28, label: '2 tbsp' },          // Chia Seeds     (1 tbsp ≈ 12–14g)
+  104: { grams: 20, label: '2 tbsp' },          // Flaxseeds      (1 tbsp ≈ 10g)
   105: { grams: 28, label: '1 oz' },            // Sunflower Seeds
   106: { grams: 28, label: '1 oz' },            // Pumpkin Seeds
-  107: { grams: 30, label: '3 tbsp' },          // Hemp Seeds
+  107: { grams: 20, label: '2 tbsp' },          // Hemp Seeds     (1 tbsp ≈ 10g)
   108: { grams: 9,  label: '1 tbsp' },          // Sesame Seeds
   109: { grams: 9,  label: '1 tbsp' },          // Poppy Seeds
 
