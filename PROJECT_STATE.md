@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-20 (session 5)
+**Last updated:** 2026-04-20 (session 6)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -56,6 +56,14 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
 | **Custom DV editor multi-column** | ✅ Live — custom DV profile editor renders nutrient groups as cards in a 3-column grid (editorOnly/inline mode); sidebar mode retains single-column layout |
+| **Complement score — preset & saved meals** | ✅ Live — each preset and saved meal card shows a 0-100 complement score badge (green ≥65, amber ≥35, grey <35); score reflects how well the meal fills remaining DV gaps in the current plan, with hard penalty for normal-with-ul nutrients crossing 125% DV (+flat −5 pts per nutrient crossing 200%) and soft penalty for limit nutrients; implemented in `lib/complementScore.ts` |
+| **Complement score — food picker** | ✅ Live — FoodPickerModal shows a live score badge per food calculated at default serving size; list sorted by score descending when a DV profile is active; updates instantly as plan changes (portion adjustments, new foods added) |
+| **Update Plan / New Plan on tab bar** | ✅ Live — "Update Plan" and "New Plan" buttons moved from Plan dropdown to the tab bar itself; Update Plan button is grey when no unsaved changes and turns purple when the plan has been modified; dirty state survives tab switches via `np:draft-snapshot` in localStorage |
+| **Tooltip animation fix** | ✅ Live — Recharts Tooltip on Nutrient Scatter Plot no longer flies in from top-left; `isAnimationActive={false}` on `<Tooltip>` |
+| **Meals collapsed on tab return** | ✅ Live — when returning to the Day Planner tab, all meal cards default to collapsed; collapse state initialized from draft localStorage key |
+| **ISR revalidate 300** | ✅ Live — replaced `export const dynamic = 'force-dynamic'` with `export const revalidate = 300`; page re-renders at most every 5 minutes; new foods/nutrients are reflected after the next revalidation cycle |
+| **Parallel Supabase pagination** | ✅ Live — `fetchHeatmapData.ts` counts rows first then fetches all pages in parallel via `Promise.all`; reduces initial load time |
+| **Bacon preset name fix** | ✅ Fixed — `seed_preset_meals_lowcarb_keto.sql` corrected `'Bacon (pork)'` → `'Bacon (pork, raw)'` to match the foods table |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)

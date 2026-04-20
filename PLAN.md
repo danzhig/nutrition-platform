@@ -1,6 +1,6 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-20 (session 5)
+**Last updated:** 2026-04-20 (session 6)
 **Phase:** Phase 3 — Polish & Ranking View (in progress)
 
 ---
@@ -54,7 +54,7 @@ nutrition-platform/
 │       ├── MealPlanner.tsx         ← Orchestrator: plan state, tab bar (Builder/Charts/Plan▾/DV▾),
 │       │                              save/load plans, preset & saved meal loading, collapse state
 │       ├── MealCard.tsx            ← One meal: named, collapsible, food items with servings/grams, save-as-template
-│       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
+│       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs; shows complement score badge per food sorted by score when a DV profile is active; scores update live as plan changes
 │       ├── DVProfilePanel.tsx      ← DV profile editor; editorOnly mode = embedded below tab bar when Custom is active;
 │       │                              editorOnly renders nutrient groups as cards in a 3-column grid; sidebar mode = single-column
 │       ├── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV); click row → NutrientInfoCard
@@ -76,7 +76,9 @@ nutrition-platform/
 │   ├── filterSetStorage.ts     ← CRUD for user_filter_sets Supabase table
 │   ├── mealStorage.ts          ← CRUD for meal_plans Supabase table
 │   ├── savedMealStorage.ts     ← CRUD for saved_meals Supabase table (individual meal templates)
-│   └── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
+│   ├── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
+│   ├── complementScore.ts      ← computeComplementScore(): 0-100 score for a candidate meal/food vs current plan; benefit normalized to remaining DV gaps; hard penalty (normal-with-ul >125% DV, flat −5 per nutrient >200%); soft penalty (limit nutrients)
+│   └── categoryColors.ts       ← CATEGORY_COLORS record + CATEGORY_COLOR_DEFAULT — shared palette used by NutrientRankingView and NutrientScatterPlot
 │
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, NutrientCategory
@@ -196,6 +198,7 @@ Three behaviors driven by `NUTRIENT_BEHAVIORS` map in `rdaProfiles.ts`:
 7. Saved plans stored as JSONB in `meal_plans.meals`; `rda_selection` is `''` | ProfileId | `'custom'` | `'saved:uuid'`
 8. Individual meals saved as templates in `saved_meals.items` (JSONB); loading clones items with fresh UUIDs so each use is independent
 9. Preset meals are public-read from `preset_meals` table; items stored as minimal JSONB (`{id, food_id, grams, servings}`) and enriched to full `MealItem` at load time using `foodsById` + `portionSizes.ts`
+10. Complement scores computed via `computeComplementScore()` in `lib/complementScore.ts`; `presetScores` and `savedMealScores` are `useMemo` maps in `MealPlanner`; `FoodPickerModal` computes per-food scores via its own `useMemo` keyed on `currentMeals` — all update reactively when the plan changes
 
 ### Meal Planner — tab bar layout
 
@@ -258,6 +261,13 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [x] **Deselect All fix** — FilterPanel empty-selection now works correctly
 - [x] **Tab persistence** — `np:mainTab` + `np:dataTab` in localStorage
 - [x] **Serving size audit** — Seeds: Flaxseeds + Hemp standardised to 2 tbsp
+- [x] **Complement score — preset & saved meals** — 0-100 badge on each meal card; benefit = remaining DV gaps filled; hard penalty for normal-with-ul nutrients >125% DV; flat −5 per nutrient >200% DV; soft penalty for limit nutrients; `lib/complementScore.ts`
+- [x] **Complement score — food picker** — live score badge per food in FoodPickerModal at default serving size; list sorted by score descending; updates instantly as plan changes
+- [x] **Update Plan / New Plan on tab bar** — buttons moved out of Plan dropdown onto tab bar; Update Plan grey = clean, purple = dirty; dirty state survives tab switches via `np:draft-snapshot`
+- [x] **Tooltip animation fix** — Recharts Scatter Plot tooltip `isAnimationActive={false}` stops fly-in animation
+- [x] **Meals collapsed on tab return** — Day Planner tab always starts with all meals collapsed
+- [x] **ISR revalidate 300** — replaced `force-dynamic` with `revalidate = 300`; new data reflected within 5 minutes
+- [x] **Parallel Supabase pagination** — `fetchHeatmapData.ts` fetches all pages concurrently via `Promise.all`
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
 - **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
