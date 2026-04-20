@@ -299,33 +299,34 @@ export default function MealPlanner({ data }: Props) {
   // ── View toggle tab bar + DV profile picker ──────────────────────────────
 
   const viewTabBar = (
-    <div className="flex items-center justify-between border-b border-slate-700 mb-4">
-      {/* Left: view tabs */}
-      <div className="flex">
-        <button
-          onClick={() => switchView('sidebar')}
-          className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            viewMode === 'sidebar'
-              ? 'border-violet-500 text-violet-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
-          }`}
-        >
-          ▤ Builder
-        </button>
-        <button
-          onClick={() => switchView('chart')}
-          className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-            viewMode === 'chart'
-              ? 'border-violet-500 text-violet-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
-          }`}
-        >
-          ▦ Charts
-        </button>
-      </div>
+    <div className="flex items-center border-b border-slate-700 mb-4 gap-1">
+      {/* View tabs */}
+      <button
+        onClick={() => switchView('sidebar')}
+        className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          viewMode === 'sidebar'
+            ? 'border-violet-500 text-violet-300'
+            : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+        }`}
+      >
+        ▤ Builder
+      </button>
+      <button
+        onClick={() => switchView('chart')}
+        className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          viewMode === 'chart'
+            ? 'border-violet-500 text-violet-300'
+            : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+        }`}
+      >
+        ▦ Charts
+      </button>
 
-      {/* Center: plan picker */}
-      <div className="flex items-center gap-2 pb-px">
+      {/* Separator */}
+      <div className="w-px h-4 bg-slate-600 mx-2 self-center flex-shrink-0" />
+
+      {/* Plan picker */}
+      <div className="flex items-center gap-1 pb-px">
         <div className="relative" ref={planDropdownRef}>
           <button
             onClick={() => setShowPlanDropdown((v) => !v)}
@@ -398,7 +399,7 @@ export default function MealPlanner({ data }: Props) {
         </div>
       </div>
 
-      {/* Right: DV profile picker */}
+      {/* DV profile picker */}
       <div className="relative pb-px" ref={profileDropdownRef}>
         <button
           onClick={() => setShowProfileDropdown((v) => !v)}
