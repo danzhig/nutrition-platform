@@ -72,12 +72,12 @@ export function computeComplementScore(
       maxBenefit   += gap / 100  // accumulate the max fillable amount per nutrient
     }
 
-    // HARD PENALTY — for UL nutrients pushed past 150% DV
-    // 0–150% is considered safe; penalty grows smoothly from 150% to 250%
+    // HARD PENALTY — for UL nutrients pushed past 125% DV
+    // 0–125% is considered safe; penalty grows smoothly from 125% to 225%
     if (behavior === 'normal-with-ul') {
       nHard++
-      if (newPct > 150) {
-        totalHardPenalty += Math.min((newPct - 150) / 100, 1)
+      if (newPct > 125) {
+        totalHardPenalty += Math.min((newPct - 125) / 100, 1)
       }
     }
 
