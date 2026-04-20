@@ -70,7 +70,17 @@ export default function MealPlanner({ data }: Props) {
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
-  const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set())
+  const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set()
+    try {
+      const draft = localStorage.getItem('np:draft-plan')
+      if (draft) {
+        const parsed = JSON.parse(draft) as ActiveMealPlan
+        return new Set(parsed.meals.map((m) => m.id))
+      }
+    } catch { /* ignore */ }
+    return new Set()
+  })
   const [showPlanDropdown, setShowPlanDropdown] = useState(false)
   const planDropdownRef = useRef<HTMLDivElement>(null)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
