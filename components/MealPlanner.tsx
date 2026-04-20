@@ -40,12 +40,14 @@ export default function MealPlanner({ data }: Props) {
   const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [showPlanList, setShowPlanList] = useState(false)
+
   const [showSavedMeals, setShowSavedMeals] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(new Set())
+  const [showPlanDropdown, setShowPlanDropdown] = useState(false)
+  const planDropdownRef = useRef<HTMLDivElement>(null)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const profileDropdownRef = useRef<HTMLDivElement>(null)
   // Guards plan restore so tab-switch auth refreshes don't overwrite in-progress edits
@@ -57,9 +59,12 @@ export default function MealPlanner({ data }: Props) {
     if (saved === 'sidebar' || saved === 'chart') setViewMode(saved)
   }, [])
 
-  // Close profile dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
+      if (planDropdownRef.current && !planDropdownRef.current.contains(e.target as Node)) {
+        setShowPlanDropdown(false)
+      }
       if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
         setShowProfileDropdown(false)
       }
@@ -278,7 +283,6 @@ export default function MealPlanner({ data }: Props) {
     setPlan({ id: sp.id, name: sp.name, meals: sp.meals, rda_selection: sp.rda_selection })
     setCollapsedMeals(new Set(sp.meals.map((m) => m.id)))
     localStorage.setItem('nutrition-active-plan-id', sp.id)
-    setShowPlanList(false)
   }
 
   // ── Not logged in ─────────────────────────────────────────────────────────
@@ -318,6 +322,80 @@ export default function MealPlanner({ data }: Props) {
         >
           ▦ Charts
         </button>
+      </div>
+
+      {/* Center: plan picker */}
+      <div className="flex items-center gap-2 pb-px">
+        <div className="relative" ref={planDropdownRef}>
+          <button
+            onClick={() => setShowPlanDropdown((v) => !v)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 transition-colors max-w-[220px]"
+          >
+            <span className="text-slate-500 text-[10px] flex-shrink-0">Plan</span>
+            <span className="font-semibold text-slate-100 truncate">{plan.name}</span>
+            <span className="text-slate-500 text-[9px] flex-shrink-0">▾</span>
+          </button>
+
+          {showPlanDropdown && (
+            <div className="absolute left-0 top-full mt-1 w-72 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden text-xs">
+              {/* Name + save */}
+              <div className="px-3 pt-3 pb-2 space-y-2 border-b border-slate-700">
+                <input
+                  type="text"
+                  value={plan.name}
+                  onChange={(e) => setPlan((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-violet-500"
+                  placeholder="Plan name…"
+                />
+                <button
+                  onClick={() => { handleSave(); setShowPlanDropdown(false) }}
+                  disabled={saving}
+                  className="w-full py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-[11px] font-semibold rounded-md transition-colors"
+                >
+                  {saving ? 'Saving…' : plan.id ? 'Update plan' : 'Save plan'}
+                </button>
+                {saveError && <p className="text-[10px] text-red-400">{saveError}</p>}
+              </div>
+
+              {/* Saved plans list */}
+              {savedPlans.length > 0 && (
+                <div className="max-h-52 overflow-y-auto">
+                  <div className="px-3 pt-2 pb-1 text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Saved Plans</div>
+                  {savedPlans.map((sp) => (
+                    <div key={sp.id} className="flex items-center justify-between hover:bg-slate-700/50 transition-colors">
+                      <button
+                        onClick={() => { handleLoadPlan(sp); setShowPlanDropdown(false) }}
+                        className={`flex-1 text-left px-3 py-2 min-w-0 ${plan.id === sp.id ? 'text-violet-300' : 'text-slate-200'}`}
+                      >
+                        <span className="block font-medium truncate">{sp.name}</span>
+                        <span className="block text-[9px] text-slate-500 mt-0.5">
+                          {sp.meals.length} meal{sp.meals.length !== 1 ? 's' : ''} · {sp.meals.reduce((s, m) => s + m.items.length, 0)} foods
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSavedPlan(sp.id)}
+                        className="px-3 py-2 text-slate-500 hover:text-red-400 flex-shrink-0 transition-colors"
+                        title="Delete plan"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* New plan */}
+              <div className="border-t border-slate-700">
+                <button
+                  onClick={() => { setPlan(newPlan()); localStorage.removeItem('nutrition-active-plan-id'); setShowPlanDropdown(false) }}
+                  className="w-full text-left px-3 py-2.5 text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+                >
+                  + New plan
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right: DV profile picker */}
@@ -443,72 +521,7 @@ export default function MealPlanner({ data }: Props) {
       {/* Left: plan builder */}
       <div className="flex-1 min-w-0 space-y-3">
 
-        {/* Plan control bar */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 space-y-3">
-
-          {/* Name + action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <input
-              type="text"
-              value={plan.name}
-              onChange={(e) => setPlan((p) => ({ ...p, name: e.target.value }))}
-              className="flex-1 min-w-[180px] bg-slate-700 border border-slate-600 rounded-md px-3 py-1.5 text-sm font-semibold text-slate-100 focus:outline-none focus:border-violet-500"
-            />
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium rounded-md transition-colors disabled:opacity-50"
-            >
-              {saving ? 'Saving…' : plan.id ? 'Update' : 'Save'}
-            </button>
-            <button
-              onClick={() => { setPlan(newPlan()); setShowPlanList(false); localStorage.removeItem('nutrition-active-plan-id') }}
-              className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-md transition-colors"
-            >
-              New
-            </button>
-            {savedPlans.length > 0 && (
-              <button
-                onClick={() => setShowPlanList((v) => !v)}
-                className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs rounded-md transition-colors"
-              >
-                {showPlanList ? 'Hide plans' : `Load (${savedPlans.length})`}
-              </button>
-            )}
-          </div>
-
-          {saveError && <p className="text-xs text-red-400">{saveError}</p>}
-
-          {/* Saved plan list  */}
-          {showPlanList && (
-            <div className="border border-slate-600 rounded-md divide-y divide-slate-700 max-h-44 overflow-y-auto">
-              {savedPlans.map((sp) => (
-                <div key={sp.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-700/50">
-                  <button
-                    onClick={() => handleLoadPlan(sp)}
-                    className="text-xs text-slate-200 hover:text-violet-300 text-left flex-1 min-w-0"
-                  >
-                    <span className="truncate block">{sp.name}</span>
-                    <span className="text-slate-500 text-[10px]">
-                      {sp.meals.length} meal{sp.meals.length !== 1 ? 's' : ''} ·{' '}
-                      {sp.meals.reduce((s, m) => s + m.items.length, 0)} foods
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSavedPlan(sp.id)}
-                    className="text-slate-500 hover:text-red-400 text-xs ml-3 flex-shrink-0"
-                    title="Delete plan"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-
-        {/* ── Add meal buttons — sits just below the control bar ── */}
+        {/* ── Add meal buttons ── */}
         <div className="flex gap-2">
           <button
             onClick={addMeal}
