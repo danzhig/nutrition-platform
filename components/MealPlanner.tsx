@@ -279,23 +279,54 @@ export default function MealPlanner({ data }: Props) {
     )
   }
 
+  // ── View toggle tab bar ───────────────────────────────────────────────────
+
+  const viewTabBar = (
+    <div className="flex border-b border-slate-700 mb-4">
+      <button
+        onClick={() => switchView('sidebar')}
+        className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          viewMode === 'sidebar'
+            ? 'border-violet-500 text-violet-300'
+            : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+        }`}
+      >
+        ▤ Builder
+      </button>
+      <button
+        onClick={() => switchView('chart')}
+        className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          viewMode === 'chart'
+            ? 'border-violet-500 text-violet-300'
+            : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+        }`}
+      >
+        ▦ Charts
+      </button>
+    </div>
+  )
+
   // ── Chart mode ────────────────────────────────────────────────────────────
 
   if (viewMode === 'chart') {
     return (
-      <MealNutritionChart
-        nutrients={data.nutrients}
-        meals={plan.meals}
-        foodsById={foodsById}
-        rdaProfile={rdaProfile}
-        onSwitchToSidebar={() => switchView('sidebar')}
-      />
+      <div>
+        {viewTabBar}
+        <MealNutritionChart
+          nutrients={data.nutrients}
+          meals={plan.meals}
+          foodsById={foodsById}
+          rdaProfile={rdaProfile}
+        />
+      </div>
     )
   }
 
   // ── Sidebar mode ──────────────────────────────────────────────────────────
 
   return (
+    <div>
+      {viewTabBar}
     <div className="flex gap-4 items-start">
       {/* Left: plan builder */}
       <div className="flex-1 min-w-0 space-y-3">
@@ -332,19 +363,6 @@ export default function MealPlanner({ data }: Props) {
                 {showPlanList ? 'Hide plans' : `Load (${savedPlans.length})`}
               </button>
             )}
-          </div>
-
-          {/* View toggle */}
-          <div className="flex items-center gap-1 rounded-md border border-slate-600 overflow-hidden self-start">
-            <button className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default">
-              ▤ Sidebar
-            </button>
-            <button
-              onClick={() => switchView('chart')}
-              className="px-2.5 py-1 text-[10px] font-medium bg-slate-700 text-slate-400 hover:bg-slate-600 transition-colors"
-            >
-              ▦ Chart
-            </button>
           </div>
 
           {saveError && <p className="text-xs text-red-400">{saveError}</p>}
@@ -559,6 +577,7 @@ export default function MealPlanner({ data }: Props) {
         foodsById={foodsById}
         rdaProfile={rdaProfile}
       />
+    </div>
     </div>
   )
 }

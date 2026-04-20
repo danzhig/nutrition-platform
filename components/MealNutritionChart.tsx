@@ -18,7 +18,6 @@ interface Props {
   meals: Meal[]
   foodsById: Map<number, FoodRow>
   rdaProfile: RDAProfile | null
-  onSwitchToSidebar: () => void
 }
 
 const CATEGORY_ORDER = ['Macronutrient', 'Vitamin', 'Mineral', 'Fatty Acid', 'Amino Acid', 'Food Metric']
@@ -109,7 +108,7 @@ function CustomXTick({ x, y, payload }: any) {
   )
 }
 
-export default function MealNutritionChart({ nutrients, meals, foodsById, rdaProfile, onSwitchToSidebar }: Props) {
+export default function MealNutritionChart({ nutrients, meals, foodsById, rdaProfile }: Props) {
   const [capAt100, setCapAt100] = useState(false)
   const [viewId, setViewId] = useState<'all' | string>('all')
 
@@ -289,19 +288,6 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
         >
           Cap Y at 100%
         </button>
-
-        {/* View toggle */}
-        <div className="flex items-center rounded-md border border-slate-600 overflow-hidden">
-          <button
-            onClick={onSwitchToSidebar}
-            className="px-2.5 py-1 text-[10px] font-medium bg-slate-700 text-slate-400 hover:bg-slate-600 transition-colors"
-          >
-            ▤ Sidebar
-          </button>
-          <button className="px-2.5 py-1 text-[10px] font-medium bg-violet-600 text-white cursor-default">
-            ▦ Chart
-          </button>
-        </div>
       </div>
     </div>
   )
