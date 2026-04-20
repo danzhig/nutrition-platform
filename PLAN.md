@@ -248,6 +248,7 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [x] Macro split donut — dual-ring PieChart; inner = macro caloric %; outer = top 5 foods per macro + Other; macro labels outside outer ring
 - [x] Tab bar UI — single bar at top of Meal Planner: Builder | Charts | Plan ▾ | DV Profile ▾; all grouped left; plan picker has inline name + save; DV picker lists saved first
 - [x] localStorage persistence — active plan ID and view mode survive page refresh; tab-switch auth refreshes guarded by `planRestoredRef`
+- [x] Day Planner draft persistence — full in-progress plan (meals, DV profile, custom RDA) written to `np:draft-plan` / `np:draft-custom-rda` on every change; switching to Data View and back preserves all unsaved work
 - [x] Header cleanup — removed stale heatmap hints and global colour-scale legend from page header; legend moved inline into heatmap status bar
 - [x] Custom DV editor multi-column — nutrient groups rendered as cards in a 3-column grid in inline/editorOnly mode; sidebar mode keeps single-column layout
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens

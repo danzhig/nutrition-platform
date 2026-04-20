@@ -35,6 +35,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Macro split donut (updated)** | ✅ Live — inner ring now shows 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald); both at 4 kcal/g (USDA convention); GI weighting in sidebar uses Net Carbs |
 | **Filter Deselect All fix** | ✅ Live — Food Category and Nutrient Group "Deselect all" now truly clears to empty (previous bug kept last item selected) |
 | **Tab persistence** | ✅ Live — active top-level tab and Data View sub-tab saved to localStorage; page reopens to last-visited tab on reload |
+| **Day Planner draft persistence** | ✅ Live — in-progress plan (meals, foods, DV profile, custom RDA values) written to `np:draft-plan` / `np:draft-custom-rda` on every change; survives switching to Data View and back without losing unsaved work; cleared on logout or "New Plan" |
 | **Seed serving sizes** | ✅ Live — Flaxseeds and Hemp Seeds standardised to 2 tbsp (matching Chia Seeds) for consistent per-serving comparison; Sunflower/Pumpkin stay at 1 oz (snack use); Sesame/Poppy stay at 1 tbsp (condiment use) |
 | **MVP Heatmap Table** | ✅ Live — all 218 foods, dark mode, column sort, filters, search |
 | **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |

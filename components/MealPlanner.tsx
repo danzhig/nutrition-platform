@@ -32,10 +32,24 @@ function newPlan(): ActiveMealPlan {
 
 export default function MealPlanner({ data }: Props) {
   const { user } = useAuth()
-  const [plan, setPlan] = useState<ActiveMealPlan>(newPlan())
+  const [plan, setPlan] = useState<ActiveMealPlan>(() => {
+    if (typeof window === 'undefined') return newPlan()
+    try {
+      const draft = localStorage.getItem('np:draft-plan')
+      if (draft) return JSON.parse(draft) as ActiveMealPlan
+    } catch { /* corrupt draft — ignore */ }
+    return newPlan()
+  })
   const [savedPlans, setSavedPlans] = useState<SavedMealPlan[]>([])
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
-  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
+  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const draft = localStorage.getItem('np:draft-custom-rda')
+      if (draft) return JSON.parse(draft) as RDAValues
+    } catch { /* corrupt draft — ignore */ }
+    return {}
+  })
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
   const [saving, setSaving] = useState(false)
@@ -52,6 +66,17 @@ export default function MealPlanner({ data }: Props) {
   const profileDropdownRef = useRef<HTMLDivElement>(null)
   // Guards plan restore so tab-switch auth refreshes don't overwrite in-progress edits
   const planRestoredRef = useRef(false)
+
+  // Persist in-progress plan so tab switches don't lose unsaved work
+  useEffect(() => {
+    localStorage.setItem('np:draft-plan', JSON.stringify(plan))
+  }, [plan])
+
+  useEffect(() => {
+    if (Object.keys(customRdaValues).length > 0) {
+      localStorage.setItem('np:draft-custom-rda', JSON.stringify(customRdaValues))
+    }
+  }, [customRdaValues])
 
   // Restore view mode from localStorage on mount
   useEffect(() => {
@@ -91,23 +116,28 @@ export default function MealPlanner({ data }: Props) {
       setSavedPlans([])
       setSavedProfiles([])
       setPlan(newPlan())
+      localStorage.removeItem('np:draft-plan')
+      localStorage.removeItem('np:draft-custom-rda')
       localStorage.removeItem('nutrition-active-plan-id')
       planRestoredRef.current = false
       return
     }
     loadMealPlans().then((plans) => {
       setSavedPlans(plans)
-      // Only restore the active plan on the first load after login.
-      // Tab-switch auth refreshes re-fire this effect but must not overwrite
-      // in-progress edits the user hasn't saved yet.
+      // Only restore from the server on the very first login load.
+      // If a draft exists (from a prior session or tab-switch), honour that
+      // instead — it may contain unsaved in-progress changes the user wants.
       if (!planRestoredRef.current) {
         planRestoredRef.current = true
-        const lastId = localStorage.getItem('nutrition-active-plan-id')
-        if (lastId) {
-          const match = plans.find((p) => p.id === lastId)
-          if (match) {
-            setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
-            setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+        const hasDraft = !!localStorage.getItem('np:draft-plan')
+        if (!hasDraft) {
+          const lastId = localStorage.getItem('nutrition-active-plan-id')
+          if (lastId) {
+            const match = plans.find((p) => p.id === lastId)
+            if (match) {
+              setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
+              setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+            }
           }
         }
       }
@@ -388,7 +418,7 @@ export default function MealPlanner({ data }: Props) {
               {/* New plan */}
               <div className="border-t border-slate-700">
                 <button
-                  onClick={() => { setPlan(newPlan()); localStorage.removeItem('nutrition-active-plan-id'); setShowPlanDropdown(false) }}
+                  onClick={() => { setPlan(newPlan()); localStorage.removeItem('nutrition-active-plan-id'); localStorage.removeItem('np:draft-plan'); localStorage.removeItem('np:draft-custom-rda'); setShowPlanDropdown(false) }}
                   className="w-full text-left px-3 py-2.5 text-[11px] text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
                 >
                   + New plan
