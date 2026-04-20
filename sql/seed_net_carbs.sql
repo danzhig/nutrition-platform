@@ -12,7 +12,13 @@
 --             SELECT carbs, fiber, net_carbs for that food_id)
 -- ============================================================
 
--- ── Step 1: Insert the Net Carbohydrates nutrient ──────────────
+-- ── Step 1: Sync the nutrients sequence before inserting ───────
+-- The SERIAL sequence can fall behind when rows were inserted with
+-- explicit IDs (as the original seed did). This brings it back in sync
+-- so Postgres doesn't try to reuse an ID that already exists.
+SELECT setval('nutrients_id_seq', (SELECT MAX(id) FROM nutrients));
+
+-- ── Step 2: Insert the Net Carbohydrates nutrient ──────────────
 INSERT INTO nutrients (name, common_name, unit, nutrient_category_id, description)
 VALUES (
   'Net Carbohydrates',
@@ -23,7 +29,7 @@ VALUES (
 )
 ON CONFLICT (name) DO NOTHING;
 
--- ── Step 2: Compute and insert net carb values for every food ──
+-- ── Step 3: Compute and insert net carb values for every food ──
 -- Uses GREATEST(0, ...) so fibre-rich foods never go negative.
 -- COALESCE handles the rare case where a food has carbs but no fibre
 -- entry (treats missing fibre as 0 — the conservative assumption).
@@ -46,7 +52,7 @@ WHERE fn_carb.nutrient_id = (SELECT id FROM nutrients WHERE name = 'Carbohydrate
 ON CONFLICT (food_id, nutrient_id) DO UPDATE
   SET value_per_100g = EXCLUDED.value_per_100g;
 
--- ── Step 3: Verification query (run after to spot-check) ───────
+-- ── Step 4: Verification query (run after to spot-check) ───────
 -- Expected highlights:
 --   Avocado:     carbs 8.53  fibre 6.7   → net 1.83
 --   Flaxseeds:   carbs 28.88 fibre 27.3  → net 1.58
