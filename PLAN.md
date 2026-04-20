@@ -260,7 +260,7 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
 - **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
-- **Data View → Charts tab** — Nutrient Ranking View is live (first chart); candidates next: Scatter/Bubble Plot (two-nutrient axes), Food Comparison Chart (2–4 foods side-by-side)
+- **Data View → Charts tab** — Nutrient Ranking View ✅ + Nutrient Scatter Plot ✅ both live; candidate next: Food Comparison Chart (2–4 foods side-by-side)
 - Nutrient co-occurrence matrix
 - Before & After plate comparison
 

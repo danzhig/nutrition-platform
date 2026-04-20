@@ -29,7 +29,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
 | **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
-| **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → horizontal ranked bar chart of all 218 foods; top-N filter (10/20/50/All); category filter; per-100g vs per-serving toggle; bars colored by food category with legend |
+| **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → ranked bar chart of all 218 foods; N selector (50/100); top/bottom toggle; category filter; per-100g vs per-serving toggle; bars colored by food category |
+| **Nutrient Scatter Plot** | ✅ Live — Charts tab (below Ranking): pick X + Y nutrient axes; optional bubble size (third nutrient); dots colored by food category (shared palette); clickable legend highlights/dims categories; per-100g vs per-serving toggle |
 | **Net Carbohydrates** | ✅ Live — `Carbohydrates` hidden from display (kept in DB); `Net Carbohydrates` (= Carbs − Fibre) added as nutrient; all 4 RDA profiles updated; `sql/seed_net_carbs.sql` deployed |
 | **Macro split donut (updated)** | ✅ Live — inner ring now shows 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald); both at 4 kcal/g (USDA convention); GI weighting in sidebar uses Net Carbs |
 | **Filter Deselect All fix** | ✅ Live — Food Category and Nutrient Group "Deselect all" now truly clears to empty (previous bug kept last item selected) |
