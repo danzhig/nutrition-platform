@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
 import HeatmapTable from './HeatmapTable'
+import NutrientRankingView from './NutrientRankingView'
 
 interface Props {
   data: HeatmapData
@@ -41,8 +42,8 @@ export default function DataView({ data }: Props) {
 
       {tab === 'heatmap' && <HeatmapTable data={data} />}
       {tab === 'charts' && (
-        <div className="flex items-center justify-center py-32">
-          <p className="text-slate-500 text-sm">Charts coming soon.</p>
+        <div className="px-1">
+          <NutrientRankingView data={data} />
         </div>
       )}
     </div>

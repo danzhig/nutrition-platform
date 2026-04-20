@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-19 (session 4)
+**Last updated:** 2026-04-20 (session 5)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -28,7 +28,8 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
 | **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
-| **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts); Charts tab is a placeholder for future data visualizations |
+| **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
+| **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → horizontal ranked bar chart of all 218 foods; top-N filter (10/20/50/All); category filter; per-100g vs per-serving toggle; bars colored by food category with legend |
 | **MVP Heatmap Table** | ✅ Live — all 212 foods, dark mode, column sort, filters, search |
 | **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
 | **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |
@@ -47,6 +48,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
 | **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
+| **Custom DV editor multi-column** | ✅ Live — custom DV profile editor renders nutrient groups as cards in a 3-column grid (editorOnly/inline mode); sidebar mode retains single-column layout |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
@@ -160,7 +162,7 @@ CREATE POLICY "Users manage their own saved meals"
 - [ ] % RDA in hover tooltips
 - [ ] Mobile-responsive collapse
 - [ ] Nutrient name tooltips from `nutrients.description`
-- [ ] Nutrient Ranking View — pick a nutrient, ranked bar chart of all 212 foods
+- [x] Nutrient Ranking View — pick a nutrient, ranked bar chart of all 218 foods (`NutrientRankingView.tsx` in Charts sub-tab)
 
 ---
 

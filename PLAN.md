@@ -55,8 +55,8 @@ nutrition-platform/
 │       │                              save/load plans, preset & saved meal loading, collapse state
 │       ├── MealCard.tsx            ← One meal: named, collapsible, food items with servings/grams, save-as-template
 │       ├── FoodPickerModal.tsx     ← Full food list modal: search + category filter tabs
-│       ├── DVProfilePanel.tsx      ← DV profile editor; normal mode = sidebar column (unused);
-│       │                              editorOnly mode = embedded below tab bar when Custom is active
+│       ├── DVProfilePanel.tsx      ← DV profile editor; editorOnly mode = embedded below tab bar when Custom is active;
+│       │                              editorOnly renders nutrient groups as cards in a 3-column grid; sidebar mode = single-column
 │       ├── MealNutritionSidebar.tsx ← 50-nutrient bar chart sidebar (fills to %DV); click row → NutrientInfoCard
 │       ├── NutrientInfoCard.tsx    ← Floating info card: viewport-clamped position (useLayoutEffect);
 │       │                              body role, deficiency/excess symptoms; stacked food-source bar
@@ -249,12 +249,13 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [x] Tab bar UI — single bar at top of Meal Planner: Builder | Charts | Plan ▾ | DV Profile ▾; all grouped left; plan picker has inline name + save; DV picker lists saved first
 - [x] localStorage persistence — active plan ID and view mode survive page refresh; tab-switch auth refreshes guarded by `planRestoredRef`
 - [x] Header cleanup — removed stale heatmap hints and global colour-scale legend from page header; legend moved inline into heatmap status bar
+- [x] Custom DV editor multi-column — nutrient groups rendered as cards in a 3-column grid in inline/editorOnly mode; sidebar mode keeps single-column layout
 - [ ] Mobile-responsive: collapse heatmap to single-nutrient ranked list on small screens
-- [ ] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category
+- [x] **Nutrient Ranking View** — pick a nutrient → ranked bar chart of all 218 foods, color by category (`NutrientRankingView.tsx`; Charts sub-tab in Data View)
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
 - **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
-- **Data View → Charts tab** — currently a placeholder; candidates: Nutrient Ranking View (ranked bar chart per nutrient), Scatter/Bubble Plot (two-nutrient axes), Food Comparison Chart (2–4 foods side-by-side)
+- **Data View → Charts tab** — Nutrient Ranking View is live (first chart); candidates next: Scatter/Bubble Plot (two-nutrient axes), Food Comparison Chart (2–4 foods side-by-side)
 - Nutrient co-occurrence matrix
 - Before & After plate comparison
 
