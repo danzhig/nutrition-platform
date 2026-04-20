@@ -96,7 +96,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Keto',
   'Classic keto staple: pan-fried bacon and eggs with cheddar and butter-wilted spinach. Very high fat, zero-carb proteins — great for choline, B12, and saturated fat intake.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Bacon (pork)'),           'grams', 100, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Bacon (pork, raw)'),           'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg (whole)'),    'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Cheddar Cheese'),         'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Butter (unsalted)'),      'grams', 20,  'servings', 1),
