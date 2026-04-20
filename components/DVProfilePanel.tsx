@@ -152,143 +152,149 @@ export default function DVProfilePanel({
 
   const isCustom = rdaSelection === 'custom'
 
-  // ── Shared editor body (used in both sidebar and editorOnly modes) ─────────
-  const editorBody = (
-    <div className="px-3 pb-3">
-      {/* Copy from */}
-      <div className="mb-3">
-        <p className="text-[9px] text-slate-500 mb-1">Copy from:</p>
-        <div className="flex flex-wrap gap-1">
-          {RDA_PROFILES.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => seedFrom(p.id)}
-              className="px-1.5 py-0.5 rounded text-[9px] bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors"
-            >
-              {p.shortLabel}
-            </button>
-          ))}
-          {savedProfiles.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => onCustomValuesChange({ ...p.values })}
-              title={`Copy from "${p.name}"`}
-              className="px-1.5 py-0.5 rounded text-[9px] bg-violet-900 text-violet-300 hover:bg-violet-800 hover:text-white transition-colors max-w-[72px] truncate"
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
+  // ── Shared editor body (multiCol=true for editorOnly wide layout) ──────────
+  function renderEditorBody(multiCol: boolean) {
+    const groups = NUTRIENT_GROUP_LIST.map((g) => {
+      const editable = nutrients
+        .filter((n) => n.nutrient_category === g.value)
+        .filter((n) => RDA_PROFILES.find((p) => p.id === 'male-avg')?.values[n.nutrient_name] != null)
+      return { g, editable }
+    }).filter(({ editable }) => editable.length > 0)
+
+    const groupCards = groups.map(({ g, editable }) => (
+      <div key={g.value} className={multiCol ? 'bg-slate-900/60 rounded-lg p-3' : 'mb-2'}>
+        <p className={`text-[9px] text-slate-500 uppercase tracking-wider mb-1 ${multiCol ? '' : 'mt-2'}`}>{g.label}</p>
+        {editable.map((n) => {
+          const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name]
+          const badge = behavior ? BEHAVIOR_BADGE[behavior] : null
+          const currentVal = effectiveValues[n.nutrient_name]
+          return (
+            <div key={n.nutrient_id} className="flex items-center gap-1 py-[3px]">
+              <span className="text-[10px] text-slate-300 flex-1 min-w-0 truncate leading-none">
+                {shortName(n.nutrient_name)}
+                {badge && <span className="ml-0.5 text-[8px] text-amber-400">{badge}</span>}
+              </span>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={currentVal ?? ''}
+                placeholder="—"
+                onChange={(e) => {
+                  const raw = e.target.value
+                  const val = raw === '' ? null : parseFloat(raw)
+                  onCustomValuesChange({
+                    ...effectiveValues,
+                    [n.nutrient_name]: isNaN(val as number) ? null : val,
+                  })
+                }}
+                className="w-14 text-[10px] text-right px-1.5 py-0.5 bg-slate-700 border border-slate-600 text-slate-100 rounded focus:ring-1 focus:ring-violet-500 outline-none appearance-none"
+              />
+              <span className="text-[9px] text-slate-500 w-8 shrink-0 leading-none">{n.unit}</span>
+            </div>
+          )
+        })}
       </div>
+    ))
 
-      {/* Nutrient inputs */}
-      {NUTRIENT_GROUP_LIST.map((g) => {
-        const editable = nutrients
-          .filter((n) => n.nutrient_category === g.value)
-          .filter((n) => {
-            const v = RDA_PROFILES.find((p) => p.id === 'male-avg')?.values[n.nutrient_name]
-            return v != null
-          })
-        if (editable.length === 0) return null
-        return (
-          <div key={g.value} className="mb-2">
-            <p className="text-[9px] text-slate-500 uppercase tracking-wider mb-1 mt-2">{g.label}</p>
-            {editable.map((n) => {
-              const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name]
-              const badge = behavior ? BEHAVIOR_BADGE[behavior] : null
-              const currentVal = effectiveValues[n.nutrient_name]
-              return (
-                <div key={n.nutrient_id} className="flex items-center gap-1 py-[3px]">
-                  <span className="text-[10px] text-slate-300 flex-1 min-w-0 truncate leading-none">
-                    {shortName(n.nutrient_name)}
-                    {badge && <span className="ml-0.5 text-[8px] text-amber-400">{badge}</span>}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={currentVal ?? ''}
-                    placeholder="—"
-                    onChange={(e) => {
-                      const raw = e.target.value
-                      const val = raw === '' ? null : parseFloat(raw)
-                      onCustomValuesChange({
-                        ...effectiveValues,
-                        [n.nutrient_name]: isNaN(val as number) ? null : val,
-                      })
-                    }}
-                    className="w-14 text-[10px] text-right px-1.5 py-0.5 bg-slate-700 border border-slate-600 text-slate-100 rounded focus:ring-1 focus:ring-violet-500 outline-none appearance-none"
-                  />
-                  <span className="text-[9px] text-slate-500 w-8 shrink-0 leading-none">{n.unit}</span>
-                </div>
-              )
-            })}
+    return (
+      <div className="px-3 pb-3">
+        {/* Copy from */}
+        <div className="mb-3">
+          <p className="text-[9px] text-slate-500 mb-1">Copy from:</p>
+          <div className="flex flex-wrap gap-1">
+            {RDA_PROFILES.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => seedFrom(p.id)}
+                className="px-1.5 py-0.5 rounded text-[9px] bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors"
+              >
+                {p.shortLabel}
+              </button>
+            ))}
+            {savedProfiles.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => onCustomValuesChange({ ...p.values })}
+                title={`Copy from "${p.name}"`}
+                className="px-1.5 py-0.5 rounded text-[9px] bg-violet-900 text-violet-300 hover:bg-violet-800 hover:text-white transition-colors max-w-[72px] truncate"
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
-        )
-      })}
-
-      <p className="mt-2 text-[9px] text-slate-600 leading-relaxed">
-        <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
-        <span className="text-slate-400">↓</span> lower is better
-      </p>
-
-      {/* Save / update */}
-      {isLoggedIn && (
-        <div className="mt-3 border-t border-slate-700 pt-3">
-          {editingProfileId ? (
-            <>
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[10px] font-semibold text-slate-400">Update profile</p>
-                <button onClick={cancelEdit} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">
-                  Cancel
-                </button>
-              </div>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Profile name…"
-                  value={saveProfileName}
-                  onChange={(e) => setSaveProfileName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleUpdate() }}
-                  className="flex-1 min-w-0 px-2 py-1 text-[10px] bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
-                />
-                <button
-                  onClick={handleUpdate}
-                  disabled={updating || !saveProfileName.trim()}
-                  className="px-2 py-1 text-[10px] font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors shrink-0"
-                >
-                  {updating ? '…' : 'Update'}
-                </button>
-              </div>
-              {updateError && <p className="mt-1 text-[10px] text-red-400">{updateError}</p>}
-            </>
-          ) : (
-            <>
-              <p className="text-[10px] font-semibold text-slate-400 mb-1.5">Save as named profile</p>
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Profile name…"
-                  value={saveProfileName}
-                  onChange={(e) => setSaveProfileName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveNew() }}
-                  className="flex-1 min-w-0 px-2 py-1 text-[10px] bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
-                />
-                <button
-                  onClick={handleSaveNew}
-                  disabled={saving || !saveProfileName.trim()}
-                  className="px-2 py-1 text-[10px] font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors shrink-0"
-                >
-                  {saving ? '…' : 'Save'}
-                </button>
-              </div>
-              {saveError && <p className="mt-1 text-[10px] text-red-400">{saveError}</p>}
-            </>
-          )}
         </div>
-      )}
-    </div>
-  )
+
+        {/* Nutrient inputs */}
+        {multiCol ? (
+          <div className="grid grid-cols-3 gap-3">{groupCards}</div>
+        ) : (
+          <div>{groupCards}</div>
+        )}
+
+        <p className="mt-2 text-[9px] text-slate-600 leading-relaxed">
+          <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
+          <span className="text-slate-400">↓</span> lower is better
+        </p>
+
+        {/* Save / update */}
+        {isLoggedIn && (
+          <div className="mt-3 border-t border-slate-700 pt-3">
+            {editingProfileId ? (
+              <>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-[10px] font-semibold text-slate-400">Update profile</p>
+                  <button onClick={cancelEdit} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Profile name…"
+                    value={saveProfileName}
+                    onChange={(e) => setSaveProfileName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleUpdate() }}
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px] bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
+                  />
+                  <button
+                    onClick={handleUpdate}
+                    disabled={updating || !saveProfileName.trim()}
+                    className="px-2 py-1 text-[10px] font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors shrink-0"
+                  >
+                    {updating ? '…' : 'Update'}
+                  </button>
+                </div>
+                {updateError && <p className="mt-1 text-[10px] text-red-400">{updateError}</p>}
+              </>
+            ) : (
+              <>
+                <p className="text-[10px] font-semibold text-slate-400 mb-1.5">Save as named profile</p>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Profile name…"
+                    value={saveProfileName}
+                    onChange={(e) => setSaveProfileName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveNew() }}
+                    className="flex-1 min-w-0 px-2 py-1 text-[10px] bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded focus:ring-1 focus:ring-violet-500 outline-none"
+                  />
+                  <button
+                    onClick={handleSaveNew}
+                    disabled={saving || !saveProfileName.trim()}
+                    className="px-2 py-1 text-[10px] font-semibold rounded bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors shrink-0"
+                  >
+                    {saving ? '…' : 'Save'}
+                  </button>
+                </div>
+                {saveError && <p className="mt-1 text-[10px] text-red-400">{saveError}</p>}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // ── Editor-only mode: embedded below the tab bar, no profile list ──────────
   if (editorOnly) {
@@ -305,7 +311,7 @@ export default function DVProfilePanel({
           </span>
           <span className="text-slate-500 text-[10px]">{customExpanded ? '▲' : '▼'}</span>
         </button>
-        {customExpanded && editorBody}
+        {customExpanded && renderEditorBody(true)}
       </div>
     )
   }
@@ -393,7 +399,7 @@ export default function DVProfilePanel({
                 </span>
                 <span className="text-slate-500">{customExpanded ? '▲' : '▼'}</span>
               </button>
-              {customExpanded && editorBody}
+              {customExpanded && renderEditorBody(false)}
             </div>
           )}
         </div>
