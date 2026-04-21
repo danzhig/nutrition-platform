@@ -93,7 +93,8 @@ nutrition-platform/
 │   ├── seed_supplements.sql    ← Supplements category + 4 supplement foods (25 nutrient rows)
 │   ├── seed_breads_and_tortillas.sql       ← Breads & tortillas (Grains & Cereals); add new bread types here
 │   ├── seed_preset_meals.sql               ← preset_meals table + 29 curated meals (6 categories)
-│   └── seed_preset_meals_lowcarb_keto.sql  ← 12 more preset meals: 6 Low Carb + 6 Keto (run after seed_preset_meals)
+│   ├── seed_preset_meals_lowcarb_keto.sql  ← 12 more preset meals: 6 Low Carb + 6 Keto (run after seed_preset_meals)
+│   └── seed_preset_meals_expanded.sql      ← 60 more preset meals: Soups & Stews (10), Stir-Fries (7), Curries (7) + expanded existing; 101 total
 │
 ├── reference/                  ← CSV reference files (food_list, nutrients_list, food_categories)
 ├── .env.local                  ← NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -246,7 +247,7 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 - [x] Nutrient info cards — click any nutrient in the meal sidebar for body role, deficiency/excess symptoms; viewport-clamped position; stacked food-source bar showing top-5 contributors from active plan
 - [x] Meal planner chart view — full-width dashboard; bar chart of all 50 nutrients by %DV; cap Y-axis toggle; nutrient labels vertical
 - [x] Category fulfilment radar — custom SVG pentagonal web chart; sits below bar chart at half-width square
-- [x] Preset meal templates — 41 curated meals across 8 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto) in `preset_meals` table; category filter pills
+- [x] Preset meal templates — 101 curated meals across 11 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto, Soups & Stews, Stir-Fries, Curries); uses ~180 of 218 available foods; spices, shellfish, organ meats, and alternative grains well-represented
 - [x] Collapsible meal cards — ▸/▾ toggle; loaded preset/template appears at top expanded, existing meals collapse; header shows food count + grams when collapsed
 - [x] Macro split donut — dual-ring PieChart; inner = macro caloric %; outer = top 5 foods per macro + Other; macro labels outside outer ring
 - [x] Tab bar UI — single bar at top of Meal Planner: Builder | Charts | Plan ▾ | DV Profile ▾; all grouped left; plan picker has inline name + save; DV picker lists saved first

@@ -47,11 +47,12 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
 | **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
 | **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
-| **Preset meal templates** | ✅ Live — 29 curated system meals across 6 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast) in `preset_meals` table; browsable in-app with category filter pills |
+| **Preset meal templates** | ✅ Live — 41 curated system meals across 8 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto); expanded to 101 meals across 11 categories once `seed_preset_meals_expanded.sql` is run (adds Soups & Stews, Stir-Fries, Curries) |
 | **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; loaded presets/templates appear at top, expanded; other meals collapse; header shows food count + total grams when collapsed |
 | **Preset item enrichment fix** | ✅ Live — preset items resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
 | **Macro split donut** | ✅ Live (superseded — see updated entry above) |
 | **Low Carb & Keto preset meals** | ✅ SQL ready (`sql/seed_preset_meals_lowcarb_keto.sql`) — 6 Low Carb + 6 Keto meals; run in Supabase SQL editor to activate |
+| **Expanded preset meal library** | ✅ SQL ready (`sql/seed_preset_meals_expanded.sql`) — 60 additional meals (101 total); new categories: Soups & Stews (10), Stir-Fries (7), Curries (7); expanded Breakfast, Salads, Bowls, High Protein, Pastas, Low Carb, Keto, Juices; introduces ~80 previously unused foods including livers, shellfish, tempeh, tofu, duck, lamb, wild rice, buckwheat, bulgur, millet, barley, couscous, coconut milk, and all major herbs/spices |
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
 | **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
@@ -81,6 +82,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 6. **`sql/seed_net_carbs.sql`** — Inserts `Net Carbohydrates` nutrient + computes values for all 218 foods (Formula: MAX(0, Carbohydrates − Dietary Fibre); safe to re-run via ON CONFLICT DO NOTHING/UPDATE)
 8. **`sql/seed_preset_meals.sql`** — Creates `preset_meals` table (public-read RLS) and inserts 29 curated preset meals (Juices, Salads, Pastas, Bowls, High Protein, Breakfast)
 9. **`sql/seed_preset_meals_lowcarb_keto.sql`** — Adds 12 more preset meals: 6 Low Carb + 6 Keto (run after step 8)
+10. **`sql/seed_preset_meals_expanded.sql`** — Adds 60 more preset meals across 11 categories: Soups & Stews, Stir-Fries, Curries + expanded existing categories (run after step 9)
 10. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
 
 ```sql
