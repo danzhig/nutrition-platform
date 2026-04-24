@@ -233,17 +233,19 @@ function NutrientComparePanel({
   return (
     <div className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden flex flex-col">
       {/* Panel header */}
-      <div className="bg-slate-800 border-b border-slate-700 px-3 py-2">
-        <p className={`text-xs font-semibold truncate ${titleColor}`} title={title}>
-          {title}
-        </p>
-        {subtitle && (
-          <p className="text-[10px] text-slate-500 truncate mt-0.5" title={subtitle}>
-            {subtitle}
+      <div className="bg-slate-800 border-b border-slate-700 px-3 py-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className={`text-xs font-semibold truncate ${titleColor}`} title={title}>
+            {title}
           </p>
-        )}
+          {subtitle && (
+            <p className="text-[10px] text-slate-500 truncate mt-0.5" title={subtitle}>
+              {subtitle}
+            </p>
+          )}
+        </div>
         {variant === 'diff' && (
-          <div className="flex items-center gap-3 mt-1.5">
+          <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
             <span className="flex items-center gap-1 text-[10px] text-green-400">
               <span className="w-2 h-2 rounded-sm inline-block bg-green-400 opacity-80" />
               A has more
@@ -266,8 +268,8 @@ function NutrientComparePanel({
         <div
           ref={scrollRef}
           onScroll={onScroll}
-          className="px-2 py-2 space-y-3"
-          style={{ maxHeight: 620, overflowY: hideScrollbar ? 'hidden' : 'scroll' }}
+          className={`px-2 py-2 space-y-3 ${hideScrollbar ? 'no-scrollbar overflow-y-scroll' : 'overflow-y-scroll'}`}
+          style={{ maxHeight: 620 }}
         >
           {CATEGORY_ORDER.map((cat) => {
             const group = grouped[cat]
