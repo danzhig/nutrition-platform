@@ -9,6 +9,79 @@
 
 A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (218 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
 
+**Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
+**Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
+**Direct DB access:** Supabase REST API credentials stored in Claude memory (`memory/reference_supabase.md`).
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Notes |
+|---|---|---|
+| Frontend | Next.js 16 App Router | `use client` components for interactivity |
+| Styling | Tailwind CSS v4 | slate-900 dark mode throughout |
+| Charting | Recharts + custom SVG | Recharts for bar charts; custom SVG for radar (gradient edges) |
+| Data layer | Supabase (PostgreSQL) | REST API + `@supabase/supabase-js` v2 |
+| Auth | Supabase Auth | Email/password; session in localStorage; `onAuthStateChange` reactive |
+| Hosting | Vercel | Deploy on push to `main` |
+| Language | TypeScript | Strict; `tsc --noEmit` must pass before every push |
+
+---
+
+## Repository Structure
+
+```
+nutrition-platform/
+├── app/
+│   ├── layout.tsx              ← Root layout; wraps children in <AuthProvider>
+│   ├── page.tsx                ← Home: fetches heatmap data, renders <MainView>
+│   └── globals.css
+├── components/
+│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View
+│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison)
+│   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving, DV profile
+│   ├── HeatmapCell.tsx         ← Single cell: color + tooltip; DV mode aware
+│   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views
+│   ├── NutrientSidebar.tsx     ← Vertical avg-profile column right of table
+│   ├── AuthProvider.tsx        ← React context: user, loading, signIn, signUp, signOut
+│   ├── AuthModal.tsx           ← Login/signup modal
+│   ├── AuthButton.tsx          ← Header button
+│   ├── MealPlanner.tsx         ← Orchestrator: plan state, tab bar, save/load, collapse state
+│   ├── MealCard.tsx            ← One meal: named, collapsible, food items, save-as-template
+│   ├── FoodPickerModal.tsx     ← Food list modal: search + category filter; complement score badges sorted by score
+│   ├── DVProfilePanel.tsx      ← DV profile editor; 3-column grid in editorOnly mode
+│   ├── MealNutritionSidebar.tsx ← 50-nutrient %DV bar chart; click → NutrientInfoCard
+│   ├── NutrientInfoCard.tsx    ← Floating info card: viewport-clamped; body role, deficiency/excess; food-source bar
+│   ├── MealNutritionChart.tsx  ← Full-width chart dashboard: bar chart + radar + donut
+│   ├── MealCategoryRadar.tsx   ← Custom SVG pentagonal radar: avg %DV per category, gradient edges
+│   ├── MacroDonutChart.tsx     ← Dual-ring PieChart: inner = macro caloric %; outer = top-5 foods per macro
+│   ├── NutrientRankingView.tsx ← Pick nutrient → ranked bar chart of all 218 foods
+│   ├── NutrientScatterPlot.tsx ← X/Y scatter; optional bubble size; category legend
+│   └── FoodComparisonView.tsx  ← Food A vs B; 3 panels (A, B, A−B net diff); centered diff bars
+├── lib/
+│   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
+│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination
+│   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
+│   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
+│   ├── portionSizes.ts         ← Per-food serving sizes (all 218 foods, keyed by food_id) ← CRITICAL
+│   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
+│   ├── rdaColorScale.ts        ← %DV color scale: normal / limit / normal-with-ul
+│   ├── profileStorage.ts       ← CRUD for user_rda_profiles
+│   ├── filterSetStorage.ts     ← CRUD for user_filter_sets
+│   ├── mealStorage.ts          ← CRUD for meal_plans
+│   ├── savedMealStorage.ts     ← CRUD for saved_meals
+│   ├── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
+│   ├── complementScore.ts      ← computeComplementScore(): 0-100 score vs current plan gaps
+│   └── categoryColors.ts       ← CATEGORY_COLORS palette shared by ranking + scatter views
+├── types/
+│   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
+│   └── meals.ts                ← MealItem, Meal, ActiveMealPlan
+├── sql/                        ← Deploy files (schema + seed data for foods/nutrients)
+├── reference/                  ← CSV reference files
+└── memory/                     ← Claude memory files (not committed to git)
+```
+
 ---
 
 ## Current Completion Status
@@ -379,6 +452,15 @@ SELECT nutrient_name FROM nutrients ORDER BY nutrient_name;
 
 ---
 
-## How to Hand This Off to a New LLM
+## Cold-Start Instructions
 
-> "This is a nutrition web app. Read PROJECT_STATE.md first, then PLAN.md for full architecture and build phases. The database is fully built — sql/schema.sql and seed files are the deploy files. The nutrients table has body_role, deficiency_symptoms, and excess_symptoms columns. The app is Next.js 16 + Supabase + Vercel, source on GitHub (danzhig/nutrition-platform). Current phase: Phase 3. Direct Supabase REST API access is available — credentials are in the Claude memory file (memory/reference_supabase.md). The preset_meals table (101 meals) lives only in Supabase — there is no local seed file for it. **IMPORTANT: before adding any food, nutrient, or food category, read the 'Data Maintenance' section in PROJECT_STATE.md — multiple files must be updated in sync or things silently break.**"
+**To pick up where we left off:**
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 218 foods × 50 nutrients. Two live features: interactive heatmap and meal planner. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (101 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
+
+**To add a new feature:**
+> Read PROJECT_STATE.md. I want to add: [DESCRIBE FEATURE]. Before writing any code: (1) which existing files will you modify? (2) what new files are needed? (3) does this need a new Supabase table/query or is it front-end only? Wait for my approval.
+
+**To add a new food:**
+> Read PROJECT_STATE.md — pay attention to the Data Maintenance section. I want to add [FOOD NAME] to [CATEGORY]. Write the SQL, the portionSizes.ts entry, and update the reference CSV. Wait for approval before writing anything.
+
+**IMPORTANT:** Before adding any food, nutrient, or food category, read the **Data Maintenance** section above — multiple files must be updated in sync or things silently break.
