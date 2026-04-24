@@ -206,6 +206,7 @@ function NutrientComparePanel({
   hasFood,
   scrollRef,
   onScroll,
+  hideScrollbar = false,
 }: {
   title: string
   subtitle?: string
@@ -216,6 +217,7 @@ function NutrientComparePanel({
   hasFood: boolean
   scrollRef?: React.RefObject<HTMLDivElement | null>
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void
+  hideScrollbar?: boolean
 }) {
   const grouped = useMemo(() => {
     const g: Record<string, NutrientMeta[]> = {}
@@ -261,7 +263,12 @@ function NutrientComparePanel({
           </p>
         </div>
       ) : (
-        <div ref={scrollRef} onScroll={onScroll} className="overflow-y-auto px-2 py-2 space-y-3" style={{ maxHeight: 560 }}>
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="px-2 py-2 space-y-3"
+          style={{ maxHeight: 620, overflowY: hideScrollbar ? 'hidden' : 'scroll' }}
+        >
           {CATEGORY_ORDER.map((cat) => {
             const group = grouped[cat]
             if (!group?.length) return null
@@ -765,6 +772,7 @@ export default function FoodComparisonView({ data }: Props) {
             hasFood={foodA !== null}
             scrollRef={scrollRefA}
             onScroll={syncScroll(scrollRefA)}
+            hideScrollbar
           />
           <NutrientComparePanel
             title={foodB ? foodB.food_name : 'Food B'}
@@ -776,6 +784,7 @@ export default function FoodComparisonView({ data }: Props) {
             hasFood={foodB !== null}
             scrollRef={scrollRefB}
             onScroll={syncScroll(scrollRefB)}
+            hideScrollbar
           />
           <NutrientComparePanel
             title="Net Difference (A − B)"
