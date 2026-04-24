@@ -193,6 +193,18 @@ function NutrientComparePanel({
             {subtitle}
           </p>
         )}
+        {variant === 'diff' && (
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="flex items-center gap-1 text-[10px] text-green-400">
+              <span className="w-2 h-2 rounded-sm inline-block bg-green-400 opacity-80" />
+              A has more
+            </span>
+            <span className="flex items-center gap-1 text-[10px] text-red-400">
+              <span className="w-2 h-2 rounded-sm inline-block bg-red-400 opacity-80" />
+              B has more
+            </span>
+          </div>
+        )}
       </div>
 
       {!hasFood ? (
