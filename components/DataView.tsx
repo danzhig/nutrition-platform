@@ -6,12 +6,13 @@ import HeatmapTable from './HeatmapTable'
 import NutrientRankingView from './NutrientRankingView'
 import NutrientScatterPlot from './NutrientScatterPlot'
 import FoodComparisonView from './FoodComparisonView'
+import MealComparisonView from './MealComparisonView'
 
 interface Props {
   data: HeatmapData
 }
 
-type DataTab = 'heatmap' | 'charts' | 'comparison'
+type DataTab = 'heatmap' | 'charts' | 'comparison' | 'meal_comparison'
 
 const DATA_TAB_KEY = 'np:dataTab'
 
@@ -19,7 +20,7 @@ export default function DataView({ data }: Props) {
   const [tab, setTab] = useState<DataTab>(() => {
     if (typeof window === 'undefined') return 'heatmap'
     const saved = localStorage.getItem(DATA_TAB_KEY)
-    return saved === 'heatmap' || saved === 'charts' || saved === 'comparison' ? saved : 'heatmap'
+    return saved === 'heatmap' || saved === 'charts' || saved === 'comparison' || saved === 'meal_comparison' ? saved : 'heatmap'
   })
 
   function handleTabChange(next: DataTab) {
@@ -61,6 +62,16 @@ export default function DataView({ data }: Props) {
         >
           Food Comparison
         </button>
+        <button
+          onClick={() => handleTabChange('meal_comparison')}
+          className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            tab === 'meal_comparison'
+              ? 'border-violet-500 text-violet-300'
+              : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-500'
+          }`}
+        >
+          Meal Comparison
+        </button>
       </div>
 
       {tab === 'heatmap' && <HeatmapTable data={data} />}
@@ -73,6 +84,11 @@ export default function DataView({ data }: Props) {
       {tab === 'comparison' && (
         <div className="px-1">
           <FoodComparisonView data={data} />
+        </div>
+      )}
+      {tab === 'meal_comparison' && (
+        <div className="px-1">
+          <MealComparisonView data={data} />
         </div>
       )}
     </div>
