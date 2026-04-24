@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-20 (session 6)
+**Last updated:** 2026-04-24 (session 7)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -65,6 +65,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **ISR revalidate 300** | ✅ Live — replaced `export const dynamic = 'force-dynamic'` with `export const revalidate = 300`; page re-renders at most every 5 minutes; new foods/nutrients are reflected after the next revalidation cycle |
 | **Parallel Supabase pagination** | ✅ Live — `fetchHeatmapData.ts` counts rows first then fetches all pages in parallel via `Promise.all`; reduces initial load time |
 | **Bacon preset name fix** | ✅ Fixed — `seed_preset_meals_lowcarb_keto.sql` corrected `'Bacon (pork)'` → `'Bacon (pork, raw)'` to match the foods table |
+| **Food Comparison** | ✅ Live — third sub-tab under Data View; pick Food A & Food B; weight mode (per 100g / per serving / custom g per food); optional DV profile; three side-by-side panels (Food A, Food B, Net Difference A−B) each grouped by nutrient category with colour bars; net difference panel uses centered bars (green = A has more, red = B has more); bar chart below sorted largest positive → largest negative %DV difference (`components/FoodComparisonView.tsx`) |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)

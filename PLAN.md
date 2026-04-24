@@ -1,6 +1,6 @@
 # Nutrition Platform — Build Plan
 
-**Last updated:** 2026-04-20 (session 6)
+**Last updated:** 2026-04-24 (session 7)
 **Phase:** Phase 3 — Polish & Ranking View (in progress)
 
 ---
@@ -36,7 +36,7 @@ nutrition-platform/
 │   └── globals.css
 ├── components/
 │   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View
-│   ├── DataView.tsx            ← Data View orchestrator: second-level tabs (Nutrient Heatmap | Charts)
+│   ├── DataView.tsx            ← Data View orchestrator: second-level tabs (Nutrient Heatmap | Charts | Food Comparison)
 │   │
 │   ├── — Heatmap ──────────────────────────────────────────────────────────────
 │   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving, DV profile
@@ -63,6 +63,13 @@ nutrition-platform/
 │       ├── MealNutritionChart.tsx  ← Full-width chart dashboard (chart view mode); bar chart + radar + donut
 │       ├── MealCategoryRadar.tsx   ← Custom SVG pentagonal radar: avg %DV per category, gradient edges
 │       └── MacroDonutChart.tsx     ← Dual-ring Recharts PieChart: inner = macro caloric %; outer = top-5 foods per macro
+│
+│   — Data View ─────────────────────────────────────────────────────────────────
+│   ├── NutrientRankingView.tsx  ← Pick a nutrient → ranked bar chart of all 218 foods; category filter; per-serving toggle
+│   ├── NutrientScatterPlot.tsx  ← X/Y scatter; optional bubble size; category legend; per-serving toggle
+│   └── FoodComparisonView.tsx   ← Food A vs Food B; per-100g/per-serving/custom weight; optional DV profile;
+│                                   3 side-by-side panels (A, B, A−B net diff) grouped by nutrient category;
+│                                   centered diff bars (green = A more, red = B more); %DV net-diff bar chart sorted by magnitude
 │
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
@@ -272,7 +279,8 @@ The top of the Meal Planner renders a single tab bar (`MealPlanner.tsx → viewT
 
 ### Phase 4 — Advanced Visualizations & Week Builder (from ideas.md)
 - **Week Builder** — tab alongside Day Builder in the Meal Planner; compose a full week by assigning saved Day Builder plans to each day; aggregate weekly nutrition totals and %DV averages across all 7 days
-- **Data View → Charts tab** — Nutrient Ranking View ✅ + Nutrient Scatter Plot ✅ both live; candidate next: Food Comparison Chart (2–4 foods side-by-side)
+- **Data View → Charts tab** — Nutrient Ranking View ✅ + Nutrient Scatter Plot ✅ both live
+- **Food Comparison** ✅ — new third sub-tab in Data View; pick 2 foods; per-100g / per-serving / custom weight; optional DV profile; 3 panels + sorted net-diff bar chart (`FoodComparisonView.tsx`)
 - Nutrient co-occurrence matrix
 - Before & After plate comparison
 

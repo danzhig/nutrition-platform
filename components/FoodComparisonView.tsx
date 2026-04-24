@@ -1,0 +1,754 @@
+'use client'
+
+import { useState, useMemo, useRef, useEffect } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ReferenceLine, Cell, ResponsiveContainer,
+} from 'recharts'
+import type { HeatmapData, NutrientMeta, FoodRow } from '@/types/nutrition'
+import { PORTION_SIZES } from '@/lib/portionSizes'
+import {
+  RDA_PROFILES,
+  NUTRIENT_BEHAVIORS,
+  FOOD_METRIC_TARGETS,
+  NUTRIENT_UPPER_LIMITS,
+} from '@/lib/rdaProfiles'
+import type { RDAProfile } from '@/lib/rdaProfiles'
+import { rdaCellColor } from '@/lib/rdaColorScale'
+
+interface Props {
+  data: HeatmapData
+}
+
+const CATEGORY_ORDER = [
+  'Macronutrient', 'Vitamin', 'Mineral', 'Fatty Acid', 'Amino Acid', 'Food Metric',
+]
+
+type WeightMode = 'per100g' | 'per_serving' | 'custom'
+
+function abbr(name: string): string {
+  return name
+    .replace('Vitamin ', 'Vit. ')
+    .replace('Pantothenic Acid', 'Pantothenic')
+    .replace('Polyunsaturated Fat', 'PUFA')
+    .replace('Monounsaturated Fat', 'MUFA')
+    .replace('Antioxidant Capacity', 'Antioxidant')
+    .replace('Omega-3 Fatty Acids', 'Omega-3')
+    .replace('Omega-6 Fatty Acids', 'Omega-6')
+    .replace('Total Sugars', 'Sugars')
+    .replace('Total Fat', 'Fat')
+    .replace('Saturated Fat', 'Sat. Fat')
+    .replace('Dietary Fibre', 'Fibre')
+    .replace('Glycemic Index', 'GI')
+    .replace('Net Carbohydrates', 'Net Carbs')
+    .replace('Cholesterol', 'Chol.')
+}
+
+function fmtVal(val: number): string {
+  const abs = Math.abs(val)
+  if (abs === 0) return '0'
+  if (abs < 0.1) return val.toFixed(3)
+  if (abs < 1) return val.toFixed(2)
+  if (abs < 100) return val.toFixed(1)
+  return Math.round(val).toString()
+}
+
+// ─── Food Selector ─────────────────────────────────────────────────────────────
+
+function FoodSelector({
+  foods,
+  value,
+  onChange,
+  label,
+}: {
+  foods: FoodRow[]
+  value: number | null
+  onChange: (id: number | null) => void
+  label: string
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const selected = foods.find((f) => f.food_id === value) ?? null
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return foods.slice(0, 60)
+    const q = query.toLowerCase()
+    return foods.filter((f) => f.food_name.toLowerCase().includes(q)).slice(0, 60)
+  }, [foods, query])
+
+  return (
+    <div ref={containerRef} className="relative flex-1 min-w-0">
+      <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wider">{label}</p>
+      <button
+        type="button"
+        className="w-full bg-slate-700 border border-slate-600 hover:border-slate-500 rounded px-2.5 py-1.5 text-sm text-left flex items-center justify-between transition-colors"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className={`truncate ${selected ? 'text-slate-100' : 'text-slate-500'}`}>
+          {selected ? selected.food_name : 'Select a food…'}
+        </span>
+        <span className="text-slate-500 ml-1 flex-shrink-0 text-[10px]">▾</span>
+      </button>
+      {selected && (
+        <p className="text-[10px] text-slate-500 mt-0.5 truncate">{selected.category}</p>
+      )}
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden">
+          <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-2">
+            <input
+              autoFocus
+              type="text"
+              className="w-full bg-slate-700 border border-slate-600 rounded px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-violet-500"
+              placeholder="Search foods…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto">
+            {value !== null && (
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700 border-b border-slate-700"
+                onClick={() => { onChange(null); setQuery(''); setOpen(false) }}
+              >
+                — Clear selection
+              </button>
+            )}
+            {filtered.map((f) => (
+              <button
+                key={f.food_id}
+                className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700/70 flex items-center justify-between ${
+                  f.food_id === value ? 'text-violet-300' : 'text-slate-200'
+                }`}
+                onClick={() => { onChange(f.food_id); setQuery(''); setOpen(false) }}
+              >
+                <span className="truncate">{f.food_name}</span>
+                <span className="text-slate-500 text-[10px] flex-shrink-0 ml-2">{f.category}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-4 text-xs text-slate-500 text-center">No foods match</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Nutrient panel ────────────────────────────────────────────────────────────
+
+function NutrientComparePanel({
+  title,
+  subtitle,
+  nutrients,
+  values,
+  rdaProfile,
+  variant,
+  hasFood,
+}: {
+  title: string
+  subtitle?: string
+  nutrients: NutrientMeta[]
+  values: Record<number, number | null>
+  rdaProfile: RDAProfile | null
+  variant: 'food' | 'diff'
+  hasFood: boolean
+}) {
+  const grouped = useMemo(() => {
+    const g: Record<string, NutrientMeta[]> = {}
+    for (const n of nutrients) {
+      if (!g[n.nutrient_category]) g[n.nutrient_category] = []
+      g[n.nutrient_category].push(n)
+    }
+    return g
+  }, [nutrients])
+
+  const titleColor = variant === 'diff' ? 'text-cyan-300' : 'text-slate-200'
+
+  return (
+    <div className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden flex flex-col">
+      {/* Panel header */}
+      <div className="bg-slate-800 border-b border-slate-700 px-3 py-2">
+        <p className={`text-xs font-semibold truncate ${titleColor}`} title={title}>
+          {title}
+        </p>
+        {subtitle && (
+          <p className="text-[10px] text-slate-500 truncate mt-0.5" title={subtitle}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      {!hasFood ? (
+        <div className="flex items-center justify-center py-12 px-4">
+          <p className="text-slate-600 text-xs text-center">
+            {variant === 'diff' ? 'Select both foods to see the difference' : 'No food selected'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-y-auto px-2 py-2 space-y-3" style={{ maxHeight: 560 }}>
+          {CATEGORY_ORDER.map((cat) => {
+            const group = grouped[cat]
+            if (!group?.length) return null
+            return (
+              <div key={cat}>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 px-1">
+                  {cat}
+                </p>
+                <div className="space-y-0.5">
+                  {group.map((n) => {
+                    const rawVal = values[n.nutrient_id] ?? null
+                    const rdaTarget =
+                      rdaProfile != null
+                        ? (rdaProfile.values[n.nutrient_name] ??
+                            FOOD_METRIC_TARGETS[n.nutrient_name] ??
+                            null)
+                        : null
+
+                    if (variant === 'food') {
+                      const effectiveVal = rawVal ?? 0
+                      const pct = rdaTarget != null ? (effectiveVal / rdaTarget) * 100 : null
+                      const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
+                      const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
+                      const ulPct =
+                        rdaTarget != null && ulValue != null
+                          ? (ulValue / rdaTarget) * 100
+                          : undefined
+                      const barWidth = pct !== null ? Math.min(Math.max(pct, 0), 100) : 0
+                      const barColor =
+                        pct !== null
+                          ? rdaCellColor(pct, behavior, ulPct)
+                          : effectiveVal > 0
+                            ? '#475569'
+                            : '#334155'
+                      const hasCap = behavior === 'limit' || behavior === 'normal-with-ul'
+
+                      return (
+                        <div key={n.nutrient_id} className="flex items-center gap-1.5 px-1">
+                          <div
+                            className="flex items-center gap-0.5 flex-shrink-0"
+                            style={{ width: 90 }}
+                          >
+                            {hasCap && (
+                              <span className="text-amber-400 text-[9px] flex-shrink-0">⚠</span>
+                            )}
+                            <span
+                              className="truncate text-slate-300 text-[10px]"
+                              title={n.nutrient_name}
+                            >
+                              {abbr(n.nutrient_name)}
+                            </span>
+                          </div>
+                          <div className="flex-1 h-3.5 bg-slate-700 rounded-sm overflow-hidden relative">
+                            {rawVal !== null && pct !== null && (
+                              <div
+                                className="h-full rounded-sm transition-all duration-200"
+                                style={{ width: `${barWidth}%`, backgroundColor: barColor }}
+                              />
+                            )}
+                            {rawVal !== null && pct === null && effectiveVal > 0 && (
+                              <div
+                                className="h-full rounded-sm"
+                                style={{ width: '100%', backgroundColor: barColor }}
+                              />
+                            )}
+                            {pct !== null && rawVal !== null && (
+                              <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-white font-medium leading-none">
+                                {pct < 1 ? '<1' : Math.round(pct)}%
+                              </span>
+                            )}
+                            {pct === null && rawVal !== null && effectiveVal > 0 && (
+                              <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-slate-300 leading-none">
+                                {fmtVal(effectiveVal)} {n.unit}
+                              </span>
+                            )}
+                            {rawVal === null && (
+                              <span className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] text-slate-600 leading-none">
+                                N/A
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    } else {
+                      // Diff variant — centered bar
+                      const diffVal = rawVal
+                      const diffPct =
+                        rdaTarget != null && diffVal !== null
+                          ? (diffVal / rdaTarget) * 100
+                          : null
+                      const isPositive = (diffVal ?? 0) >= 0
+                      // Bar half-width: ±100%DV diff maps to ±50% of container
+                      const clampedAbs =
+                        diffPct !== null ? Math.min(Math.abs(diffPct), 100) : 0
+                      const barHalfWidth = (clampedAbs / 100) * 50
+
+                      const barColor = isPositive ? '#4ade80' : '#f87171'
+
+                      const displayLabel =
+                        diffPct !== null
+                          ? `${isPositive ? '+' : ''}${Math.round(diffPct)}%`
+                          : diffVal !== null
+                            ? `${isPositive ? '+' : ''}${fmtVal(diffVal)} ${n.unit}`
+                            : 'N/A'
+
+                      const labelColor =
+                        diffVal === null
+                          ? '#475569'
+                          : isPositive
+                            ? '#4ade80'
+                            : '#f87171'
+
+                      return (
+                        <div key={n.nutrient_id} className="flex items-center gap-1.5 px-1">
+                          <div className="flex-shrink-0" style={{ width: 90 }}>
+                            <span
+                              className="truncate text-slate-300 text-[10px] block"
+                              title={n.nutrient_name}
+                            >
+                              {abbr(n.nutrient_name)}
+                            </span>
+                          </div>
+                          <div className="flex-1 h-3.5 bg-slate-700 rounded-sm relative">
+                            {/* Center marker */}
+                            <div className="absolute top-0 bottom-0 left-1/2 w-px bg-slate-500" />
+                            {/* Diff bar */}
+                            {diffVal !== null && barHalfWidth > 0 && (
+                              <div
+                                className="absolute top-0 bottom-0 rounded-sm"
+                                style={{
+                                  width: `${barHalfWidth}%`,
+                                  [isPositive ? 'left' : 'right']: '50%',
+                                  backgroundColor: barColor,
+                                  opacity: 0.8,
+                                }}
+                              />
+                            )}
+                            {/* Label */}
+                            <span
+                              className="absolute inset-0 flex items-center justify-end pr-1 text-[9px] font-medium leading-none"
+                              style={{ color: labelColor }}
+                            >
+                              {displayLabel}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    }
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Chart tooltip ─────────────────────────────────────────────────────────────
+
+interface DiffBar {
+  label: string
+  fullName: string
+  diffPct: number
+  unit: string
+  rawDiff: number
+}
+
+function DiffChartTooltip({ active, payload }: { active?: boolean; payload?: { payload: DiffBar }[] }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  return (
+    <div className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs shadow-xl">
+      <p className="text-slate-100 font-semibold mb-1">{d.fullName}</p>
+      <p>
+        <span
+          className="font-semibold text-sm"
+          style={{ color: d.diffPct >= 0 ? '#4ade80' : '#f87171' }}
+        >
+          {d.diffPct >= 0 ? '+' : ''}
+          {Math.round(d.diffPct)}%
+        </span>
+        <span className="text-slate-400 ml-1">DV difference</span>
+      </p>
+      <p className="text-slate-400 mt-0.5">
+        {d.rawDiff >= 0 ? '+' : ''}
+        {fmtVal(d.rawDiff)} {d.unit}
+      </p>
+    </div>
+  )
+}
+
+function CustomXTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dx={-4}
+        textAnchor="end"
+        transform="rotate(-90)"
+        fontSize={10}
+        fill="#94a3b8"
+      >
+        {payload?.value}
+      </text>
+    </g>
+  )
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+
+export default function FoodComparisonView({ data }: Props) {
+  const [foodAId, setFoodAId] = useState<number | null>(null)
+  const [foodBId, setFoodBId] = useState<number | null>(null)
+  const [weightMode, setWeightMode] = useState<WeightMode>('per100g')
+  const [customGramsA, setCustomGramsA] = useState(100)
+  const [customGramsB, setCustomGramsB] = useState(100)
+  const [profileId, setProfileId] = useState<string>('none')
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const foodsById = useMemo(() => {
+    const m = new Map<number, FoodRow>()
+    for (const f of data.foods) m.set(f.food_id, f)
+    return m
+  }, [data.foods])
+
+  const foodA = foodAId != null ? (foodsById.get(foodAId) ?? null) : null
+  const foodB = foodBId != null ? (foodsById.get(foodBId) ?? null) : null
+
+  const rdaProfile: RDAProfile | null = useMemo(
+    () => (profileId === 'none' ? null : RDA_PROFILES.find((p) => p.id === profileId) ?? null),
+    [profileId],
+  )
+
+  function getGrams(food: FoodRow | null, custom: number): number {
+    if (!food) return 100
+    if (weightMode === 'per100g') return 100
+    if (weightMode === 'per_serving') return PORTION_SIZES[food.food_id]?.grams ?? 100
+    return custom > 0 ? custom : 100
+  }
+
+  const gramsA = getGrams(foodA, customGramsA)
+  const gramsB = getGrams(foodB, customGramsB)
+
+  const valuesA = useMemo<Record<number, number | null>>(() => {
+    if (!foodA) return {}
+    const mult = gramsA / 100
+    const result: Record<number, number | null> = {}
+    for (const [idStr, val] of Object.entries(foodA.nutrients)) {
+      result[Number(idStr)] = val != null ? (val as number) * mult : null
+    }
+    return result
+  }, [foodA, gramsA])
+
+  const valuesB = useMemo<Record<number, number | null>>(() => {
+    if (!foodB) return {}
+    const mult = gramsB / 100
+    const result: Record<number, number | null> = {}
+    for (const [idStr, val] of Object.entries(foodB.nutrients)) {
+      result[Number(idStr)] = val != null ? (val as number) * mult : null
+    }
+    return result
+  }, [foodB, gramsB])
+
+  const valuesDiff = useMemo<Record<number, number | null>>(() => {
+    const result: Record<number, number | null> = {}
+    for (const n of data.nutrients) {
+      const a = valuesA[n.nutrient_id]
+      const b = valuesB[n.nutrient_id]
+      result[n.nutrient_id] = a != null && b != null ? a - b : null
+    }
+    return result
+  }, [valuesA, valuesB, data.nutrients])
+
+  const diffChartData = useMemo<DiffBar[]>(() => {
+    if (!foodA || !foodB || !rdaProfile) return []
+    const bars: DiffBar[] = []
+    for (const n of data.nutrients) {
+      const diffVal = valuesDiff[n.nutrient_id]
+      if (diffVal === null) continue
+      const rdaTarget =
+        rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null
+      if (rdaTarget === null) continue
+      bars.push({
+        label: abbr(n.nutrient_name),
+        fullName: n.nutrient_name,
+        diffPct: (diffVal / rdaTarget) * 100,
+        unit: n.unit,
+        rawDiff: diffVal,
+      })
+    }
+    bars.sort((a, b) => b.diffPct - a.diffPct)
+    return bars
+  }, [foodA, foodB, rdaProfile, data.nutrients, valuesDiff])
+
+  function portionLabel(food: FoodRow | null, custom: number): string {
+    if (!food) return ''
+    if (weightMode === 'per100g') return '100g'
+    if (weightMode === 'per_serving') {
+      const ps = PORTION_SIZES[food.food_id]
+      return ps ? `${ps.label} (${ps.grams}g)` : '100g'
+    }
+    return `${custom > 0 ? custom : 100}g`
+  }
+
+  const bothSelected = foodA !== null && foodB !== null
+  const eitherSelected = foodA !== null || foodB !== null
+
+  return (
+    <div className="space-y-4">
+      {/* Controls bar */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+        <div className="flex gap-4 flex-wrap items-start">
+          {/* Food selectors */}
+          <FoodSelector foods={data.foods} value={foodAId} onChange={setFoodAId} label="Food A" />
+          <div className="flex items-end pb-3 flex-shrink-0">
+            <span className="text-slate-500 text-sm font-medium">vs</span>
+          </div>
+          <FoodSelector foods={data.foods} value={foodBId} onChange={setFoodBId} label="Food B" />
+
+          <div className="w-px self-stretch bg-slate-700 mx-1 flex-shrink-0" />
+
+          {/* Weight mode */}
+          <div className="flex-shrink-0">
+            <p className="text-[10px] text-slate-500 mb-1.5 font-medium uppercase tracking-wider">
+              Weight
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {(['per100g', 'per_serving', 'custom'] as WeightMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setWeightMode(mode)}
+                  className={`px-2.5 py-1 text-xs rounded transition-colors ${
+                    weightMode === mode
+                      ? 'bg-violet-700 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                  }`}
+                >
+                  {mode === 'per100g' ? 'Per 100g' : mode === 'per_serving' ? 'Per Serving' : 'Custom'}
+                </button>
+              ))}
+              {weightMode === 'custom' && (
+                <div className="flex items-center gap-1.5 ml-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={2000}
+                    value={customGramsA}
+                    onChange={(e) => setCustomGramsA(Number(e.target.value))}
+                    className="w-16 bg-slate-700 border border-slate-600 rounded px-1.5 py-1 text-xs text-slate-200 text-center outline-none focus:border-violet-500"
+                    title="Grams for Food A"
+                  />
+                  <span className="text-slate-500 text-[10px]">g A</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={2000}
+                    value={customGramsB}
+                    onChange={(e) => setCustomGramsB(Number(e.target.value))}
+                    className="w-16 bg-slate-700 border border-slate-600 rounded px-1.5 py-1 text-xs text-slate-200 text-center outline-none focus:border-violet-500"
+                    title="Grams for Food B"
+                  />
+                  <span className="text-slate-500 text-[10px]">g B</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="w-px self-stretch bg-slate-700 mx-1 flex-shrink-0" />
+
+          {/* DV Profile dropdown */}
+          <div ref={profileRef} className="relative flex-shrink-0">
+            <p className="text-[10px] text-slate-500 mb-1.5 font-medium uppercase tracking-wider">
+              DV Profile
+            </p>
+            <button
+              onClick={() => setProfileOpen((v) => !v)}
+              className="bg-slate-700 border border-slate-600 hover:border-slate-500 rounded px-3 py-1.5 text-xs text-slate-200 flex items-center gap-2 transition-colors whitespace-nowrap"
+            >
+              {rdaProfile ? rdaProfile.shortLabel : 'None (Raw Values)'}
+              <span className="text-slate-500 text-[10px]">▾</span>
+            </button>
+            {profileOpen && (
+              <div className="absolute z-50 top-full right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden min-w-[180px]">
+                <button
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
+                    profileId === 'none' ? 'text-violet-300' : 'text-slate-300'
+                  }`}
+                  onClick={() => { setProfileId('none'); setProfileOpen(false) }}
+                >
+                  None (Raw Values)
+                </button>
+                {RDA_PROFILES.map((p) => (
+                  <button
+                    key={p.id}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
+                      profileId === p.id ? 'text-violet-300' : 'text-slate-300'
+                    }`}
+                    onClick={() => { setProfileId(p.id); setProfileOpen(false) }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Three comparison panels */}
+      {eitherSelected ? (
+        <div className="flex gap-3">
+          <NutrientComparePanel
+            title={foodA ? foodA.food_name : 'Food A'}
+            subtitle={foodA ? portionLabel(foodA, customGramsA) : undefined}
+            nutrients={data.nutrients}
+            values={valuesA}
+            rdaProfile={rdaProfile}
+            variant="food"
+            hasFood={foodA !== null}
+          />
+          <NutrientComparePanel
+            title={foodB ? foodB.food_name : 'Food B'}
+            subtitle={foodB ? portionLabel(foodB, customGramsB) : undefined}
+            nutrients={data.nutrients}
+            values={valuesB}
+            rdaProfile={rdaProfile}
+            variant="food"
+            hasFood={foodB !== null}
+          />
+          <NutrientComparePanel
+            title="Net Difference (A − B)"
+            subtitle={
+              bothSelected
+                ? `${foodA!.food_name} minus ${foodB!.food_name}`
+                : 'Select both foods to see the difference'
+            }
+            nutrients={data.nutrients}
+            values={valuesDiff}
+            rdaProfile={rdaProfile}
+            variant="diff"
+            hasFood={bothSelected}
+          />
+        </div>
+      ) : (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-slate-400 text-sm font-medium mb-1">Select two foods to compare</p>
+            <p className="text-slate-600 text-xs">
+              Use the dropdowns above to pick Food A and Food B
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Net difference bar chart */}
+      {bothSelected && rdaProfile && diffChartData.length > 0 && (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="text-xs font-semibold text-slate-300">
+                Net Difference — % Daily Value ({rdaProfile.shortLabel})
+              </p>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                Sorted largest positive → largest negative ·{' '}
+                <span className="text-slate-400">{foodA!.food_name}</span>
+                {' minus '}
+                <span className="text-slate-400">{foodB!.food_name}</span>
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-[10px]">
+              <span className="flex items-center gap-1.5 text-green-400">
+                <span className="w-2.5 h-2.5 rounded-sm inline-block bg-green-400 opacity-80" />
+                A has more
+              </span>
+              <span className="flex items-center gap-1.5 text-red-400">
+                <span className="w-2.5 h-2.5 rounded-sm inline-block bg-red-400 opacity-80" />
+                B has more
+              </span>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={440}>
+            <BarChart
+              data={diffChartData}
+              margin={{ top: 16, right: 16, left: 0, bottom: 100 }}
+              barCategoryGap="20%"
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={<CustomXTick />}
+                interval={0}
+                axisLine={{ stroke: '#475569' }}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(v: number) => `${Math.round(v)}%`}
+                tick={{ fontSize: 10, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+              />
+              <Tooltip
+                content={<DiffChartTooltip />}
+                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                isAnimationActive={false}
+              />
+              <ReferenceLine
+                y={0}
+                stroke="#64748b"
+                strokeWidth={1.5}
+                label={{ value: '0%', fontSize: 9, fill: '#64748b', position: 'insideTopRight' }}
+              />
+              <Bar dataKey="diffPct" radius={[3, 3, 0, 0]} maxBarSize={28}>
+                {diffChartData.map((bar) => (
+                  <Cell
+                    key={bar.label}
+                    fill={bar.diffPct >= 0 ? '#4ade80' : '#f87171'}
+                    fillOpacity={0.85}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Prompt for DV profile when both foods are selected but no profile */}
+      {bothSelected && !rdaProfile && (
+        <div className="bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center py-10">
+          <p className="text-slate-500 text-sm">
+            Select a DV profile above to see the net difference bar chart.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
