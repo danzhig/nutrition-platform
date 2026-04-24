@@ -70,6 +70,7 @@ function FoodSelector({
   label: string
 }) {
   const [query, setQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<string>('All')
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -85,11 +86,29 @@ function FoodSelector({
 
   const selected = foods.find((f) => f.food_id === value) ?? null
 
+  // All distinct categories in the order they first appear
+  const categories = useMemo(() => {
+    const seen = new Set<string>()
+    const cats: string[] = []
+    for (const f of foods) {
+      if (!seen.has(f.category)) { seen.add(f.category); cats.push(f.category) }
+    }
+    return ['All', ...cats.sort()]
+  }, [foods])
+
+  // When searching, ignore category filter and search everything
   const filtered = useMemo(() => {
-    if (!query.trim()) return foods.slice(0, 60)
-    const q = query.toLowerCase()
-    return foods.filter((f) => f.food_name.toLowerCase().includes(q)).slice(0, 60)
-  }, [foods, query])
+    const q = query.trim().toLowerCase()
+    if (q) return foods.filter((f) => f.food_name.toLowerCase().includes(q))
+    if (activeCategory === 'All') return foods
+    return foods.filter((f) => f.category === activeCategory)
+  }, [foods, query, activeCategory])
+
+  function handleSelect(id: number | null) {
+    onChange(id)
+    setQuery('')
+    setOpen(false)
+  }
 
   return (
     <div ref={containerRef} className="relative flex-1 min-w-0">
@@ -109,22 +128,44 @@ function FoodSelector({
       )}
 
       {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden">
-          <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-2">
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden" style={{ minWidth: 280 }}>
+          {/* Search bar */}
+          <div className="p-2 border-b border-slate-700">
             <input
               autoFocus
               type="text"
               className="w-full bg-slate-700 border border-slate-600 rounded px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-violet-500"
-              placeholder="Search foods…"
+              placeholder="Search all foods…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="max-h-56 overflow-y-auto">
+
+          {/* Category filter buttons — hidden while searching */}
+          {!query.trim() && (
+            <div className="px-2 py-1.5 border-b border-slate-700 flex flex-wrap gap-1">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                    activeCategory === cat
+                      ? 'bg-violet-700 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Food list */}
+          <div className="overflow-y-auto" style={{ maxHeight: 240 }}>
             {value !== null && (
               <button
                 className="w-full text-left px-3 py-1.5 text-xs text-slate-400 hover:bg-slate-700 border-b border-slate-700"
-                onClick={() => { onChange(null); setQuery(''); setOpen(false) }}
+                onClick={() => handleSelect(null)}
               >
                 — Clear selection
               </button>
@@ -135,10 +176,12 @@ function FoodSelector({
                 className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700/70 flex items-center justify-between ${
                   f.food_id === value ? 'text-violet-300' : 'text-slate-200'
                 }`}
-                onClick={() => { onChange(f.food_id); setQuery(''); setOpen(false) }}
+                onClick={() => handleSelect(f.food_id)}
               >
                 <span className="truncate">{f.food_name}</span>
-                <span className="text-slate-500 text-[10px] flex-shrink-0 ml-2">{f.category}</span>
+                {(query.trim() || activeCategory === 'All') && (
+                  <span className="text-slate-500 text-[10px] flex-shrink-0 ml-2">{f.category}</span>
+                )}
               </button>
             ))}
             {filtered.length === 0 && (
