@@ -20,7 +20,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Soups & Stews',
   'Silky red lentil soup with onion, carrot, garlic, cumin, and turmeric. Plant-based iron and folate powerhouse with anti-inflammatory spices.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Red)'),          'grams', 150, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Red)'),          'grams', 96,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Carrot'),                 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
@@ -54,7 +54,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Soups & Stews',
   'Smoky Cuban-inspired black bean soup with onion, garlic, cumin, and paprika. Excellent for fiber, folate, plant protein, and iron.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Black Beans'),            'grams', 200, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Black Beans'),            'grams', 92,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 150, 'servings', 1),
@@ -114,8 +114,8 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Soups & Stews',
   'Moroccan-style braised lamb with chickpeas, tomato, cumin, cinnamon, and paprika. Rich in iron, zinc, B vitamins, and warming spices.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lamb (leg)'),             'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chickpeas'),              'grams', 150, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lamb (leg)'),             'grams', 170, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chickpeas'),              'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
@@ -160,7 +160,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Soups & Stews',
   'Hearty green split pea soup with carrot, leek, garlic, thyme, and black pepper. Exceptionally high in fiber, plant protein, and B vitamins.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Green Split Peas'),       'grams', 180, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Green Split Peas'),       'grams', 98,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Carrot'),                 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Leek'),                   'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 10,  'servings', 1),
@@ -286,7 +286,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Saag chana-style curry: chickpeas and spinach simmered in coconut milk with turmeric, cumin, ginger, and tomato. Iron, folate, and vitamin K powerhouse.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chickpeas'),              'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 120, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Coconut Milk (canned, full fat)'), 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 100, 'servings', 1),
@@ -305,7 +305,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Salmon (Atlantic)'),      'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Coconut Milk (canned, full fat)'), 'grams', 120, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 100, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 120, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
@@ -320,7 +320,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Curries',
   'Classic Indian tarka dal: red lentils simmered with onion, tomato, turmeric, cumin, and coriander. One of the most nutrient-dense plant meals possible.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Red)'),          'grams', 180, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Red)'),          'grams', 96,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
@@ -357,7 +357,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tofu (Firm)'),            'grams', 180, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Sweet Potato'),           'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Coconut Milk (canned, full fat)'), 'grams', 120, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
@@ -390,7 +390,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Curries',
   'South Indian-style mung bean curry simmered in coconut milk with tomato, turmeric, mustard-seed spicing, and fresh lemon. High in folate and manganese.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Mung Beans'),             'grams', 180, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Mung Beans'),             'grams', 104, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Coconut Milk (canned, full fat)'), 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 80,  'servings', 1),
@@ -465,8 +465,8 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Breakfast',
   'Light omelette made with egg whites, spinach, mushroom, and red pepper. High-protein, low-fat breakfast with iron, selenium, and vitamin C.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg White'),      'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg White'),      'grams', 165, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Mushroom (White Button)'), 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Red Bell Pepper'),        'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 10, 'servings', 1)
@@ -690,7 +690,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Rainbow Trout'),          'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Green)'),        'grams', 100, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 100, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),                  'grams', 30,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Rosemary (dried)'),       'grams', 2,   'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1)
@@ -776,7 +776,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Pasta (dry, white)'),     'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Salmon (Atlantic)'),      'grams', 180, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 100, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 15,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),                  'grams', 25,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 20, 'servings', 1),
@@ -880,7 +880,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Liver'),          'grams', 180, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Butter (unsalted)'),      'grams', 25,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),                 'grams', 12,  'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 40,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Thyme (dried)'),          'grams', 2,   'servings', 1)
   )
 ),
@@ -893,7 +893,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Deep-red pomegranate and apple juice blended with kale and lemon. Polyphenol and antioxidant powerhouse with vitamin K, C, and folate.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Pomegranate'),            'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Kale'),                   'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Kale'),                   'grams', 67,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Apple'),                  'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),                  'grams', 30,  'servings', 1)
   )
@@ -917,7 +917,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Bright green juice with kiwi, spinach, cucumber, and lemon. Kiwi is one of the most vitamin C-dense fruits; spinach adds iron and folate.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Kiwi'),                   'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Cucumber'),               'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),                  'grams', 30,  'servings', 1)
   )

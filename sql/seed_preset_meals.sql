@@ -44,9 +44,9 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Juices',
   'A cleansing green juice loaded with vitamins K and C, folate, and chlorophyll from spinach and cucumber, brightened with lemon.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),  'grams', 120, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),  'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Cucumber'), 'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Celery'),   'grams', 100, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Celery'),   'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Apple'),    'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),    'grams', 40,  'servings', 1)
   )
@@ -134,7 +134,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Salads',
   'Baby spinach with strawberries, walnuts, and olive oil. High in iron, omega-3, vitamin C, and folate.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 120, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 90,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Strawberry'),           'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Walnuts'),              'grams', 30,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1)
@@ -232,7 +232,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Italian peasant pasta and bean soup. Navy beans with pasta, tomato, and garlic — excellent for fiber, plant protein, and iron.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Pasta (dry, white)'),   'grams', 80,  'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Navy Beans'),           'grams', 150, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Navy Beans'),           'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),               'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Garlic'),               'grams', 15,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1)
@@ -321,7 +321,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg (whole)'),  'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Breast (skinless)'), 'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Cottage Cheese'),       'grams', 150, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 80,  'servings', 1)
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 60,  'servings', 1)
   )
 ),
 
@@ -343,7 +343,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'High Protein',
   'Lean turkey breast with roasted sweet potato and broccoli. High in B6, potassium, vitamin A, and complete protein.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Turkey Breast'),        'grams', 220, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Turkey Breast'),        'grams', 170, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Sweet Potato'),         'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Broccoli'),             'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1)
@@ -398,7 +398,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Fluffy scrambled eggs with spinach and butter. Simple, fast, and rich in choline, vitamin K, iron, and complete protein.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg (whole)'),  'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Spinach'),              'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Butter (unsalted)'),    'grams', 15,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Whole Milk (3.25%)'),   'grams', 30,  'servings', 1)
   )
@@ -426,6 +426,6 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Salmon (Atlantic)'),    'grams', 120, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Chicken Egg (whole)'),  'grams', 150, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Avocado'),              'grams', 100, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),              'grams', 50,  'servings', 1)
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),              'grams', 40,  'servings', 1)
   )
 );
