@@ -66,6 +66,7 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 | **Parallel Supabase pagination** | ✅ Live — `fetchHeatmapData.ts` counts rows first then fetches all pages in parallel via `Promise.all`; reduces initial load time |
 | **Bacon preset name fix** | ✅ Fixed — `seed_preset_meals_lowcarb_keto.sql` corrected `'Bacon (pork)'` → `'Bacon (pork, raw)'` to match the foods table |
 | **Food Comparison** | ✅ Live — third sub-tab under Data View; pick Food A & Food B; weight mode (per 100g / per serving / custom g per food); optional DV profile; three side-by-side panels (Food A, Food B, Net Difference A−B) each grouped by nutrient category with colour bars; net difference panel uses centered bars (green = A has more, red = B has more); bar chart below sorted largest positive → largest negative %DV difference (`components/FoodComparisonView.tsx`) |
+| **Preset meal portion audit** | ✅ SQL ready — 28 portion corrections applied across all 3 seed files; fixes: spinach ≤90g in salads / 60g elsewhere, arugula 40g, kale 67g in juices, dry legumes ≤104g (~2 servings), turkey/mackerel 170g, bacon 56g (4 slices), heavy cream 60g, lamb 170g in stews, egg whites 165g; migration file `sql/seed_preset_meals_fix_portions.sql` created for applying to live Supabase DB |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
