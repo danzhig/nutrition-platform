@@ -36,7 +36,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Soups & Stews',
   'Classic Italian vegetable soup: navy beans, zucchini, tomato, carrot, and pasta with oregano and basil. High in fiber, plant protein, and vitamins.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Navy Beans'),             'grams', 120, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Navy Beans'),             'grams', 92,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Zucchini'),               'grams', 120, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Carrot'),                 'grams', 80,  'servings', 1),
@@ -495,7 +495,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Earthy roasted beetroot with arugula, walnuts, orange, and olive oil. Brilliant for folate, manganese, nitrates, and heart-healthy fats.',
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Beetroot'),               'grams', 200, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Walnuts'),                'grams', 30,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Orange'),                 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1),
@@ -510,7 +510,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   json_build_array(
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Quinoa (uncooked)'),      'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Pomegranate'),            'grams', 150, 'servings', 1),
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 80,  'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Arugula'),                'grams', 60,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Walnuts'),                'grams', 30,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lemon'),                  'grams', 25,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Olive Oil (extra virgin)'), 'grams', 15, 'servings', 1)
@@ -522,7 +522,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Salads',
   'Green lentils with fire-roasted eggplant, tomato, onion, parsley, cumin, and lemon. Mediterranean-inspired, high in fiber, plant iron, and B vitamins.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Green)'),        'grams', 150, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Lentils (Green)'),        'grams', 96,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Eggplant'),               'grams', 200, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 100, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Onion'),                  'grams', 60,  'servings', 1),
@@ -657,7 +657,7 @@ INSERT INTO preset_meals (name, category, description, items) VALUES
   'Bowls',
   'Mexican-inspired bowl: black beans, brown rice, avocado, tomato, corn, lime, and cumin. High in fiber, heart-healthy fats, and plant protein.',
   json_build_array(
-    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Black Beans'),            'grams', 150, 'servings', 1),
+    json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Black Beans'),            'grams', 92,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Brown Rice (uncooked)'),  'grams', 80,  'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Avocado'),                'grams', 120, 'servings', 1),
     json_build_object('id', gen_random_uuid()::text, 'food_id', (SELECT id FROM foods WHERE name = 'Tomato'),                 'grams', 100, 'servings', 1),
