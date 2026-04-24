@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, Cell, ResponsiveContainer,
@@ -204,6 +204,8 @@ function NutrientComparePanel({
   rdaProfile,
   variant,
   hasFood,
+  scrollRef,
+  onScroll,
 }: {
   title: string
   subtitle?: string
@@ -212,6 +214,8 @@ function NutrientComparePanel({
   rdaProfile: RDAProfile | null
   variant: 'food' | 'diff'
   hasFood: boolean
+  scrollRef?: React.RefObject<HTMLDivElement | null>
+  onScroll?: (e: React.UIEvent<HTMLDivElement>) => void
 }) {
   const grouped = useMemo(() => {
     const g: Record<string, NutrientMeta[]> = {}
@@ -257,7 +261,7 @@ function NutrientComparePanel({
           </p>
         </div>
       ) : (
-        <div className="overflow-y-auto px-2 py-2 space-y-3" style={{ maxHeight: 560 }}>
+        <div ref={scrollRef} onScroll={onScroll} className="overflow-y-auto px-2 py-2 space-y-3" style={{ maxHeight: 560 }}>
           {CATEGORY_ORDER.map((cat) => {
             const group = grouped[cat]
             if (!group?.length) return null
@@ -482,6 +486,20 @@ export default function FoodComparisonView({ data }: Props) {
   const [profileOpen, setProfileOpen] = useState(false)
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const profileRef = useRef<HTMLDivElement>(null)
+  const scrollRefA = useRef<HTMLDivElement>(null)
+  const scrollRefB = useRef<HTMLDivElement>(null)
+  const scrollRefDiff = useRef<HTMLDivElement>(null)
+
+  const syncScroll = useCallback((source: React.RefObject<HTMLDivElement | null>) => {
+    return (e: React.UIEvent<HTMLDivElement>) => {
+      const top = (e.target as HTMLDivElement).scrollTop
+      for (const ref of [scrollRefA, scrollRefB, scrollRefDiff]) {
+        if (ref !== source && ref.current && ref.current.scrollTop !== top) {
+          ref.current.scrollTop = top
+        }
+      }
+    }
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -745,6 +763,8 @@ export default function FoodComparisonView({ data }: Props) {
             rdaProfile={rdaProfile}
             variant="food"
             hasFood={foodA !== null}
+            scrollRef={scrollRefA}
+            onScroll={syncScroll(scrollRefA)}
           />
           <NutrientComparePanel
             title={foodB ? foodB.food_name : 'Food B'}
@@ -754,6 +774,8 @@ export default function FoodComparisonView({ data }: Props) {
             rdaProfile={rdaProfile}
             variant="food"
             hasFood={foodB !== null}
+            scrollRef={scrollRefB}
+            onScroll={syncScroll(scrollRefB)}
           />
           <NutrientComparePanel
             title="Net Difference (A − B)"
@@ -767,6 +789,8 @@ export default function FoodComparisonView({ data }: Props) {
             rdaProfile={rdaProfile}
             variant="diff"
             hasFood={bothSelected}
+            scrollRef={scrollRefDiff}
+            onScroll={syncScroll(scrollRefDiff)}
           />
         </div>
       ) : (
