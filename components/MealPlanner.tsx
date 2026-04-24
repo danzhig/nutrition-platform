@@ -324,6 +324,7 @@ export default function MealPlanner({ data }: Props) {
     const meal: Meal = {
       id: crypto.randomUUID(),
       name: pm.name,
+      isJuice: pm.category.toLowerCase().includes('juice'),
       items: pm.items.map((item) => {
         const food = foodsById.get(item.food_id)
         const portion = getPortionSize(item.food_id)

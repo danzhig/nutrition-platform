@@ -19,6 +19,7 @@ export interface Meal {
   id: string             // client-generated
   name: string
   items: MealItem[]
+  isJuice?: boolean      // true = apply cold-press juice nutrient reduction factors
 }
 
 /**

@@ -118,6 +118,32 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
             </span>
           )}
 
+          {/* Food / Juice toggle */}
+          <div className="flex rounded overflow-hidden border border-slate-600 flex-shrink-0 text-[10px]">
+            <button
+              onClick={() => onChange({ ...meal, isJuice: false })}
+              className={`px-1.5 py-0.5 transition-colors ${
+                !meal.isJuice
+                  ? 'bg-violet-700 text-white'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+              title="Treat as solid food"
+            >
+              Food
+            </button>
+            <button
+              onClick={() => onChange({ ...meal, isJuice: true })}
+              className={`px-1.5 py-0.5 transition-colors ${
+                meal.isJuice
+                  ? 'bg-cyan-700 text-white'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+              title="Treat as cold-pressed juice — reduces fiber, protein, and fat to reflect pulp removal"
+            >
+              Juice
+            </button>
+          </div>
+
           {onSaveAsTemplate && meal.items.length > 0 && (
             <button
               onClick={handleSaveAsTemplate}

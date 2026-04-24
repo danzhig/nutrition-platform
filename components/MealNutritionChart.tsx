@@ -10,6 +10,7 @@ import type { RDAProfile } from '@/lib/rdaProfiles'
 import { NUTRIENT_BEHAVIORS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import type { Meal } from '@/types/meals'
+import { buildJuiceFactorMap } from '@/lib/juiceFactors'
 import MealCategoryRadar from './MealCategoryRadar'
 import MacroDonutChart from './MacroDonutChart'
 
@@ -117,6 +118,8 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
     [meals, viewId]
   )
 
+  const juiceFactorById = useMemo(() => buildJuiceFactorMap(nutrients), [nutrients])
+
   const giNutrientId = useMemo(
     () => nutrients.find((n) => n.nutrient_name === 'Glycemic Index')?.nutrient_id ?? null,
     [nutrients]
@@ -129,6 +132,7 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
   const totals = useMemo<Record<number, number>>(() => {
     const t: Record<number, number> = {}
     for (const meal of activeMeals) {
+      const isJuice = meal.isJuice ?? false
       for (const item of meal.items) {
         const food = foodsById.get(item.food_id)
         if (!food) continue
@@ -137,17 +141,20 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
           if (value === null || value === undefined) continue
           const nId = Number(nIdStr)
           if (nId === giNutrientId) continue
-          t[nId] = (t[nId] ?? 0) + (value as number) * multiplier
+          const jFactor = isJuice ? (juiceFactorById.get(nId) ?? 0.85) : 1
+          t[nId] = (t[nId] ?? 0) + (value as number) * multiplier * jFactor
         }
       }
     }
     return t
-  }, [activeMeals, foodsById, giNutrientId])
+  }, [activeMeals, foodsById, giNutrientId, juiceFactorById])
 
   const weightedGI = useMemo<number | null>(() => {
     if (giNutrientId === null || carbsNutrientId === null) return null
     let sumGIxCarbs = 0, sumCarbs = 0
     for (const meal of activeMeals) {
+      const isJuice = meal.isJuice ?? false
+      const carbFactor = isJuice ? (juiceFactorById.get(carbsNutrientId) ?? 0.85) : 1
       for (const item of meal.items) {
         const food = foodsById.get(item.food_id)
         if (!food) continue
@@ -155,12 +162,12 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
         const gi = food.nutrients[giNutrientId]
         const carbs = food.nutrients[carbsNutrientId]
         if (gi == null || carbs == null) continue
-        const carbAmount = (carbs as number) * multiplier
+        const carbAmount = (carbs as number) * multiplier * carbFactor
         if (carbAmount > 0) { sumGIxCarbs += (gi as number) * carbAmount; sumCarbs += carbAmount }
       }
     }
     return sumCarbs > 0 ? Math.round(sumGIxCarbs / sumCarbs) : null
-  }, [activeMeals, foodsById, giNutrientId, carbsNutrientId])
+  }, [activeMeals, foodsById, giNutrientId, carbsNutrientId, juiceFactorById])
 
   // Base chart data (true pct values, not yet clamped)
   const chartData = useMemo<Omit<ChartBar, 'displayPct'>[]>(() => {

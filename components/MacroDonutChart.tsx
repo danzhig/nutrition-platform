@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { Meal } from '@/types/meals'
+import { getJuiceFactor } from '@/lib/juiceFactors'
 
 interface Props {
   nutrients: NutrientMeta[]
@@ -118,6 +119,11 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
     }>()
 
     for (const meal of meals) {
+      const isJuice = meal.isJuice ?? false
+      const carbFactor   = isJuice ? getJuiceFactor('Net Carbohydrates', 'Macronutrient') : 1
+      const fibreFactor  = isJuice ? getJuiceFactor('Dietary Fibre',     'Macronutrient') : 1
+      const protFactor   = isJuice ? getJuiceFactor('Protein',           'Macronutrient') : 1
+      const fatFactor    = isJuice ? getJuiceFactor('Total Fat',         'Macronutrient') : 1
       for (const item of meal.items) {
         const food = foodsById.get(item.food_id)
         if (!food) continue
@@ -126,10 +132,10 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
           name: item.food_name || food.food_name,
           netCarbs_g: 0, fibre_g: 0, protein_g: 0, fat_g: 0,
         }
-        prev.netCarbs_g += ((food.nutrients[netCarbsId] as number) ?? 0) * mult
-        prev.fibre_g    += ((food.nutrients[fibreId]    as number) ?? 0) * mult
-        prev.protein_g  += ((food.nutrients[proteinId]  as number) ?? 0) * mult
-        prev.fat_g      += ((food.nutrients[fatId]      as number) ?? 0) * mult
+        prev.netCarbs_g += ((food.nutrients[netCarbsId] as number) ?? 0) * mult * carbFactor
+        prev.fibre_g    += ((food.nutrients[fibreId]    as number) ?? 0) * mult * fibreFactor
+        prev.protein_g  += ((food.nutrients[proteinId]  as number) ?? 0) * mult * protFactor
+        prev.fat_g      += ((food.nutrients[fatId]      as number) ?? 0) * mult * fatFactor
         contribs.set(item.food_id, prev)
       }
     }

@@ -21,6 +21,7 @@ import { loadPresetMeals } from '@/lib/presetMealStorage'
 import type { PresetMeal } from '@/lib/presetMealStorage'
 import { loadSavedMeals } from '@/lib/savedMealStorage'
 import type { SavedMeal } from '@/lib/savedMealStorage'
+import { buildJuiceFactorMap } from '@/lib/juiceFactors'
 
 interface Props {
   data: HeatmapData
@@ -35,6 +36,7 @@ interface MealOption {
   name: string
   category: string
   items: { food_id: number; grams: number }[]
+  isJuice: boolean
 }
 
 function abbr(name: string): string {
@@ -64,7 +66,11 @@ function fmtVal(val: number): string {
   return Math.round(val).toString()
 }
 
-function computeMealValues(meal: MealOption, foodsById: Map<number, FoodRow>): Record<number, number | null> {
+function computeMealValues(
+  meal: MealOption,
+  foodsById: Map<number, FoodRow>,
+  juiceFactorById: Map<number, number>
+): Record<number, number | null> {
   const result: Record<number, number | null> = {}
   for (const item of meal.items) {
     const food = foodsById.get(item.food_id)
@@ -73,7 +79,8 @@ function computeMealValues(meal: MealOption, foodsById: Map<number, FoodRow>): R
     for (const [idStr, rawVal] of Object.entries(food.nutrients)) {
       const nid = Number(idStr)
       if (rawVal != null) {
-        result[nid] = (result[nid] ?? 0) + rawVal * mult
+        const jFactor = meal.isJuice ? (juiceFactorById.get(nid) ?? 0.85) : 1
+        result[nid] = (result[nid] ?? 0) + rawVal * mult * jFactor
       }
     }
   }
@@ -561,6 +568,8 @@ export default function MealComparisonView({ data }: Props) {
     return m
   }, [data.foods])
 
+  const juiceFactorById = useMemo(() => buildJuiceFactorMap(data.nutrients), [data.nutrients])
+
   // Combine preset and saved meals into unified MealOption list
   const allMeals = useMemo<MealOption[]>(() => {
     const preset: MealOption[] = presetMeals.map((p) => ({
@@ -568,12 +577,14 @@ export default function MealComparisonView({ data }: Props) {
       name: p.name,
       category: p.category,
       items: p.items,
+      isJuice: p.category.toLowerCase().includes('juice'),
     }))
     const saved: MealOption[] = savedMeals.map((s) => ({
       id: s.id,
       name: s.name,
       category: MY_MEALS_CAT,
       items: s.items,
+      isJuice: false,
     }))
     return [...saved, ...preset]
   }, [presetMeals, savedMeals])
@@ -601,13 +612,13 @@ export default function MealComparisonView({ data }: Props) {
 
   const valuesA = useMemo<Record<number, number | null>>(() => {
     if (!mealA) return {}
-    return computeMealValues(mealA, foodsById)
-  }, [mealA, foodsById])
+    return computeMealValues(mealA, foodsById, juiceFactorById)
+  }, [mealA, foodsById, juiceFactorById])
 
   const valuesB = useMemo<Record<number, number | null>>(() => {
     if (!mealB) return {}
-    return computeMealValues(mealB, foodsById)
-  }, [mealB, foodsById])
+    return computeMealValues(mealB, foodsById, juiceFactorById)
+  }, [mealB, foodsById, juiceFactorById])
 
   const valuesDiff = useMemo<Record<number, number | null>>(() => {
     const result: Record<number, number | null> = {}
