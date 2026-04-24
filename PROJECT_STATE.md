@@ -155,10 +155,6 @@ nutrition-platform/
 - `.env.local` — Supabase URL + anon key (never committed; also set in Vercel dashboard)
 
 ### Human-readable reference
-- **`reference/food_list.csv`** — All 212 foods with category, batch, priority
-- **`reference/nutrients_list.csv`** — All 50 nutrients with units, categories, descriptions
-- **`reference/food_categories.csv`** — All 16 food categories with descriptions (incl. Supplements)
-- **`status_tracker.csv`** — Per-food completion log (all 212 marked complete)
 - **`ideas.md`** — Full visualization roadmap for future features
 
 ---
@@ -268,7 +264,6 @@ INSERT INTO food_nutrients (food_id, nutrient_id, value_per_100g) VALUES
 | File | What to add | Why it breaks without it |
 |---|---|---|
 | `lib/portionSizes.ts` | `food_id: { grams: N, label: '...' }` in `PORTION_SIZES` | Meal planner defaults to 100g/serving, preset enrichment uses wrong portion |
-| `reference/food_list.csv` | New row with id, name, category, batch, priority | Reference doc becomes stale |
 
 **portionSizes.ts convention:**
 - Use USDA standard reference amounts where available (e.g. 1 medium apple = 182g)
@@ -318,7 +313,6 @@ WHERE n.name = 'Nutrient Name' AND f.name = 'Food Name';
 | `lib/rdaProfiles.ts` → `BUILT_IN_PROFILES` | RDA value for all 4 profiles (`male-avg`, `female-avg`, `male-active`, `female-active`) | Nutrient shows no %DV bar; appears as 0% in all views |
 | `lib/rdaProfiles.ts` → `NUTRIENT_BEHAVIORS` | `'Nutrient Name': 'normal'` (or `'limit'` or `'normal-with-ul'`) | Color scale falls back to default; may color backwards for limit nutrients |
 | `lib/filterConstants.ts` → `NUTRIENT_GROUP_LIST` | Add to the appropriate group's `nutrients` array | Nutrient won't appear in the nutrient filter panel |
-| `reference/nutrients_list.csv` | New row | Reference doc becomes stale |
 
 **Behavior guide:**
 - `normal` — more is better (vitamins, minerals, protein, fiber)
@@ -354,7 +348,6 @@ VALUES ('Category Name', 'What kinds of foods belong here.');
 | File | What to add | Why it breaks without it |
 |---|---|---|
 | `lib/filterConstants.ts` → `FOOD_CATEGORY_LIST` | `'Category Name'` string | Category won't appear in the food filter panel |
-| `reference/food_categories.csv` | New row | Reference doc becomes stale |
 
 ---
 
