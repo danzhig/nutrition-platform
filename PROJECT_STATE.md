@@ -77,7 +77,7 @@ nutrition-platform/
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
 │   └── meals.ts                ← MealItem, Meal, ActiveMealPlan
-├── sql/                        ← Deploy files (schema + seed data for foods/nutrients)
+├── sql/                        ← schema.sql — schema reference (reflects live DB structure)
 ├── reference/                  ← CSV reference files
 └── memory/                     ← Claude memory files (not committed to git)
 ```
@@ -88,15 +88,11 @@ nutrition-platform/
 
 | Component | Status |
 |---|---|
-| Schema (all 6 tables, indexes, RLS) | ✅ Complete |
+| Schema (all 11 tables, indexes, RLS) | ✅ Complete |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
 | Tortillas (Corn + Flour, all 50 nutrients) | ✅ Complete |
-| Combined seed file (`sql/seed_all.sql`) | ✅ Complete |
-| Extended seed file (`sql/seed_amino_acids_gi_antioxidant.sql`) | ✅ Complete |
-| Supplements seed file (`sql/seed_supplements.sql`) | ✅ Complete |
-| Breads & Tortillas seed file (`sql/seed_breads_and_tortillas.sql`) | ✅ Complete |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
@@ -104,7 +100,7 @@ nutrition-platform/
 | **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
 | **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → ranked bar chart of all 218 foods; N selector (50/100); top/bottom toggle; category filter; per-100g vs per-serving toggle; bars colored by food category |
 | **Nutrient Scatter Plot** | ✅ Live — Charts tab (below Ranking): pick X + Y nutrient axes; optional bubble size (third nutrient); dots colored by food category (shared palette); clickable legend highlights/dims categories; per-100g vs per-serving toggle |
-| **Net Carbohydrates** | ✅ Live — `Carbohydrates` hidden from display (kept in DB); `Net Carbohydrates` (= Carbs − Fibre) added as nutrient; all 4 RDA profiles updated; `sql/seed_net_carbs.sql` deployed |
+| **Net Carbohydrates** | ✅ Live — `Carbohydrates` hidden from display (kept in DB); `Net Carbohydrates` (= Carbs − Fibre) added as nutrient; all 4 RDA profiles updated |
 | **Macro split donut (updated)** | ✅ Live — inner ring now shows 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald); both at 4 kcal/g (USDA convention); GI weighting in sidebar uses Net Carbs |
 | **Filter Deselect All fix** | ✅ Live — Food Category and Nutrient Group "Deselect all" now truly clears to empty (previous bug kept last item selected) |
 | **Tab persistence** | ✅ Live — active top-level tab and Data View sub-tab saved to localStorage; page reopens to last-visited tab on reload |
@@ -137,7 +133,7 @@ nutrition-platform/
 | **Meals collapsed on tab return** | ✅ Live — when returning to the Day Planner tab, all meal cards default to collapsed; collapse state initialized from draft localStorage key |
 | **ISR revalidate 300** | ✅ Live — replaced `export const dynamic = 'force-dynamic'` with `export const revalidate = 300`; page re-renders at most every 5 minutes; new foods/nutrients are reflected after the next revalidation cycle |
 | **Parallel Supabase pagination** | ✅ Live — `fetchHeatmapData.ts` counts rows first then fetches all pages in parallel via `Promise.all`; reduces initial load time |
-| **Bacon preset name fix** | ✅ Fixed — `seed_preset_meals_lowcarb_keto.sql` corrected `'Bacon (pork)'` → `'Bacon (pork, raw)'` to match the foods table |
+| **Bacon preset name fix** | ✅ Fixed — `'Bacon (pork)'` corrected to `'Bacon (pork, raw)'` in preset_meals (Supabase) |
 | **Food Comparison** | ✅ Live — third sub-tab under Data View; pick Food A & Food B; weight mode (per 100g / per serving / custom g per food); optional DV profile; three side-by-side panels (Food A, Food B, Net Difference A−B) each grouped by nutrient category with colour bars; net difference panel uses centered bars (green = A has more, red = B has more); bar chart below sorted largest positive → largest negative %DV difference (`components/FoodComparisonView.tsx`) |
 | **Preset meal portion audit** | ✅ Live — 34 portion corrections applied and deployed; fixes: spinach ≤90g in salads / 60g elsewhere, arugula 40–60g, kale 67g in juices, dry legumes ≤104g (~2 servings), turkey/mackerel 170g, bacon 56g (4 slices), heavy cream 60g, lamb 170g in stews, egg whites 165g; all corrections are live in Supabase |
 
@@ -148,73 +144,11 @@ nutrition-platform/
 
 ## Authoritative Deliverable Files
 
-### Deploy to Supabase (run in this order)
-1. **`sql/schema.sql`** — Creates all 6 base tables, indexes, Row Level Security policies
-2. **`sql/seed_all.sql`** — Inserts all reference data + all 212 foods + original 8,268 nutrient rows
-3. **`sql/seed_amino_acids_gi_antioxidant.sql`** — Adds 9 EAAs + GI + antioxidant capacity (2,332 rows)
-4. **`sql/seed_supplements.sql`** — Adds Supplements category + 4 supplement foods (25 nutrient rows)
-5. **`sql/seed_breads_and_tortillas.sql`** — Breads & tortillas in Grains & Cereals; currently Corn + Flour Tortilla (100 nutrient rows; add new bread types here)
-6. **`sql/seed_net_carbs.sql`** — Inserts `Net Carbohydrates` nutrient + computes values for all 218 foods (Formula: MAX(0, Carbohydrates − Dietary Fibre); safe to re-run via ON CONFLICT DO NOTHING/UPDATE)
-8. **Preset meals** — Already live in Supabase (101 meals, 11 categories). To reproduce from scratch, query the live DB via the REST API (credentials in memory) and re-generate the seed file.
-9. **Auth tables** — Auto-created by Supabase Auth. Then run these in SQL editor:
+### Database
+**Live Supabase is the source of truth.** All 11 tables, all data, all RLS policies are already deployed. No seed files exist locally.
 
-```sql
--- Saved custom RDA profiles
-CREATE TABLE user_rda_profiles (
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name       text NOT NULL,
-  values     jsonb NOT NULL DEFAULT '{}',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE user_rda_profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage their own RDA profiles"
-  ON user_rda_profiles FOR ALL
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Saved filter views
-CREATE TABLE user_filter_sets (
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name       text NOT NULL,
-  state      jsonb NOT NULL DEFAULT '{}',
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE user_filter_sets ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage their own filter sets"
-  ON user_filter_sets FOR ALL
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Meal plans
-CREATE TABLE meal_plans (
-  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id       uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name          text        NOT NULL,
-  meals         jsonb       NOT NULL DEFAULT '[]',
-  rda_selection text        NOT NULL DEFAULT '',
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  updated_at    timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE meal_plans ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage their own meal plans"
-  ON meal_plans FOR ALL
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
--- Saved individual meal templates
-CREATE TABLE saved_meals (
-  id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  name       text        NOT NULL,
-  items      jsonb       NOT NULL DEFAULT '[]',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE saved_meals ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage their own saved meals"
-  ON saved_meals FOR ALL
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
+- **`sql/schema.sql`** — Reference-only DDL reflecting the full live schema (11 tables, indexes, RLS). Use this to understand the structure or to recreate the DB from scratch. Do not run it against the live DB.
+- **Supabase credentials** — REST API URL + service role key stored in Claude memory (`memory/reference_supabase.md`).
 
 ### App source
 - All app files live in the GitHub repo root (Next.js 16 project)
@@ -226,9 +160,6 @@ CREATE POLICY "Users manage their own saved meals"
 - **`reference/food_categories.csv`** — All 16 food categories with descriptions (incl. Supplements)
 - **`status_tracker.csv`** — Per-food completion log (all 212 marked complete)
 - **`ideas.md`** — Full visualization roadmap for future features
-
-### Planning & architecture
-- **`PLAN.md`** — Tech stack, repo structure, deployment workflow, build phases, component design
 
 ---
 
@@ -290,8 +221,9 @@ user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB v
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
 meal_plans          (per user)    — Saved meal plans (JSONB meals array)
 saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
+preset_meals        (system)      — 101 curated meals across 11 categories (JSONB items array)
 
-nutrients table now has 3 additional columns:
+nutrients table has 3 extra columns beyond the original schema:
   body_role             — broad thematic function in the body
   deficiency_symptoms   — clinical symptoms of too little
   excess_symptoms       — symptoms of too much / toxicity notes
@@ -336,7 +268,6 @@ INSERT INTO food_nutrients (food_id, nutrient_id, value_per_100g) VALUES
 | File | What to add | Why it breaks without it |
 |---|---|---|
 | `lib/portionSizes.ts` | `food_id: { grams: N, label: '...' }` in `PORTION_SIZES` | Meal planner defaults to 100g/serving, preset enrichment uses wrong portion |
-| `sql/seed_*.sql` | The same INSERT in the appropriate seed file | Future redeploys won't include the food |
 | `reference/food_list.csv` | New row with id, name, category, batch, priority | Reference doc becomes stale |
 
 **portionSizes.ts convention:**
@@ -361,7 +292,7 @@ A nutrient has a row in `nutrients`, values in `food_nutrients` for every applic
 
 ```sql
 -- Step 1: insert the nutrient
-INSERT INTO nutrients (nutrient_name, unit, nutrient_category_id, description, body_role, deficiency_symptoms, excess_symptoms)
+INSERT INTO nutrients (name, unit, nutrient_category_id, description, body_role, deficiency_symptoms, excess_symptoms)
 VALUES (
   'Nutrient Name',
   'mg',  -- unit string shown in UI
@@ -377,7 +308,7 @@ VALUES (
 INSERT INTO food_nutrients (food_id, nutrient_id, value_per_100g)
 SELECT f.id, n.id, <value>
 FROM foods f, nutrients n
-WHERE n.nutrient_name = 'Nutrient Name' AND f.name = 'Food Name';
+WHERE n.name = 'Nutrient Name' AND f.name = 'Food Name';
 ```
 
 #### 2. App code — REQUIRED
@@ -447,7 +378,7 @@ LEFT JOIN food_nutrients fn ON fn.food_id = f.id
 GROUP BY f.name ORDER BY nutrient_count ASC LIMIT 20;
 
 -- Nutrients with no RDA in any profile (check rdaProfiles.ts manually for these)
-SELECT nutrient_name FROM nutrients ORDER BY nutrient_name;
+SELECT name FROM nutrients ORDER BY name;
 ```
 
 ---
