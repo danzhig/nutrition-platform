@@ -520,14 +520,19 @@ export default function MealPlanner({ data }: Props) {
         </button>
       </div>
 
-      {/* DV profile picker */}
-      <div className="pb-px">
+      {/* DV profile picker — pushed to far right, violet-tinted when nothing selected */}
+      <div className="ml-auto pb-px flex items-center gap-2">
+        <div className="w-px h-4 bg-slate-600 self-center flex-shrink-0" />
         <button
           onClick={() => setShowDVOverlay(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 transition-colors"
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs border transition-colors ${
+            rdaProfile
+              ? 'bg-slate-700/60 hover:bg-slate-700 border-slate-600 text-slate-300'
+              : 'bg-violet-600/10 hover:bg-violet-600/20 border-violet-500/50 hover:border-violet-400/70 text-violet-300'
+          }`}
         >
-          <span className="text-slate-500 text-[10px]">DV Profile</span>
-          <span className={rdaProfile ? 'text-violet-300 font-semibold' : 'text-slate-400'}>
+          <span className={`text-[10px] ${rdaProfile ? 'text-slate-500' : 'text-violet-400/80'}`}>DV Profile</span>
+          <span className={rdaProfile ? 'text-violet-300 font-semibold' : 'text-violet-300/60'}>
             {rdaProfile ? rdaProfile.shortLabel : 'None'}
           </span>
           <span className="text-slate-500 text-[9px]">▾</span>
@@ -771,6 +776,7 @@ export default function MealPlanner({ data }: Props) {
         meals={plan.meals}
         foodsById={foodsById}
         rdaProfile={rdaProfile}
+        onOpenDVProfile={() => setShowDVOverlay(true)}
       />
     </div>
     </div>

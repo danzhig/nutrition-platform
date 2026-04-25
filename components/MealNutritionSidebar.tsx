@@ -14,6 +14,7 @@ interface Props {
   meals: Meal[]
   foodsById: Map<number, FoodRow>
   rdaProfile: RDAProfile | null
+  onOpenDVProfile?: () => void
 }
 
 const CATEGORY_ORDER = ['Macronutrient', 'Vitamin', 'Mineral', 'Fatty Acid', 'Amino Acid', 'Food Metric']
@@ -29,7 +30,7 @@ function abbr(name: string): string {
     .replace('Omega-6 Fatty Acids', 'Omega-6')
 }
 
-export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaProfile }: Props) {
+export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaProfile, onOpenDVProfile }: Props) {
   // 'all' = full plan; meal id = individual meal
   const [viewId, setViewId] = useState<'all' | string>('all')
   const [infoNutrient, setInfoNutrient] = useState<NutrientMeta | null>(null)
@@ -136,11 +137,36 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
     <div className="w-72 flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg overflow-y-auto max-h-[calc(100vh-130px)] text-xs">
       <div className="sticky top-0 bg-slate-800 border-b border-slate-700 z-10">
         {/* Title row */}
-        <div className="px-3 pt-2 pb-1.5">
-          <p className="text-slate-300 font-semibold text-xs">
-            {rdaProfile ? `% Daily Value — ${rdaProfile.shortLabel}` : 'Total Nutrients'}
-          </p>
-          {!rdaProfile && (
+        <div className="px-3 pt-2 pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-slate-300 font-semibold text-xs">
+              {rdaProfile ? '% Daily Value' : 'Total Nutrients'}
+            </p>
+            {rdaProfile && onOpenDVProfile && (
+              <button
+                onClick={onOpenDVProfile}
+                className="text-[10px] text-violet-400 hover:text-violet-200 font-medium shrink-0 transition-colors"
+                title="Change DV profile"
+              >
+                {rdaProfile.shortLabel} ↗
+              </button>
+            )}
+          </div>
+
+          {/* CTA when no profile selected */}
+          {!rdaProfile && onOpenDVProfile && (
+            <button
+              onClick={onOpenDVProfile}
+              className="mt-2 w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-violet-600/15 hover:bg-violet-600/25 border border-violet-500/40 hover:border-violet-400/70 text-violet-300 transition-colors group"
+            >
+              <div className="text-left flex-1 min-w-0">
+                <span className="block text-[11px] font-semibold leading-tight">Choose a DV Profile</span>
+                <span className="block text-[9px] text-violet-400/70 mt-0.5">to see % daily value bars</span>
+              </div>
+              <span className="text-violet-500 group-hover:text-violet-300 transition-colors text-sm shrink-0">→</span>
+            </button>
+          )}
+          {!rdaProfile && !onOpenDVProfile && (
             <p className="text-slate-500 text-[10px] mt-0.5">Select a profile above to see % daily value</p>
           )}
         </div>
