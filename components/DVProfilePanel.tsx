@@ -20,6 +20,8 @@ interface Props {
   onSavedProfilesChange: (profiles: SavedProfile[]) => void
   /** When true: renders only the custom editor (no profile list). Used when embedded below the tab bar. */
   editorOnly?: boolean
+  /** When provided: renders as a floating overlay instead of inline. */
+  onClose?: () => void
 }
 
 function shortName(name: string): string {
@@ -49,6 +51,7 @@ export default function DVProfilePanel({
   onCustomValuesChange,
   onSavedProfilesChange,
   editorOnly = false,
+  onClose,
 }: Props) {
   const [customExpanded, setCustomExpanded] = useState(false)
   const [saveProfileName, setSaveProfileName] = useState('')
@@ -57,6 +60,9 @@ export default function DVProfilePanel({
   const [editingProfileId, setEditingProfileId] = useState<string | null>(null)
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState<string | null>(null)
+  // Overlay-only state
+  const [overlayView, setOverlayView] = useState<'picker' | 'editor'>('picker')
+  const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null)
 
   function seedFrom(baseId: ProfileId) {
     const base = RDA_PROFILES.find((p) => p.id === baseId)
@@ -104,6 +110,7 @@ export default function DVProfilePanel({
       onSavedProfilesChange([...savedProfiles, created])
       onRdaSelectionChange(`saved:${created.id}`)
       setSaveProfileName('')
+      onClose?.()
     } catch (e: unknown) {
       setSaveError(e instanceof Error ? e.message : 'Save failed')
     } finally {
@@ -127,6 +134,7 @@ export default function DVProfilePanel({
       onRdaSelectionChange(`saved:${editingProfileId}`)
       setEditingProfileId(null)
       setSaveProfileName('')
+      onClose?.()
     } catch (e: unknown) {
       setUpdateError(e instanceof Error ? e.message : 'Update failed')
     } finally {
@@ -145,6 +153,18 @@ export default function DVProfilePanel({
     }
   }
 
+  async function handleDeleteOverlay(p: SavedProfile) {
+    try {
+      await deleteSavedProfile(p.id)
+      onSavedProfilesChange(savedProfiles.filter((sp) => sp.id !== p.id))
+      if (rdaSelection === `saved:${p.id}`) onRdaSelectionChange('')
+      setDeletingProfileId(null)
+    } catch (e: unknown) {
+      console.error(e)
+      setDeletingProfileId(null)
+    }
+  }
+
   const effectiveValues: RDAValues =
     Object.keys(customRdaValues).length > 0
       ? customRdaValues
@@ -152,8 +172,8 @@ export default function DVProfilePanel({
 
   const isCustom = rdaSelection === 'custom'
 
-  // ── Shared editor body (multiCol=true for editorOnly wide layout) ──────────
-  function renderEditorBody(multiCol: boolean) {
+  // ── Shared nutrient input grid ────────────────────────────────────────────
+  function buildGroupCards() {
     const groups = NUTRIENT_GROUP_LIST.map((g) => {
       const editable = nutrients
         .filter((n) => n.nutrient_category === g.value)
@@ -161,9 +181,9 @@ export default function DVProfilePanel({
       return { g, editable }
     }).filter(({ editable }) => editable.length > 0)
 
-    const groupCards = groups.map(({ g, editable }) => (
-      <div key={g.value} className={multiCol ? 'bg-slate-900/60 rounded-lg p-3' : 'mb-2'}>
-        <p className={`text-[9px] text-slate-500 uppercase tracking-wider mb-1 ${multiCol ? '' : 'mt-2'}`}>{g.label}</p>
+    return groups.map(({ g, editable }) => (
+      <div key={g.value} className="bg-slate-900/60 rounded-lg p-3">
+        <p className="text-[9px] text-slate-500 uppercase tracking-wider mb-1">{g.label}</p>
         {editable.map((n) => {
           const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name]
           const badge = behavior ? BEHAVIOR_BADGE[behavior] : null
@@ -196,6 +216,11 @@ export default function DVProfilePanel({
         })}
       </div>
     ))
+  }
+
+  // ── Shared editor body (editorOnly + sidebar modes) ───────────────────────
+  function renderEditorBody(multiCol: boolean) {
+    const groupCards = buildGroupCards()
 
     return (
       <div className="px-3 pb-3">
@@ -292,6 +317,253 @@ export default function DVProfilePanel({
             )}
           </div>
         )}
+      </div>
+    )
+  }
+
+  // ── Overlay mode ──────────────────────────────────────────────────────────
+  if (onClose) {
+    // PICKER VIEW
+    if (overlayView === 'picker') {
+      return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
+          <div className="fixed inset-0 bg-black/60" onClick={onClose} />
+          <div className="relative w-80 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+              <span className="text-sm font-semibold text-slate-100">DV Profile</span>
+              <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-base leading-none">✕</button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-y-auto">
+              {/* My Profiles */}
+              {isLoggedIn && savedProfiles.length > 0 && (
+                <div className="px-3 pt-3 pb-2">
+                  <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-2">My Profiles</p>
+                  <div className="space-y-1">
+                    {savedProfiles.map((sp) =>
+                      deletingProfileId === sp.id ? (
+                        <div key={sp.id} className="flex items-center justify-between px-2.5 py-2 rounded-md bg-red-900/30 border border-red-700/60">
+                          <span className="text-[11px] text-red-300 truncate mr-2">Delete &ldquo;{sp.name}&rdquo;?</span>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => handleDeleteOverlay(sp)}
+                              className="px-2 py-0.5 text-[10px] font-semibold bg-red-600 hover:bg-red-500 text-white rounded transition-colors"
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => setDeletingProfileId(null)}
+                              className="px-2 py-0.5 text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors"
+                            >
+                              No
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          key={sp.id}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md border transition-colors ${
+                            rdaSelection === `saved:${sp.id}`
+                              ? 'bg-violet-700 border-violet-600 text-white'
+                              : 'bg-slate-700 border-slate-600 text-slate-300'
+                          }`}
+                        >
+                          <button
+                            onClick={() => { onRdaSelectionChange(`saved:${sp.id}`); onClose() }}
+                            className="flex-1 text-left text-[11px] font-medium truncate"
+                          >
+                            {sp.name}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingProfileId(sp.id)
+                              setSaveProfileName(sp.name)
+                              setUpdateError(null)
+                              onCustomValuesChange({ ...sp.values })
+                              setOverlayView('editor')
+                            }}
+                            title="Edit profile"
+                            className="shrink-0 text-[11px] text-slate-400 hover:text-violet-400 transition-colors px-1"
+                          >
+                            ✎
+                          </button>
+                          <button
+                            onClick={() => setDeletingProfileId(sp.id)}
+                            title="Delete profile"
+                            className="shrink-0 text-[11px] text-slate-400 hover:text-red-400 transition-colors px-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Built-in profiles */}
+              <div className="px-3 py-2">
+                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Built-in</p>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => { onRdaSelectionChange(''); onClose() }}
+                    className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                      rdaSelection === '' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    None
+                  </button>
+                  {RDA_PROFILES.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => { onRdaSelectionChange(p.id); onClose() }}
+                      title={p.description}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-md transition-colors ${
+                        rdaSelection === p.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      <span className="block text-[11px] font-medium">{p.label}</span>
+                      <span className="block text-[9px] opacity-60 mt-0.5 leading-tight">{p.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {!isLoggedIn && (
+                <p className="px-3 pb-2 text-[10px] text-slate-600 italic">Sign in to save custom profiles.</p>
+              )}
+            </div>
+
+            {/* Custom profile button — fixed at bottom of picker */}
+            <div className="border-t border-slate-700 px-3 py-2.5">
+              <button
+                onClick={() => {
+                  setEditingProfileId(null)
+                  setSaveProfileName('')
+                  setSaveError(null)
+                  if (Object.keys(customRdaValues).length === 0) seedFrom('male-avg')
+                  setOverlayView('editor')
+                }}
+                className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-medium border transition-colors ${
+                  rdaSelection === 'custom'
+                    ? 'bg-violet-600 border-violet-500 text-white'
+                    : 'bg-slate-700/60 border-slate-600 border-dashed text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
+              >
+                + Custom Profile…
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // EDITOR VIEW
+    const groupCards = buildGroupCards()
+    return (
+      <div className="fixed inset-0 z-50 flex items-start justify-center pt-10">
+        <div className="fixed inset-0 bg-black/60" onClick={onClose} />
+        <div className="relative w-[500px] max-h-[85vh] flex flex-col bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-700 flex-shrink-0">
+            <button
+              onClick={() => { setOverlayView('picker'); setSaveError(null); setUpdateError(null) }}
+              className="text-slate-400 hover:text-white transition-colors text-xs shrink-0"
+            >
+              ← Back
+            </button>
+            <span className="flex-1 text-sm font-semibold text-slate-100">
+              {editingProfileId
+                ? `Edit: ${savedProfiles.find((p) => p.id === editingProfileId)?.name ?? '…'}`
+                : 'Custom Profile'}
+            </span>
+            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-base leading-none shrink-0">✕</button>
+          </div>
+
+          {/* Profile name — at the top */}
+          <div className="px-4 pt-3 pb-3 border-b border-slate-700 flex-shrink-0">
+            <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+              Profile Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Pregnancy, Athlete, My Custom…"
+              value={saveProfileName}
+              onChange={(e) => setSaveProfileName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && saveProfileName.trim()) {
+                  editingProfileId ? handleUpdate() : handleSaveNew()
+                }
+              }}
+              className="w-full px-3 py-1.5 text-sm bg-slate-700 border border-slate-600 text-slate-100 placeholder-slate-500 rounded-md focus:ring-1 focus:ring-violet-500 outline-none"
+              autoFocus
+            />
+          </div>
+
+          {/* Scrollable nutrient editor */}
+          <div className="flex-1 overflow-y-auto min-h-0 px-4 py-3">
+            {/* Copy from */}
+            <div className="mb-3">
+              <p className="text-[9px] text-slate-500 mb-1.5">Copy from:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {RDA_PROFILES.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => seedFrom(p.id)}
+                    className="px-2 py-1 rounded text-[10px] bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white transition-colors"
+                  >
+                    {p.shortLabel}
+                  </button>
+                ))}
+                {savedProfiles
+                  .filter((p) => p.id !== editingProfileId)
+                  .map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => onCustomValuesChange({ ...p.values })}
+                      title={`Copy from "${p.name}"`}
+                      className="px-2 py-1 rounded text-[10px] bg-violet-900 text-violet-300 hover:bg-violet-800 hover:text-white transition-colors max-w-[80px] truncate"
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+              </div>
+            </div>
+
+            {/* Nutrient inputs — 2-col grid */}
+            <div className="grid grid-cols-2 gap-2">{groupCards}</div>
+
+            <p className="mt-3 text-[9px] text-slate-600 leading-relaxed">
+              <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
+              <span className="text-slate-400">↓</span> lower is better
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="flex-shrink-0 border-t border-slate-700 px-4 py-3 flex items-center justify-between gap-2">
+            <div className="text-[10px] text-red-400 min-w-0 truncate">
+              {saveError || updateError || ''}
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={() => { onRdaSelectionChange('custom'); onClose() }}
+                className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
+              >
+                Apply
+              </button>
+              {isLoggedIn && (
+                <button
+                  onClick={editingProfileId ? handleUpdate : handleSaveNew}
+                  disabled={saving || updating || !saveProfileName.trim()}
+                  className="px-3 py-1.5 text-[11px] font-semibold rounded-md bg-violet-600 hover:bg-violet-500 disabled:opacity-40 text-white transition-colors"
+                >
+                  {saving || updating ? '…' : editingProfileId ? 'Update Profile' : 'Save Profile'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

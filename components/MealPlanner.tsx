@@ -98,8 +98,7 @@ export default function MealPlanner({ data }: Props) {
   })
   const [showPlanDropdown, setShowPlanDropdown] = useState(false)
   const planDropdownRef = useRef<HTMLDivElement>(null)
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false)
-  const profileDropdownRef = useRef<HTMLDivElement>(null)
+  const [showDVOverlay, setShowDVOverlay] = useState(false)
   // Guards plan restore so tab-switch auth refreshes don't overwrite in-progress edits
   const planRestoredRef = useRef(false)
 
@@ -120,14 +119,11 @@ export default function MealPlanner({ data }: Props) {
     if (saved === 'sidebar' || saved === 'chart') setViewMode(saved)
   }, [])
 
-  // Close dropdowns on outside click
+  // Close plan dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (planDropdownRef.current && !planDropdownRef.current.contains(e.target as Node)) {
         setShowPlanDropdown(false)
-      }
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target as Node)) {
-        setShowProfileDropdown(false)
       }
     }
     document.addEventListener('mousedown', handler)
@@ -525,9 +521,9 @@ export default function MealPlanner({ data }: Props) {
       </div>
 
       {/* DV profile picker */}
-      <div className="relative pb-px" ref={profileDropdownRef}>
+      <div className="pb-px">
         <button
-          onClick={() => setShowProfileDropdown((v) => !v)}
+          onClick={() => setShowDVOverlay(true)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 transition-colors"
         >
           <span className="text-slate-500 text-[10px]">DV Profile</span>
@@ -536,79 +532,13 @@ export default function MealPlanner({ data }: Props) {
           </span>
           <span className="text-slate-500 text-[9px]">▾</span>
         </button>
-
-        {showProfileDropdown && (
-          <div className="absolute right-0 top-full mt-1 w-56 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 overflow-hidden text-xs">
-            {/* Saved profiles first */}
-            {savedProfiles.length > 0 && (
-              <>
-                <div className="px-3 pt-2 pb-1 text-[9px] font-semibold text-slate-500 uppercase tracking-wider">My Profiles</div>
-                {savedProfiles.map((sp) => (
-                  <button
-                    key={sp.id}
-                    onClick={() => { setPlan((p) => ({ ...p, rda_selection: `saved:${sp.id}` })); setShowProfileDropdown(false) }}
-                    className={`w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                      plan.rda_selection === `saved:${sp.id}` ? 'bg-violet-700/60 text-violet-200' : 'text-slate-200 hover:bg-slate-700'
-                    }`}
-                  >
-                    {sp.name}
-                  </button>
-                ))}
-                <div className="border-t border-slate-700 my-1" />
-              </>
-            )}
-
-            {/* Built-in profiles */}
-            <div className="px-3 pt-2 pb-1 text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Built-in</div>
-            <button
-              onClick={() => { setPlan((p) => ({ ...p, rda_selection: '' })); setShowProfileDropdown(false) }}
-              className={`w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors ${
-                plan.rda_selection === '' ? 'bg-violet-700/60 text-violet-200' : 'text-slate-200 hover:bg-slate-700'
-              }`}
-            >
-              None
-            </button>
-            {RDA_PROFILES.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => { setPlan((prev) => ({ ...prev, rda_selection: p.id })); setShowProfileDropdown(false) }}
-                className={`w-full text-left px-3 py-1.5 text-[11px] transition-colors ${
-                  plan.rda_selection === p.id ? 'bg-violet-700/60 text-violet-200' : 'text-slate-200 hover:bg-slate-700'
-                }`}
-              >
-                <span className="block font-medium">{p.label}</span>
-                <span className="block text-[9px] text-slate-500 mt-0.5 leading-tight">{p.description}</span>
-              </button>
-            ))}
-
-            {/* Custom */}
-            <div className="border-t border-slate-700 my-1" />
-            <button
-              onClick={() => {
-                if (Object.keys(customRdaValues).length === 0) {
-                  const base = RDA_PROFILES.find((p) => p.id === 'male-avg')
-                  if (base) setCustomRdaValues({ ...base.values })
-                }
-                setPlan((p) => ({ ...p, rda_selection: 'custom' }))
-                setShowProfileDropdown(false)
-              }}
-              className={`w-full text-left px-3 py-1.5 text-[11px] font-medium transition-colors mb-1 ${
-                plan.rda_selection === 'custom' ? 'bg-violet-700/60 text-violet-200' : 'text-slate-200 hover:bg-slate-700'
-              }`}
-            >
-              Custom…
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
 
-  // ── Custom editor panel (shown below tab bar in both views when active) ───
-
-  const customEditorPanel = plan.rda_selection === 'custom' ? (
+  const dvOverlay = showDVOverlay ? (
     <DVProfilePanel
-      editorOnly
+      onClose={() => setShowDVOverlay(false)}
       nutrients={data.nutrients}
       rdaSelection={plan.rda_selection}
       customRdaValues={customRdaValues}
@@ -624,25 +554,27 @@ export default function MealPlanner({ data }: Props) {
 
   if (viewMode === 'chart') {
     return (
-      <div>
-        {viewTabBar}
-        {customEditorPanel}
-        <MealNutritionChart
-          nutrients={data.nutrients}
-          meals={plan.meals}
-          foodsById={foodsById}
-          rdaProfile={rdaProfile}
-        />
-      </div>
+      <>
+        <div>
+          {viewTabBar}
+          <MealNutritionChart
+            nutrients={data.nutrients}
+            meals={plan.meals}
+            foodsById={foodsById}
+            rdaProfile={rdaProfile}
+          />
+        </div>
+        {dvOverlay}
+      </>
     )
   }
 
   // ── Sidebar mode ──────────────────────────────────────────────────────────
 
   return (
+    <>
     <div>
       {viewTabBar}
-      {customEditorPanel}
     <div className="flex gap-4 items-start">
       {/* Left: plan builder */}
       <div className="flex-1 min-w-0 space-y-3">
@@ -842,5 +774,7 @@ export default function MealPlanner({ data }: Props) {
       />
     </div>
     </div>
+    {dvOverlay}
+    </>
   )
 }
