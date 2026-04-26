@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-24 (session 7)
+**Last updated:** 2026-04-26 (session 9)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -116,12 +116,12 @@ nutrition-platform/
 | **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
 | **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
 | **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
-| **Preset meal templates** | ✅ Live — 101 curated system meals across 11 categories (Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto, Soups & Stews, Stir-Fries, Curries) deployed to Supabase |
+| **Preset meal templates** | ✅ Live — 113 curated system meals across 12 categories (Juices, Low Sug Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto, Soups & Stews, Stir-Fries, Curries) deployed to Supabase |
 | **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; loaded presets/templates appear at top, expanded; other meals collapse; header shows food count + total grams when collapsed |
 | **Preset item enrichment fix** | ✅ Live — preset items resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
 | **Macro split donut** | ✅ Live (superseded — see updated entry above) |
 | **Low Carb & Keto preset meals** | ✅ Live — 6 Low Carb + 6 Keto meals deployed to Supabase |
-| **Expanded preset meal library** | ✅ Live — 60 additional meals (101 total) deployed to Supabase; categories: Soups & Stews (10), Stir-Fries (7), Curries (7); expanded Breakfast, Salads, Bowls, High Protein, Pastas, Low Carb, Keto, Juices |
+| **Expanded preset meal library** | ✅ Live — 60 additional meals (101 total at that point) deployed to Supabase; categories: Soups & Stews (10), Stir-Fries (7), Curries (7); expanded Breakfast, Salads, Bowls, High Protein, Pastas, Low Carb, Keto, Juices |
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
 | **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
@@ -136,9 +136,15 @@ nutrition-platform/
 | **Bacon preset name fix** | ✅ Fixed — `'Bacon (pork)'` corrected to `'Bacon (pork, raw)'` in preset_meals (Supabase) |
 | **Food Comparison** | ✅ Live — third sub-tab under Data View; pick Food A & Food B; weight mode (per 100g / per serving / custom g per food); optional DV profile; three side-by-side panels (Food A, Food B, Net Difference A−B) each grouped by nutrient category with colour bars; net difference panel uses centered bars (green = A has more, red = B has more); bar chart below sorted largest positive → largest negative %DV difference (`components/FoodComparisonView.tsx`) |
 | **Preset meal portion audit** | ✅ Live — 34 portion corrections applied and deployed; fixes: spinach ≤90g in salads / 60g elsewhere, arugula 40–60g, kale 67g in juices, dry legumes ≤104g (~2 servings), turkey/mackerel 170g, bacon 56g (4 slices), heavy cream 60g, lamb 170g in stews, egg whites 165g; all corrections are live in Supabase |
+| **Juice portion audit** | ✅ Live — all 8 existing Juice presets corrected to realistic single-serving cold-press sizes (300–410g produce total); Berry Antioxidant Boost restructured with apple as juice base (berry-only had no drinkable liquid); all 8 patches live in Supabase |
+| **Low Sug Juices preset category** | ✅ Live — 6 new low-sugar cold-press juice presets in a new "Low Sug Juices" category: Cucumber Mint Refresher, Celery Lemon Detox, Green Alkaline Juice, Beet Ginger Shots, Tomato Herb Juice, Carrot Turmeric Zinger; all deployed to Supabase |
+| **Preset portion fixes (critical)** | ✅ Live — Chickpea & Spinach Curry reduced from 200g to 80g dry chickpeas (200g dry ≈ 500g cooked, was 3+ servings); Lamb Chop & Collard Greens reduced from 250g to 170g lamb; patched directly in Supabase |
+| **Meal Comparison food drill-down** | ✅ Live — in Meal A and Meal B panels, food pill buttons appear in the panel header (one per food in the meal + an "All" pill); clicking a food shows only that food's standalone nutrient contribution as %DV; selection resets when the meal changes; diff panel always compares full meals unchanged (`components/MealComparisonView.tsx`) |
+| **Meal expansion roadmap** | ✅ Documented — `meal_ideas.md` at project root documents ~25–28 planned new presets across 5 categories: Snacks (6), Wraps & Tacos (5), Smoothies (5), Breakfast variety (5), Underused Foods inventory; execution order defined |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
-**Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)
+**Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)  
+**Total preset meals: 113** (107 original + 6 Low Sug Juices)
 
 ---
 
@@ -217,7 +223,7 @@ user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB v
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
 meal_plans          (per user)    — Saved meal plans (JSONB meals array)
 saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
-preset_meals        (system)      — 101 curated meals across 11 categories (JSONB items array)
+preset_meals        (system)      — 113 curated meals across 12 categories (JSONB items array)
 
 nutrients table has 3 extra columns beyond the original schema:
   body_role             — broad thematic function in the body

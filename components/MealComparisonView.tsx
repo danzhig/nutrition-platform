@@ -87,6 +87,25 @@ function computeMealValues(
   return result
 }
 
+function computeSingleFoodValues(
+  foodId: number,
+  grams: number,
+  isJuice: boolean,
+  foodsById: Map<number, FoodRow>,
+  juiceFactorById: Map<number, number>
+): Record<number, number | null> {
+  const result: Record<number, number | null> = {}
+  const food = foodsById.get(foodId)
+  if (!food) return result
+  const mult = grams / 100
+  for (const [idStr, rawVal] of Object.entries(food.nutrients)) {
+    const nid = Number(idStr)
+    const jFactor = isJuice ? (juiceFactorById.get(nid) ?? 0.85) : 1
+    result[nid] = rawVal != null ? (rawVal as number) * mult * jFactor : null
+  }
+  return result
+}
+
 // ─── Meal Selector ─────────────────────────────────────────────────────────────
 
 const MY_MEALS_CAT = 'My Meals'
@@ -235,6 +254,10 @@ function NutrientComparePanel({
   scrollRef,
   onScroll,
   hideScrollbar = false,
+  mealItems,
+  foodsById,
+  selectedFoodId,
+  onSelectFood,
 }: {
   title: string
   subtitle?: string
@@ -246,6 +269,10 @@ function NutrientComparePanel({
   scrollRef?: React.RefObject<HTMLDivElement | null>
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void
   hideScrollbar?: boolean
+  mealItems?: { food_id: number; grams: number }[]
+  foodsById?: Map<number, FoodRow>
+  selectedFoodId?: number | null
+  onSelectFood?: (id: number | null) => void
 }) {
   const grouped = useMemo(() => {
     const g: Record<string, NutrientMeta[]> = {}
@@ -258,29 +285,68 @@ function NutrientComparePanel({
 
   const titleColor = variant === 'diff' ? 'text-cyan-300' : 'text-slate-200'
 
+  const hasFoodPills = variant === 'meal' && !!mealItems?.length && !!foodsById && !!onSelectFood
+
   return (
     <div className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden flex flex-col">
-      <div className="bg-slate-800 border-b border-slate-700 px-3 py-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className={`text-xs font-semibold truncate ${titleColor}`} title={title}>
-            {title}
-          </p>
-          {subtitle && (
-            <p className="text-[10px] text-slate-500 truncate mt-0.5" title={subtitle}>
-              {subtitle}
+      <div className="bg-slate-800 border-b border-slate-700 px-3 py-2 flex flex-col gap-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className={`text-xs font-semibold truncate ${titleColor}`} title={title}>
+              {title}
             </p>
+            {subtitle && (
+              <p className="text-[10px] text-slate-500 truncate mt-0.5" title={subtitle}>
+                {subtitle}
+              </p>
+            )}
+          </div>
+          {variant === 'diff' && (
+            <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
+              <span className="flex items-center gap-1 text-[10px] text-green-400">
+                <span className="w-2 h-2 rounded-sm inline-block bg-green-400 opacity-80" />
+                A has more
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-red-400">
+                <span className="w-2 h-2 rounded-sm inline-block bg-red-400 opacity-80" />
+                B has more
+              </span>
+            </div>
           )}
         </div>
-        {variant === 'diff' && (
-          <div className="flex items-center gap-3 flex-shrink-0 pt-0.5">
-            <span className="flex items-center gap-1 text-[10px] text-green-400">
-              <span className="w-2 h-2 rounded-sm inline-block bg-green-400 opacity-80" />
-              A has more
-            </span>
-            <span className="flex items-center gap-1 text-[10px] text-red-400">
-              <span className="w-2 h-2 rounded-sm inline-block bg-red-400 opacity-80" />
-              B has more
-            </span>
+
+        {hasFoodPills && (
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => onSelectFood!(null)}
+              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                selectedFoodId == null
+                  ? 'bg-violet-600 text-white'
+                  : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+              }`}
+            >
+              All
+            </button>
+            {mealItems!.map((item) => {
+              const food = foodsById!.get(item.food_id)
+              if (!food) return null
+              const name = food.food_name
+              const label = name.length > 14 ? name.slice(0, 13) + '…' : name
+              return (
+                <button
+                  key={item.food_id}
+                  onClick={() => onSelectFood!(item.food_id)}
+                  title={`${name} · ${item.grams}g`}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                    selectedFoodId === item.food_id
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
@@ -509,6 +575,8 @@ export default function MealComparisonView({ data }: Props) {
   const { user } = useAuth()
   const [mealAId, setMealAId] = useState<string | null>(null)
   const [mealBId, setMealBId] = useState<string | null>(null)
+  const [selectedFoodA, setSelectedFoodA] = useState<number | null>(null)
+  const [selectedFoodB, setSelectedFoodB] = useState<number | null>(null)
   const [profileId, setProfileId] = useState<string>('none')
   const [profileOpen, setProfileOpen] = useState(false)
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
@@ -610,6 +678,10 @@ export default function MealComparisonView({ data }: Props) {
     return RDA_PROFILES.find((p) => p.id === profileId) ?? null
   }, [profileId, savedProfiles])
 
+  // Reset food drill-down when meal selection changes
+  useEffect(() => { setSelectedFoodA(null) }, [mealAId])
+  useEffect(() => { setSelectedFoodB(null) }, [mealBId])
+
   const valuesA = useMemo<Record<number, number | null>>(() => {
     if (!mealA) return {}
     return computeMealValues(mealA, foodsById, juiceFactorById)
@@ -619,6 +691,21 @@ export default function MealComparisonView({ data }: Props) {
     if (!mealB) return {}
     return computeMealValues(mealB, foodsById, juiceFactorById)
   }, [mealB, foodsById, juiceFactorById])
+
+  // Drill-down display values: single food when selected, full meal otherwise
+  const displayValuesA = useMemo<Record<number, number | null>>(() => {
+    if (!mealA || selectedFoodA === null) return valuesA
+    const item = mealA.items.find((i) => i.food_id === selectedFoodA)
+    if (!item) return valuesA
+    return computeSingleFoodValues(selectedFoodA, item.grams, mealA.isJuice, foodsById, juiceFactorById)
+  }, [mealA, selectedFoodA, valuesA, foodsById, juiceFactorById])
+
+  const displayValuesB = useMemo<Record<number, number | null>>(() => {
+    if (!mealB || selectedFoodB === null) return valuesB
+    const item = mealB.items.find((i) => i.food_id === selectedFoodB)
+    if (!item) return valuesB
+    return computeSingleFoodValues(selectedFoodB, item.grams, mealB.isJuice, foodsById, juiceFactorById)
+  }, [mealB, selectedFoodB, valuesB, foodsById, juiceFactorById])
 
   const valuesDiff = useMemo<Record<number, number | null>>(() => {
     const result: Record<number, number | null> = {}
@@ -751,25 +838,33 @@ export default function MealComparisonView({ data }: Props) {
             title={mealA ? mealA.name : 'Meal A'}
             subtitle={mealA ? mealA.category : undefined}
             nutrients={data.nutrients}
-            values={valuesA}
+            values={displayValuesA}
             rdaProfile={rdaProfile}
             variant="meal"
             hasMeal={mealA !== null}
             scrollRef={scrollRefA}
             onScroll={syncScroll(scrollRefA)}
             hideScrollbar
+            mealItems={mealA?.items}
+            foodsById={foodsById}
+            selectedFoodId={selectedFoodA}
+            onSelectFood={setSelectedFoodA}
           />
           <NutrientComparePanel
             title={mealB ? mealB.name : 'Meal B'}
             subtitle={mealB ? mealB.category : undefined}
             nutrients={data.nutrients}
-            values={valuesB}
+            values={displayValuesB}
             rdaProfile={rdaProfile}
             variant="meal"
             hasMeal={mealB !== null}
             scrollRef={scrollRefB}
             onScroll={syncScroll(scrollRefB)}
             hideScrollbar
+            mealItems={mealB?.items}
+            foodsById={foodsById}
+            selectedFoodId={selectedFoodB}
+            onSelectFood={setSelectedFoodB}
           />
           <NutrientComparePanel
             title="Net Difference (A − B)"
