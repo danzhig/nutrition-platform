@@ -79,7 +79,6 @@ export default function MealPlanner({ data }: Props) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const [showSavedMeals, setShowSavedMeals] = useState(false)
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [sortPresetsByScore, setSortPresetsByScore] = useState(false)
@@ -258,11 +257,22 @@ export default function MealPlanner({ data }: Props) {
   }, [presetMeals, presetCategory, sortPresetsByScore, presetScores, presetNutrientSort, foodsById])
 
   const sortedSavedMeals = useMemo(() => {
-    if (sortSavedByScore && savedMealScores.size > 0) {
-      return [...savedMeals].sort((a, b) => (savedMealScores.get(b.id) ?? 0) - (savedMealScores.get(a.id) ?? 0))
+    let list = [...savedMeals]
+    if (presetNutrientSort !== null) {
+      const nid = presetNutrientSort
+      list.sort((a, b) => {
+        const sum = (sm: SavedMeal) => sm.items.reduce((acc, item) => {
+          const food = foodsById.get(item.food_id)
+          const v = food?.nutrients[nid]
+          return acc + (v != null ? (v as number) * item.grams / 100 : 0)
+        }, 0)
+        return sum(b) - sum(a)
+      })
+    } else if (sortSavedByScore && savedMealScores.size > 0) {
+      list.sort((a, b) => (savedMealScores.get(b.id) ?? 0) - (savedMealScores.get(a.id) ?? 0))
     }
-    return savedMeals
-  }, [savedMeals, sortSavedByScore, savedMealScores])
+    return list
+  }, [savedMeals, sortSavedByScore, savedMealScores, presetNutrientSort, foodsById])
 
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(plan) !== savedSnapshot,
@@ -327,7 +337,7 @@ export default function MealPlanner({ data }: Props) {
     }
     setPlan((p) => ({ ...p, meals: [meal, ...p.meals] }))
     setCollapsedMeals(new Set(plan.meals.map((m) => m.id)))
-    setShowSavedMeals(false)
+    setShowPresets(false)
   }
 
   async function handleDeleteSavedMeal(id: string) {
@@ -617,21 +627,9 @@ export default function MealPlanner({ data }: Props) {
           >
             + Add Meal
           </button>
-          {savedMeals.length > 0 && (
-            <button
-              onClick={() => { setShowSavedMeals((v) => !v); setShowPresets(false) }}
-              className={`px-4 text-sm border border-dashed rounded-lg py-2.5 transition-colors whitespace-nowrap ${
-                showSavedMeals
-                  ? 'text-violet-300 border-violet-500'
-                  : 'text-slate-400 hover:text-violet-300 border-slate-600 hover:border-violet-500'
-              }`}
-            >
-              {showSavedMeals ? 'Hide saved' : `+ My templates (${savedMeals.length})`}
-            </button>
-          )}
           {presetMeals.length > 0 && (
             <button
-              onClick={() => { setShowPresets((v) => !v); setShowSavedMeals(false) }}
+              onClick={() => setShowPresets((v) => !v)}
               className={`px-4 text-sm border border-dashed rounded-lg py-2.5 transition-colors whitespace-nowrap ${
                 showPresets
                   ? 'text-emerald-300 border-emerald-500'
@@ -642,54 +640,6 @@ export default function MealPlanner({ data }: Props) {
             </button>
           )}
         </div>
-
-        {/* Saved meal template picker */}
-        {showSavedMeals && savedMeals.length > 0 && (
-          <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400">My saved meal templates</span>
-              {savedMealScores.size > 0 && (
-                <button
-                  onClick={() => setSortSavedByScore((v) => !v)}
-                  className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
-                    sortSavedByScore
-                      ? 'bg-violet-600 text-white'
-                      : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
-                  }`}
-                >
-                  Sort by rank
-                </button>
-              )}
-            </div>
-            <div className="divide-y divide-slate-700/60 max-h-52 overflow-y-auto">
-              {sortedSavedMeals.map((sm) => (
-                <div key={sm.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-700/40">
-                  <button
-                    onClick={() => handleLoadSavedMeal(sm)}
-                    className="text-xs text-slate-200 hover:text-violet-300 text-left flex-1 min-w-0"
-                  >
-                    <span className="flex items-center gap-2 min-w-0">
-                      <span className="truncate">{sm.name}</span>
-                      {savedMealScores.has(sm.id) && (
-                        <ScoreBadge score={savedMealScores.get(sm.id)!} />
-                      )}
-                    </span>
-                    <span className="text-slate-500 text-[10px]">
-                      {sm.items.length} food{sm.items.length !== 1 ? 's' : ''}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSavedMeal(sm.id)}
-                    className="text-slate-500 hover:text-red-400 text-xs ml-3 flex-shrink-0"
-                    title="Delete template"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Preset meal browser */}
         {showPresets && presetMeals.length > 0 && (
@@ -722,17 +672,32 @@ export default function MealPlanner({ data }: Props) {
                     </optgroup>
                   ))}
                 </select>
-                {presetScores.size > 0 && (
-                  <button
-                    onClick={() => { setSortPresetsByScore((v) => !v); setPresetNutrientSort(null) }}
-                    className={`text-[10px] px-2 py-0.5 rounded transition-colors flex-shrink-0 ${
-                      sortPresetsByScore
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
-                    }`}
-                  >
-                    Sort by rank
-                  </button>
+                {presetCategory === 'My Templates' ? (
+                  savedMealScores.size > 0 && (
+                    <button
+                      onClick={() => { setSortSavedByScore((v) => !v); setPresetNutrientSort(null) }}
+                      className={`text-[10px] px-2 py-0.5 rounded transition-colors flex-shrink-0 ${
+                        sortSavedByScore
+                          ? 'bg-violet-600 text-white'
+                          : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                      }`}
+                    >
+                      Sort by rank
+                    </button>
+                  )
+                ) : (
+                  presetScores.size > 0 && (
+                    <button
+                      onClick={() => { setSortPresetsByScore((v) => !v); setPresetNutrientSort(null) }}
+                      className={`text-[10px] px-2 py-0.5 rounded transition-colors flex-shrink-0 ${
+                        sortPresetsByScore
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
+                      }`}
+                    >
+                      Sort by rank
+                    </button>
+                  )
                 )}
                 <span className="text-[10px] text-slate-500 hidden sm:inline">Click to add</span>
               </div>
@@ -753,57 +718,113 @@ export default function MealPlanner({ data }: Props) {
                   {cat}
                 </button>
               ))}
+              {savedMeals.length > 0 && (
+                <button
+                  onClick={() => setPresetCategory('My Templates')}
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                    presetCategory === 'My Templates'
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-700/60 text-violet-400 hover:bg-slate-700 hover:text-violet-300 border border-violet-800/50'
+                  }`}
+                >
+                  ★ My Templates ({savedMeals.length})
+                </button>
+              )}
             </div>
 
-            {/* Meal list */}
-            <div className="divide-y divide-slate-700/60 max-h-72 overflow-y-auto">
-              {filteredPresets.map((pm) => (
-                <button
-                  key={pm.id}
-                  onClick={() => handleLoadPreset(pm)}
-                  className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-slate-700/40 text-left transition-colors group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-300 transition-colors truncate">
-                        {pm.name}
+            {/* Meal list — My Templates or preset meals */}
+            {presetCategory === 'My Templates' ? (
+              <div className="divide-y divide-slate-700/60 max-h-72 overflow-y-auto">
+                {sortedSavedMeals.map((sm) => (
+                  <div key={sm.id} className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-700/40">
+                    <button
+                      onClick={() => handleLoadSavedMeal(sm)}
+                      className="text-xs text-left flex-1 min-w-0"
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="text-slate-200 hover:text-violet-300 truncate transition-colors">{sm.name}</span>
+                        {presetNutrientSort !== null && presetNutrientMeta && (() => {
+                          const nid = presetNutrientSort
+                          const val = sm.items.reduce((acc, item) => {
+                            const food = foodsById.get(item.food_id)
+                            const v = food?.nutrients[nid]
+                            return acc + (v != null ? (v as number) * item.grams / 100 : 0)
+                          }, 0)
+                          const d = val < 1 ? val.toFixed(2) : val < 100 ? val.toFixed(1) : Math.round(val).toString()
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-300 whitespace-nowrap flex-shrink-0 font-medium tabular-nums">
+                              {d}{presetNutrientMeta.unit}
+                            </span>
+                          )
+                        })()}
+                        {savedMealScores.has(sm.id) && (
+                          <ScoreBadge score={savedMealScores.get(sm.id)!} />
+                        )}
                       </span>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 whitespace-nowrap flex-shrink-0">
-                        {pm.category}
+                      <span className="text-slate-500 text-[10px]">
+                        {sm.items.length} food{sm.items.length !== 1 ? 's' : ''}
                       </span>
-                      {presetNutrientSort !== null && presetNutrientMeta && (() => {
-                        const nid = presetNutrientSort
-                        const val = pm.items.reduce((acc, item) => {
-                          const food = foodsById.get(item.food_id)
-                          const v = food?.nutrients[nid]
-                          return acc + (v != null ? (v as number) * item.grams / 100 : 0)
-                        }, 0)
-                        const d = val < 1 ? val.toFixed(2) : val < 100 ? val.toFixed(1) : Math.round(val).toString()
-                        return (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-300 whitespace-nowrap flex-shrink-0 font-medium tabular-nums">
-                            {d}{presetNutrientMeta.unit}
-                          </span>
-                        )
-                      })()}
-                      {presetScores.has(pm.id) && (
-                        <ScoreBadge score={presetScores.get(pm.id)!} />
-                      )}
-                    </div>
-                    {pm.description && (
-                      <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
-                        {pm.description}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-slate-600 mt-0.5">
-                      {pm.items.length} ingredient{pm.items.length !== 1 ? 's' : ''}
-                    </p>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSavedMeal(sm.id)}
+                      className="text-slate-500 hover:text-red-400 text-xs ml-3 flex-shrink-0 transition-colors"
+                      title="Delete template"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <span className="text-emerald-600 group-hover:text-emerald-400 text-xs flex-shrink-0 mt-0.5 transition-colors">
-                    + Add
-                  </span>
-                </button>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-700/60 max-h-72 overflow-y-auto">
+                {filteredPresets.map((pm) => (
+                  <button
+                    key={pm.id}
+                    onClick={() => handleLoadPreset(pm)}
+                    className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-slate-700/40 text-left transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-slate-200 group-hover:text-emerald-300 transition-colors truncate">
+                          {pm.name}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 whitespace-nowrap flex-shrink-0">
+                          {pm.category}
+                        </span>
+                        {presetNutrientSort !== null && presetNutrientMeta && (() => {
+                          const nid = presetNutrientSort
+                          const val = pm.items.reduce((acc, item) => {
+                            const food = foodsById.get(item.food_id)
+                            const v = food?.nutrients[nid]
+                            return acc + (v != null ? (v as number) * item.grams / 100 : 0)
+                          }, 0)
+                          const d = val < 1 ? val.toFixed(2) : val < 100 ? val.toFixed(1) : Math.round(val).toString()
+                          return (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-300 whitespace-nowrap flex-shrink-0 font-medium tabular-nums">
+                              {d}{presetNutrientMeta.unit}
+                            </span>
+                          )
+                        })()}
+                        {presetScores.has(pm.id) && (
+                          <ScoreBadge score={presetScores.get(pm.id)!} />
+                        )}
+                      </div>
+                      {pm.description && (
+                        <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-2 leading-relaxed">
+                          {pm.description}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-slate-600 mt-0.5">
+                        {pm.items.length} ingredient{pm.items.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <span className="text-emerald-600 group-hover:text-emerald-400 text-xs flex-shrink-0 mt-0.5 transition-colors">
+                      + Add
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
