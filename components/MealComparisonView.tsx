@@ -573,11 +573,28 @@ function CustomXTick({ x, y, payload }: { x?: number; y?: number; payload?: { va
 
 export default function MealComparisonView({ data }: Props) {
   const { user } = useAuth()
-  const [mealAId, setMealAId] = useState<string | null>(null)
-  const [mealBId, setMealBId] = useState<string | null>(null)
-  const [selectedFoodA, setSelectedFoodA] = useState<number | null>(null)
-  const [selectedFoodB, setSelectedFoodB] = useState<number | null>(null)
-  const [profileId, setProfileId] = useState<string>('none')
+  const [mealAId, setMealAId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('np:mealComp:mealAId')
+  })
+  const [mealBId, setMealBId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return localStorage.getItem('np:mealComp:mealBId')
+  })
+  const [selectedFoodA, setSelectedFoodA] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    const v = localStorage.getItem('np:mealComp:selectedFoodA')
+    return v !== null ? parseInt(v, 10) : null
+  })
+  const [selectedFoodB, setSelectedFoodB] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    const v = localStorage.getItem('np:mealComp:selectedFoodB')
+    return v !== null ? parseInt(v, 10) : null
+  })
+  const [profileId, setProfileId] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'none'
+    return localStorage.getItem('np:mealComp:profileId') ?? 'none'
+  })
   const [profileOpen, setProfileOpen] = useState(false)
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
@@ -630,6 +647,25 @@ export default function MealComparisonView({ data }: Props) {
     loadSavedProfiles().then(setSavedProfiles).catch(console.error)
   }, [user])
 
+  // Persist selections across tab switches
+  useEffect(() => {
+    if (mealAId === null) localStorage.removeItem('np:mealComp:mealAId')
+    else localStorage.setItem('np:mealComp:mealAId', mealAId)
+  }, [mealAId])
+  useEffect(() => {
+    if (mealBId === null) localStorage.removeItem('np:mealComp:mealBId')
+    else localStorage.setItem('np:mealComp:mealBId', mealBId)
+  }, [mealBId])
+  useEffect(() => {
+    if (selectedFoodA === null) localStorage.removeItem('np:mealComp:selectedFoodA')
+    else localStorage.setItem('np:mealComp:selectedFoodA', String(selectedFoodA))
+  }, [selectedFoodA])
+  useEffect(() => {
+    if (selectedFoodB === null) localStorage.removeItem('np:mealComp:selectedFoodB')
+    else localStorage.setItem('np:mealComp:selectedFoodB', String(selectedFoodB))
+  }, [selectedFoodB])
+  useEffect(() => { localStorage.setItem('np:mealComp:profileId', profileId) }, [profileId])
+
   const foodsById = useMemo(() => {
     const m = new Map<number, FoodRow>()
     for (const f of data.foods) m.set(f.food_id, f)
@@ -678,9 +714,17 @@ export default function MealComparisonView({ data }: Props) {
     return RDA_PROFILES.find((p) => p.id === profileId) ?? null
   }, [profileId, savedProfiles])
 
-  // Reset food drill-down when meal selection changes
-  useEffect(() => { setSelectedFoodA(null) }, [mealAId])
-  useEffect(() => { setSelectedFoodB(null) }, [mealBId])
+  // Reset food drill-down only when meal selection actually changes (not on initial mount)
+  const mealAMountedRef = useRef(false)
+  useEffect(() => {
+    if (!mealAMountedRef.current) { mealAMountedRef.current = true; return }
+    setSelectedFoodA(null)
+  }, [mealAId])
+  const mealBMountedRef = useRef(false)
+  useEffect(() => {
+    if (!mealBMountedRef.current) { mealBMountedRef.current = true; return }
+    setSelectedFoodB(null)
+  }, [mealBId])
 
   const valuesA = useMemo<Record<number, number | null>>(() => {
     if (!mealA) return {}

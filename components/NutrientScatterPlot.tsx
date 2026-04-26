@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   ScatterChart,
   Scatter,
@@ -69,13 +69,61 @@ export default function NutrientScatterPlot({ data }: Props) {
     [data.nutrients]
   )
 
-  const [xId, setXId] = useState<number>(defaultX)
-  const [yId, setYId] = useState<number>(defaultY)
-  const [zId, setZId] = useState<number | null>(null)
-  const [highlightCat, setHighlightCat] = useState<string>('All')
-  const [perServing, setPerServing] = useState(false)
-  const [maxX, setMaxX] = useState<string>('')
-  const [maxY, setMaxY] = useState<string>('')
+  const [xId, setXId] = useState<number>(() => {
+    if (typeof window === 'undefined') return defaultX
+    const v = localStorage.getItem('np:scatter:xId')
+    if (v !== null) {
+      const id = parseInt(v, 10)
+      if (data.nutrients.some((n) => n.nutrient_id === id)) return id
+    }
+    return defaultX
+  })
+  const [yId, setYId] = useState<number>(() => {
+    if (typeof window === 'undefined') return defaultY
+    const v = localStorage.getItem('np:scatter:yId')
+    if (v !== null) {
+      const id = parseInt(v, 10)
+      if (data.nutrients.some((n) => n.nutrient_id === id)) return id
+    }
+    return defaultY
+  })
+  const [zId, setZId] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    const v = localStorage.getItem('np:scatter:zId')
+    if (v !== null) {
+      const id = parseInt(v, 10)
+      if (data.nutrients.some((n) => n.nutrient_id === id)) return id
+    }
+    return null
+  })
+  const [highlightCat, setHighlightCat] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'All'
+    return localStorage.getItem('np:scatter:highlightCat') ?? 'All'
+  })
+  const [perServing, setPerServing] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('np:scatter:perServing') === 'true'
+  })
+  const [maxX, setMaxX] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('np:scatter:maxX') ?? ''
+  })
+  const [maxY, setMaxY] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('np:scatter:maxY') ?? ''
+  })
+
+  // Persist selections across tab switches
+  useEffect(() => { localStorage.setItem('np:scatter:xId', String(xId)) }, [xId])
+  useEffect(() => { localStorage.setItem('np:scatter:yId', String(yId)) }, [yId])
+  useEffect(() => {
+    if (zId === null) localStorage.removeItem('np:scatter:zId')
+    else localStorage.setItem('np:scatter:zId', String(zId))
+  }, [zId])
+  useEffect(() => { localStorage.setItem('np:scatter:highlightCat', highlightCat) }, [highlightCat])
+  useEffect(() => { localStorage.setItem('np:scatter:perServing', String(perServing)) }, [perServing])
+  useEffect(() => { localStorage.setItem('np:scatter:maxX', maxX) }, [maxX])
+  useEffect(() => { localStorage.setItem('np:scatter:maxY', maxY) }, [maxY])
 
   const xNutrient = useMemo(() => data.nutrients.find((n) => n.nutrient_id === xId), [data.nutrients, xId])
   const yNutrient = useMemo(() => data.nutrients.find((n) => n.nutrient_id === yId), [data.nutrients, yId])

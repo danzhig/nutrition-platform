@@ -486,12 +486,35 @@ function CustomXTick({ x, y, payload }: { x?: number; y?: number; payload?: { va
 
 export default function FoodComparisonView({ data }: Props) {
   const { user } = useAuth()
-  const [foodAId, setFoodAId] = useState<number | null>(null)
-  const [foodBId, setFoodBId] = useState<number | null>(null)
-  const [weightMode, setWeightMode] = useState<WeightMode>('per100g')
-  const [customGramsA, setCustomGramsA] = useState(100)
-  const [customGramsB, setCustomGramsB] = useState(100)
-  const [profileId, setProfileId] = useState<string>('none')
+  const [foodAId, setFoodAId] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    const v = localStorage.getItem('np:foodComp:foodAId')
+    return v !== null ? parseInt(v, 10) : null
+  })
+  const [foodBId, setFoodBId] = useState<number | null>(() => {
+    if (typeof window === 'undefined') return null
+    const v = localStorage.getItem('np:foodComp:foodBId')
+    return v !== null ? parseInt(v, 10) : null
+  })
+  const [weightMode, setWeightMode] = useState<WeightMode>(() => {
+    if (typeof window === 'undefined') return 'per100g'
+    const v = localStorage.getItem('np:foodComp:weightMode')
+    return v === 'per_serving' || v === 'custom' ? v : 'per100g'
+  })
+  const [customGramsA, setCustomGramsA] = useState(() => {
+    if (typeof window === 'undefined') return 100
+    const v = localStorage.getItem('np:foodComp:customGramsA')
+    return v !== null ? parseInt(v, 10) : 100
+  })
+  const [customGramsB, setCustomGramsB] = useState(() => {
+    if (typeof window === 'undefined') return 100
+    const v = localStorage.getItem('np:foodComp:customGramsB')
+    return v !== null ? parseInt(v, 10) : 100
+  })
+  const [profileId, setProfileId] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'none'
+    return localStorage.getItem('np:foodComp:profileId') ?? 'none'
+  })
   const [profileOpen, setProfileOpen] = useState(false)
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const profileRef = useRef<HTMLDivElement>(null)
@@ -530,6 +553,20 @@ export default function FoodComparisonView({ data }: Props) {
     }
     loadSavedProfiles().then(setSavedProfiles).catch(console.error)
   }, [user])
+
+  // Persist selections across tab switches
+  useEffect(() => {
+    if (foodAId === null) localStorage.removeItem('np:foodComp:foodAId')
+    else localStorage.setItem('np:foodComp:foodAId', String(foodAId))
+  }, [foodAId])
+  useEffect(() => {
+    if (foodBId === null) localStorage.removeItem('np:foodComp:foodBId')
+    else localStorage.setItem('np:foodComp:foodBId', String(foodBId))
+  }, [foodBId])
+  useEffect(() => { localStorage.setItem('np:foodComp:weightMode', weightMode) }, [weightMode])
+  useEffect(() => { localStorage.setItem('np:foodComp:customGramsA', String(customGramsA)) }, [customGramsA])
+  useEffect(() => { localStorage.setItem('np:foodComp:customGramsB', String(customGramsB)) }, [customGramsB])
+  useEffect(() => { localStorage.setItem('np:foodComp:profileId', profileId) }, [profileId])
 
   const foodsById = useMemo(() => {
     const m = new Map<number, FoodRow>()

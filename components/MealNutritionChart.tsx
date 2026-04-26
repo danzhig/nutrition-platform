@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, Cell, ResponsiveContainer, ReferenceArea,
@@ -110,8 +110,14 @@ function CustomXTick({ x, y, payload }: any) {
 }
 
 export default function MealNutritionChart({ nutrients, meals, foodsById, rdaProfile }: Props) {
-  const [capAt100, setCapAt100] = useState(false)
+  const [capAt100, setCapAt100] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('np:dayChart:capAt100') === 'true'
+  })
   const [viewId, setViewId] = useState<'all' | string>('all')
+
+  // Persist cap toggle across tab switches
+  useEffect(() => { localStorage.setItem('np:dayChart:capAt100', String(capAt100)) }, [capAt100])
 
   const activeMeals = useMemo(
     () => (viewId === 'all' ? meals : meals.filter((m) => m.id === viewId)),

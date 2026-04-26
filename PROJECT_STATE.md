@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-26 (session 9)
+**Last updated:** 2026-04-26 (session 10)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -141,6 +141,7 @@ nutrition-platform/
 | **Preset portion fixes (critical)** | ✅ Live — Chickpea & Spinach Curry reduced from 200g to 80g dry chickpeas (200g dry ≈ 500g cooked, was 3+ servings); Lamb Chop & Collard Greens reduced from 250g to 170g lamb; patched directly in Supabase |
 | **Meal Comparison food drill-down** | ✅ Live — in Meal A and Meal B panels, food pill buttons appear in the panel header (one per food in the meal + an "All" pill); clicking a food shows only that food's standalone nutrient contribution as %DV; selection resets when the meal changes; diff panel always compares full meals unchanged (`components/MealComparisonView.tsx`) |
 | **Meal expansion roadmap** | ✅ Documented — `meal_ideas.md` at project root documents ~25–28 planned new presets across 5 categories: Snacks (6), Wraps & Tacos (5), Smoothies (5), Breakfast variety (5), Underused Foods inventory; execution order defined |
+| **Cross-tab state persistence** | ✅ Live — all user selections survive tab switches for the full browser session: Food Comparison (food A/B, weight mode, custom grams, DV profile); Meal Comparison (meal A/B, food drill-down within each meal, DV profile); Charts — Nutrient Ranking (nutrient, N, top/bottom, category filter, per-serving); Charts — Scatter Plot (X axis, Y axis, bubble size, category highlight, per-serving, axis limits); Day Builder chart view (cap-at-100% toggle). All persisted via localStorage so they also survive page refresh. |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
 **Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)  
@@ -207,6 +208,7 @@ nutrition-platform/
 | Auth | Supabase Auth (email/password) | Native to existing Supabase project; no extra service |
 | User data storage | JSONB columns | Flexible schema for RDA values, filter state, meal plans |
 | Meal data | JSONB `meals` column in `meal_plans` | Meals are document-like; no benefit to normalizing further |
+| **Cross-tab state persistence** | Every user-facing selection (dropdowns, toggles, food/meal pickers) must survive tab switches for the full session. Pattern: lazy `useState(() => localStorage.getItem(...))` init + `useEffect(() => localStorage.setItem(...), [value])` save. New interactive components must follow this pattern. localStorage keys are namespaced `np:<area>:<field>`. |
 
 ---
 

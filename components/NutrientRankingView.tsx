@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -64,13 +64,38 @@ function CustomTooltip({
 }
 
 export default function NutrientRankingView({ data }: Props) {
-  const [selectedNutrientId, setSelectedNutrientId] = useState<number>(
-    data.nutrients[0]?.nutrient_id ?? 0
-  )
-  const [topN, setTopN] = useState<TopN>(50)
-  const [rankDir, setRankDir] = useState<RankDir>('top')
-  const [categoryFilter, setCategoryFilter] = useState<string>('All')
-  const [perServing, setPerServing] = useState(false)
+  const [selectedNutrientId, setSelectedNutrientId] = useState<number>(() => {
+    if (typeof window === 'undefined') return data.nutrients[0]?.nutrient_id ?? 0
+    const v = localStorage.getItem('np:ranking:nutrientId')
+    if (v !== null) {
+      const id = parseInt(v, 10)
+      if (data.nutrients.some((n) => n.nutrient_id === id)) return id
+    }
+    return data.nutrients[0]?.nutrient_id ?? 0
+  })
+  const [topN, setTopN] = useState<TopN>(() => {
+    if (typeof window === 'undefined') return 50
+    return localStorage.getItem('np:ranking:topN') === '100' ? 100 : 50
+  })
+  const [rankDir, setRankDir] = useState<RankDir>(() => {
+    if (typeof window === 'undefined') return 'top'
+    return localStorage.getItem('np:ranking:rankDir') === 'bottom' ? 'bottom' : 'top'
+  })
+  const [categoryFilter, setCategoryFilter] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'All'
+    return localStorage.getItem('np:ranking:catFilter') ?? 'All'
+  })
+  const [perServing, setPerServing] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('np:ranking:perServing') === 'true'
+  })
+
+  // Persist selections across tab switches
+  useEffect(() => { localStorage.setItem('np:ranking:nutrientId', String(selectedNutrientId)) }, [selectedNutrientId])
+  useEffect(() => { localStorage.setItem('np:ranking:topN', String(topN)) }, [topN])
+  useEffect(() => { localStorage.setItem('np:ranking:rankDir', rankDir) }, [rankDir])
+  useEffect(() => { localStorage.setItem('np:ranking:catFilter', categoryFilter) }, [categoryFilter])
+  useEffect(() => { localStorage.setItem('np:ranking:perServing', String(perServing)) }, [perServing])
 
   const selectedNutrient = useMemo(
     () => data.nutrients.find((n) => n.nutrient_id === selectedNutrientId),
