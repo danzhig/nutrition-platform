@@ -37,6 +37,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All')
   const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
+  const [nutrientSortId, setNutrientSortId] = useState<number | null>(null)
 
   const handleAdd = useCallback((food: FoodRow) => {
     onAdd(food)
@@ -67,6 +68,20 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
     return map
   }, [foods, currentMeals, nutrients, rdaProfile, foodsById])
 
+  const activeSortMeta = useMemo(
+    () => nutrientSortId !== null ? nutrients.find((n) => n.nutrient_id === nutrientSortId) ?? null : null,
+    [nutrientSortId, nutrients]
+  )
+
+  const nutrientGroups = useMemo(() => {
+    const groups: Record<string, { nutrient_id: number; nutrient_name: string }[]> = {}
+    for (const n of nutrients) {
+      if (!groups[n.nutrient_category]) groups[n.nutrient_category] = []
+      groups[n.nutrient_category].push({ nutrient_id: n.nutrient_id, nutrient_name: n.nutrient_name })
+    }
+    return Object.entries(groups)
+  }, [nutrients])
+
   const filtered = useMemo(() => {
     let list = foods
     if (category !== 'All') list = list.filter((f) => f.category === category)
@@ -74,11 +89,21 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
       const q = search.trim().toLowerCase()
       list = list.filter((f) => f.food_name.toLowerCase().includes(q))
     }
-    if (rdaProfile) {
+    if (nutrientSortId !== null) {
+      const nid = nutrientSortId
+      list = [...list].sort((a, b) => {
+        const val = (f: FoodRow) => {
+          const v = f.nutrients[nid]
+          if (v == null) return 0
+          return (v as number) * getPortionSize(f.food_id).grams / 100
+        }
+        return val(b) - val(a)
+      })
+    } else if (rdaProfile) {
       list = [...list].sort((a, b) => (foodScores.get(b.food_id) ?? 0) - (foodScores.get(a.food_id) ?? 0))
     }
     return list
-  }, [foods, category, search, rdaProfile, foodScores])
+  }, [foods, category, search, rdaProfile, foodScores, nutrientSortId])
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh]">
@@ -88,9 +113,32 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
       {/* Modal */}
       <div className="relative bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-          <h2 className="text-sm font-semibold text-slate-100">Add Food</h2>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
+          <h2 className="text-sm font-semibold text-slate-100 flex-shrink-0">Add Food</h2>
+          {/* Nutrient sort dropdown */}
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            <select
+              value={nutrientSortId ?? ''}
+              onChange={(e) => {
+                const val = e.target.value
+                setNutrientSortId(val === '' ? null : parseInt(val, 10))
+              }}
+              className="bg-slate-700 border border-slate-600 rounded px-1.5 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-violet-500 min-w-0 flex-1 max-w-[200px]"
+            >
+              <option value="">Sort by nutrient…</option>
+              {nutrientGroups.map(([cat, ns]) => (
+                <optgroup key={cat} label={cat}>
+                  {ns.map((n) => (
+                    <option key={n.nutrient_id} value={n.nutrient_id}>
+                      {n.nutrient_name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <span className="text-[10px] text-slate-500 flex-shrink-0">per serving</span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={onClose}
               className="px-3 py-1 rounded-md bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors"
@@ -165,6 +213,17 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                       <span className="text-[11px] text-slate-400">
                         {portion.label} · {portion.grams}g
                       </span>
+                      {nutrientSortId !== null && activeSortMeta && (() => {
+                        const v = food.nutrients[nutrientSortId]
+                        if (v == null) return null
+                        const servingVal = (v as number) * portion.grams / 100
+                        const d = servingVal < 1 ? servingVal.toFixed(2) : servingVal < 100 ? servingVal.toFixed(1) : Math.round(servingVal).toString()
+                        return (
+                          <span className="text-[10px] text-violet-300 font-medium tabular-nums">
+                            {d}{activeSortMeta.unit}
+                          </span>
+                        )
+                      })()}
                       {rdaProfile && foodScores.has(food.food_id) && (
                         <ScoreBadge score={foodScores.get(food.food_id)!} />
                       )}

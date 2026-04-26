@@ -83,6 +83,7 @@ export default function MealPlanner({ data }: Props) {
   const [showPresets, setShowPresets] = useState(false)
   const [presetCategory, setPresetCategory] = useState<string>('All')
   const [sortPresetsByScore, setSortPresetsByScore] = useState(false)
+  const [presetNutrientSort, setPresetNutrientSort] = useState<number | null>(null)
   const [sortSavedByScore, setSortSavedByScore] = useState(false)
   const [viewMode, setViewMode] = useState<'sidebar' | 'chart'>('sidebar')
   const [collapsedMeals, setCollapsedMeals] = useState<Set<string>>(() => {
@@ -222,15 +223,39 @@ export default function MealPlanner({ data }: Props) {
     return map
   }, [plan.meals, rdaProfile, savedMeals, data.nutrients, foodsById])
 
+  const presetNutrientMeta = useMemo(
+    () => presetNutrientSort !== null ? data.nutrients.find((n) => n.nutrient_id === presetNutrientSort) ?? null : null,
+    [presetNutrientSort, data.nutrients]
+  )
+
+  const presetNutrientGroups = useMemo(() => {
+    const groups: Record<string, { nutrient_id: number; nutrient_name: string }[]> = {}
+    for (const n of data.nutrients) {
+      if (!groups[n.nutrient_category]) groups[n.nutrient_category] = []
+      groups[n.nutrient_category].push({ nutrient_id: n.nutrient_id, nutrient_name: n.nutrient_name })
+    }
+    return Object.entries(groups)
+  }, [data.nutrients])
+
   const filteredPresets = useMemo(() => {
     let list = presetCategory === 'All'
       ? presetMeals
       : presetMeals.filter((p) => p.category === presetCategory)
-    if (sortPresetsByScore && presetScores.size > 0) {
+    if (presetNutrientSort !== null) {
+      const nid = presetNutrientSort
+      list = [...list].sort((a, b) => {
+        const sum = (pm: PresetMeal) => pm.items.reduce((acc, item) => {
+          const food = foodsById.get(item.food_id)
+          const v = food?.nutrients[nid]
+          return acc + (v != null ? (v as number) * item.grams / 100 : 0)
+        }, 0)
+        return sum(b) - sum(a)
+      })
+    } else if (sortPresetsByScore && presetScores.size > 0) {
       list = [...list].sort((a, b) => (presetScores.get(b.id) ?? 0) - (presetScores.get(a.id) ?? 0))
     }
     return list
-  }, [presetMeals, presetCategory, sortPresetsByScore, presetScores])
+  }, [presetMeals, presetCategory, sortPresetsByScore, presetScores, presetNutrientSort, foodsById])
 
   const sortedSavedMeals = useMemo(() => {
     if (sortSavedByScore && savedMealScores.size > 0) {
@@ -669,13 +694,38 @@ export default function MealPlanner({ data }: Props) {
         {/* Preset meal browser */}
         {showPresets && presetMeals.length > 0 && (
           <div className="bg-slate-800 border border-emerald-900/50 rounded-lg overflow-hidden">
-            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between">
-              <span className="text-xs font-semibold text-emerald-400">Preset Meals</span>
-              <div className="flex items-center gap-2">
+            <div className="px-3 py-2 bg-slate-900/40 border-b border-slate-700 flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-emerald-400 flex-shrink-0">Preset Meals</span>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                {/* Nutrient sort dropdown */}
+                <select
+                  value={presetNutrientSort ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val === '') {
+                      setPresetNutrientSort(null)
+                    } else {
+                      setPresetNutrientSort(parseInt(val, 10))
+                      setSortPresetsByScore(false)
+                    }
+                  }}
+                  className="bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-[10px] text-slate-300 focus:outline-none focus:border-emerald-500 max-w-[160px]"
+                >
+                  <option value="">Sort by nutrient…</option>
+                  {presetNutrientGroups.map(([cat, nutrients]) => (
+                    <optgroup key={cat} label={cat}>
+                      {nutrients.map((n) => (
+                        <option key={n.nutrient_id} value={n.nutrient_id}>
+                          {n.nutrient_name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
                 {presetScores.size > 0 && (
                   <button
-                    onClick={() => setSortPresetsByScore((v) => !v)}
-                    className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                    onClick={() => { setSortPresetsByScore((v) => !v); setPresetNutrientSort(null) }}
+                    className={`text-[10px] px-2 py-0.5 rounded transition-colors flex-shrink-0 ${
                       sortPresetsByScore
                         ? 'bg-emerald-600 text-white'
                         : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200'
@@ -684,7 +734,7 @@ export default function MealPlanner({ data }: Props) {
                     Sort by rank
                   </button>
                 )}
-                <span className="text-[10px] text-slate-500">Click a meal to add it to your plan</span>
+                <span className="text-[10px] text-slate-500 hidden sm:inline">Click to add</span>
               </div>
             </div>
 
@@ -721,6 +771,20 @@ export default function MealPlanner({ data }: Props) {
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400 whitespace-nowrap flex-shrink-0">
                         {pm.category}
                       </span>
+                      {presetNutrientSort !== null && presetNutrientMeta && (() => {
+                        const nid = presetNutrientSort
+                        const val = pm.items.reduce((acc, item) => {
+                          const food = foodsById.get(item.food_id)
+                          const v = food?.nutrients[nid]
+                          return acc + (v != null ? (v as number) * item.grams / 100 : 0)
+                        }, 0)
+                        const d = val < 1 ? val.toFixed(2) : val < 100 ? val.toFixed(1) : Math.round(val).toString()
+                        return (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-300 whitespace-nowrap flex-shrink-0 font-medium tabular-nums">
+                            {d}{presetNutrientMeta.unit}
+                          </span>
+                        )
+                      })()}
                       {presetScores.has(pm.id) && (
                         <ScoreBadge score={presetScores.get(pm.id)!} />
                       )}
