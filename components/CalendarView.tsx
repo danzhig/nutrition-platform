@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from './AuthProvider'
 import CalendarMonthGrid from './CalendarMonthGrid'
+import CalendarDayPanel from './CalendarDayPanel'
 import CalendarAddModal from './CalendarAddModal'
 import type { HeatmapData } from '@/types/nutrition'
 import type { FoodLogEntry } from '@/types/calendar'
@@ -52,7 +53,7 @@ export default function CalendarView({ data }: Props) {
   const [entries, setEntries] = useState<FoodLogEntry[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Persist view-mode, year/month, selected date
+  // Persist state
   useEffect(() => { localStorage.setItem(KEYS.view, viewMode) }, [viewMode])
   useEffect(() => {
     localStorage.setItem(KEYS.year, String(year))
@@ -63,7 +64,7 @@ export default function CalendarView({ data }: Props) {
     else localStorage.removeItem(KEYS.selectedDate)
   }, [selectedDate])
 
-  // Food lookup map (derived from page-level heatmap data — zero additional fetch cost)
+  // Food lookup map
   const foodsById = useMemo(() => {
     const map = new Map<number, (typeof data.foods)[number]>()
     for (const f of data.foods) map.set(f.food_id, f)
@@ -89,6 +90,18 @@ export default function CalendarView({ data }: Props) {
 
   useEffect(() => { fetchEntries() }, [fetchEntries])
 
+  // Day selection — handles cross-month navigation from the panel ‹ › arrows
+  function handleDaySelect(date: string) {
+    setSelectedDate(date)
+    const d = new Date(date + 'T00:00:00')
+    const newYear  = d.getFullYear()
+    const newMonth = d.getMonth()
+    if (newYear !== year || newMonth !== month) {
+      setYear(newYear)
+      setMonth(newMonth)
+    }
+  }
+
   function navMonth(delta: number) {
     const d = new Date(year, month + delta, 1)
     setYear(d.getFullYear())
@@ -99,6 +112,12 @@ export default function CalendarView({ data }: Props) {
     setYear(today.getFullYear())
     setMonth(today.getMonth())
   }
+
+  // Entries for the selected date (filtered from month cache)
+  const selectedDateEntries = useMemo<FoodLogEntry[]>(() => {
+    if (!selectedDate) return []
+    return entries.filter(e => e.log_date === selectedDate)
+  }, [entries, selectedDate])
 
   const panelOpen = selectedDate !== null
 
@@ -143,7 +162,7 @@ export default function CalendarView({ data }: Props) {
               entries={entries}
               loading={loading}
               selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
+              onDateSelect={handleDaySelect}
               onAddClick={setAddTargetDate}
               onPrevMonth={() => navMonth(-1)}
               onNextMonth={() => navMonth(1)}
@@ -157,25 +176,19 @@ export default function CalendarView({ data }: Props) {
           )}
         </div>
 
-        {/* Day Detail Panel slot (Phase 4) */}
+        {/* Day Detail Panel */}
         {panelOpen && (
           <div className="flex-1 min-w-0">
-            <div className="rounded-xl border border-slate-700 bg-slate-800/50 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-slate-200 font-medium text-sm">
-                  {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                    weekday: 'long', month: 'long', day: 'numeric',
-                  })}
-                </span>
-                <button
-                  onClick={() => setSelectedDate(null)}
-                  className="w-6 h-6 flex items-center justify-center rounded text-slate-500 hover:text-slate-300 hover:bg-slate-700 text-base leading-none"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="text-slate-600 text-xs">Day detail panel — Phase 4</p>
-            </div>
+            <CalendarDayPanel
+              date={selectedDate}
+              entries={selectedDateEntries}
+              nutrients={data.nutrients}
+              foodsById={foodsById}
+              onClose={() => setSelectedDate(null)}
+              onDayChange={handleDaySelect}
+              onAddEntry={() => setAddTargetDate(selectedDate)}
+              onEntriesChanged={fetchEntries}
+            />
           </div>
         )}
       </div>

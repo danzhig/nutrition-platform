@@ -92,6 +92,7 @@ nutrition-platform/
 | **Calendar tab — Phase 1: DB & storage layer** | ✅ Live — `food_log` table deployed to Supabase with RLS; `types/calendar.ts` (FoodLogItem, FoodLogEntry, NewFoodLogEntry); `lib/foodLogStorage.ts` (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId); `mealStorage.ts` + `savedMealStorage.ts` updated to null source_id on delete |
 | **Calendar tab — Phase 2: Tab shell + Month Grid** | ✅ Live — Calendar tab added to MainView; `CalendarView.tsx` (Month/Week toggle, two-column layout, month entry fetch, localStorage persistence); `CalendarMonthGrid.tsx` (7×5–6 grid, prev/today/next nav, violet/teal/amber entry pills, +N overflow, hover + button, today highlight, selected-day highlight) |
 | **Calendar tab — Phase 3: Add Entry Modal** | ✅ Live — `CalendarAddModal.tsx`: type chooser → Add Meal (preset pane with category pills + nutrient sort, no complement scores) / Add Plan (saved plan list with counts) / Add Food (inline search + grams confirmation); all three write food_log rows via addEntry and trigger month re-fetch |
+| **Calendar tab — Phase 4: Day Detail Panel** | ✅ Live — `CalendarDayPanel.tsx`: sticky panel; date header with ‹/› day navigation (cross-month aware), close, + Add Entry; entry cards grouped by type (food/meal/plan) with meal_label sub-grouping for plan entries; inline click-to-edit grams per food item; remove entry; Day Total section with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
@@ -191,7 +192,7 @@ nutrition-platform/
 - [x] Phase 1: DB & storage layer — `food_log` table + RLS + `foodLogStorage.ts` + source-null wiring
 - [x] Phase 2: Tab shell + Month Grid (display) — Calendar tab in nav; `CalendarView.tsx` (month/week toggle, two-column layout, entry fetch); `CalendarMonthGrid.tsx` (7×5–6 grid, nav, entry pills, hover +)
 - [x] Phase 3: Add Entry Modal — `CalendarAddModal.tsx` (type chooser → Add Meal / Add Plan / Add Food; preset pane with category pills + nutrient sort, no complement scores; plan picker with meal/food counts; inline food search + grams confirmation; all three paths write food_log rows via addEntry)
-- [ ] Phase 4: Day Detail Panel
+- [x] Phase 4: Day Detail Panel — `CalendarDayPanel.tsx` (sticky sidebar; date header with ‹ › day nav + close + Add Entry; entry cards with type badges + kcal; meal-grouped plan/meal/food rendering; inline grams edit; remove entry; Day Total with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart)
 - [ ] Phase 5: Week Mode
 
 ### Phase 3 — Polish backlog
