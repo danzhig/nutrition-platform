@@ -49,7 +49,7 @@ export default function MainView({ data }: Props) {
 
       {tab === 'meals'    && <MealPlanner   data={data} />}
       {tab === 'data'     && <DataView      data={data} />}
-      {tab === 'calendar' && <CalendarView />}
+      {tab === 'calendar' && <CalendarView  data={data} />}
     </div>
   )
 }

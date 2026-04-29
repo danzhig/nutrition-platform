@@ -1,10 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from './AuthProvider'
 import CalendarMonthGrid from './CalendarMonthGrid'
+import CalendarAddModal from './CalendarAddModal'
+import type { HeatmapData } from '@/types/nutrition'
 import type { FoodLogEntry } from '@/types/calendar'
 import { getEntriesForDateRange } from '@/lib/foodLogStorage'
+
+interface Props {
+  data: HeatmapData
+}
 
 type ViewMode = 'month' | 'week'
 
@@ -15,7 +21,7 @@ const KEYS = {
   selectedDate: 'np:calendar:selected-date',
 }
 
-export default function CalendarView() {
+export default function CalendarView({ data }: Props) {
   const { user } = useAuth()
   const today = new Date()
 
@@ -42,9 +48,11 @@ export default function CalendarView() {
     return localStorage.getItem(KEYS.selectedDate)
   })
 
+  const [addTargetDate, setAddTargetDate] = useState<string | null>(null)
   const [entries, setEntries] = useState<FoodLogEntry[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Persist view-mode, year/month, selected date
   useEffect(() => { localStorage.setItem(KEYS.view, viewMode) }, [viewMode])
   useEffect(() => {
     localStorage.setItem(KEYS.year, String(year))
@@ -55,18 +63,31 @@ export default function CalendarView() {
     else localStorage.removeItem(KEYS.selectedDate)
   }, [selectedDate])
 
-  useEffect(() => {
+  // Food lookup map (derived from page-level heatmap data — zero additional fetch cost)
+  const foodsById = useMemo(() => {
+    const map = new Map<number, (typeof data.foods)[number]>()
+    for (const f of data.foods) map.set(f.food_id, f)
+    return map
+  }, [data.foods])
+
+  // Fetch entries for the visible month
+  const fetchEntries = useCallback(async () => {
     if (!user) { setEntries([]); return }
     const mm = String(month + 1).padStart(2, '0')
     const lastDay = new Date(year, month + 1, 0).getDate()
     const start = `${year}-${mm}-01`
     const end   = `${year}-${mm}-${String(lastDay).padStart(2, '0')}`
     setLoading(true)
-    getEntriesForDateRange(start, end)
-      .then(setEntries)
-      .catch(console.error)
-      .finally(() => setLoading(false))
+    try {
+      setEntries(await getEntriesForDateRange(start, end))
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }, [user, year, month])
+
+  useEffect(() => { fetchEntries() }, [fetchEntries])
 
   function navMonth(delta: number) {
     const d = new Date(year, month + delta, 1)
@@ -123,7 +144,7 @@ export default function CalendarView() {
               loading={loading}
               selectedDate={selectedDate}
               onDateSelect={setSelectedDate}
-              onAddClick={() => { /* Phase 3 */ }}
+              onAddClick={setAddTargetDate}
               onPrevMonth={() => navMonth(-1)}
               onNextMonth={() => navMonth(1)}
               onToday={goToday}
@@ -158,6 +179,21 @@ export default function CalendarView() {
           </div>
         )}
       </div>
+
+      {/* Add Entry Modal */}
+      {addTargetDate && (
+        <CalendarAddModal
+          targetDate={addTargetDate}
+          foods={data.foods}
+          nutrients={data.nutrients}
+          foodsById={foodsById}
+          onClose={() => setAddTargetDate(null)}
+          onAdded={() => {
+            setAddTargetDate(null)
+            fetchEntries()
+          }}
+        />
+      )}
     </div>
   )
 }
