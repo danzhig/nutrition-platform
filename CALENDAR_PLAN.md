@@ -126,78 +126,51 @@ The tradeoff is that if USDA revises a food's values, historical calorie/macro t
 
 ---
 
-## Part 2 — Calendar Layout Alternatives
+## Part 2 — Calendar Layout (Decided)
+
+Two distinct modes toggled from the header. Each has its own navigation and density model.
 
 ---
 
-### Option A — Month Grid with Week Toggle (Recommended)
+### Month Mode
 
-The default view is a standard monthly calendar (7 columns × 5–6 rows). A "Week" toggle at the top switches to a 7-column single-week strip with more vertical space per cell.
+A standard monthly calendar grid (7 columns × 5–6 rows). Navigate between months with `← Prev` / `Today` / `Next →` arrows.
 
-**Month view cell:**
-- Date number in corner
-- Up to 3 entry pills (colored by type: violet = plan, teal = meal, amber = food)
-- Overflow indicator: "+2 more" if more than 3 entries
-- `+` button on hover
+**Day cell:**
+- Date number in top-left corner
+- Up to 3 entry pills, colored by type: violet = plan, teal = meal, amber = food
+- Overflow indicator: "+2 more" if more than 3 entries on that day
+- `+` button on hover to add an entry
+- Clicking the date number or anywhere in the cell (not the `+`) opens the Day Detail panel on the right (see Part 4)
 
-**Week view cell:**
-- Full day column with more space
-- Entries listed as cards instead of pills
-- Easier to see nutrition summary badges on each entry
-
-**Navigation:** `← Prev` / `Today` / `Next →` arrows in the header for month/week navigation.
-
-**Pros:**
-- Familiar to users (Google Calendar / Apple Calendar mental model)
-- Month view gives the "big picture" habit overview
-- Week view is actionable for day-to-day planning
-
-**Cons:**
-- More complex to build (grid math, overflow logic)
+**Purpose:** High-level habit overview. See which days have logged entries, spot gaps, understand the shape of a month at a glance.
 
 ---
 
-### Option B — Scrollable Week List
+### Week Mode
 
-No grid — instead a vertical list of week blocks. Each week is a section header ("Week of April 21") followed by 7 day rows. Scroll down to see past weeks.
+A vertically scrollable stack of week strips — not a single isolated week. Each strip is one week (Mon–Sun or Sun–Sat), displayed as a 7-column row. Weeks stack top-to-bottom so you can scroll the entire history like a rolodex.
 
-**Day row:**
-- Date label on left
-- Entry pills in the middle
-- Total kcal / protein summary on the right
-- `+` to add entry
+**Week strip:**
+- Week header row: "Week of Apr 21" with a `← →` nudge or anchor-scroll to that week (optional)
+- 7 day columns, each showing:
+  - Date number
+  - Entry cards (not pills) — enough vertical height to show label + kcal badge per entry
+  - Total kcal for the day as a compact badge at the bottom of the column
+  - `+` button to add an entry
+- Clicking a day column (not the `+`) opens the Day Detail panel on the right
 
-**Pros:**
-- Simpler to build
-- Very easy to scroll through history
-- Works naturally on mobile
+**Scrolling behavior:** The list renders enough weeks to cover a rolling window (e.g. current week ± 8 weeks = ~17 strips). A "Load more" trigger at the top and bottom extends the window. The scroll position on first open snaps to the current week. Returning to Week mode after navigating away restores the previous scroll position via `np:calendar:week` localStorage key.
 
-**Cons:**
-- No spatial overview of the month
-- Less intuitive than a calendar grid for "how did this month go" questions
-- Doesn't look like a calendar
+**Purpose:** Comparative weekly view. Scroll up/down to see how meal and food choices evolved week over week. The vertical rolodex makes it natural to visually diff "last Tuesday vs this Tuesday."
 
 ---
 
-### Option C — Compact Month + Day Panel Split
+### Toggle and Navigation
 
-Month grid on the left (compact, ~35% width). Clicking a day opens a detail panel on the right (65% width) without a modal — the panel is always visible.
+A `Month | Week` pill toggle in the Calendar tab header switches between modes. Each mode remembers its own position (month in view, scroll offset in week list) independently via localStorage.
 
-**Pros:**
-- No modal interruptions; the calendar and the day detail are always co-visible
-- Power-user feel
-- Good for desktop usage
-
-**Cons:**
-- Cramped on narrower screens
-- Month grid cells are small — hard to read entry pills
-- More complex layout to maintain responsively
-
----
-
-### Recommendation: Option A
-
-Month grid with week toggle. Matches user expectations for a "calendar" feature. Week toggle adds the actionable daily view without building a separate screen.
+The Day Detail panel (Part 4) works identically in both modes — clicking any day in either view populates the panel on the right.
 
 ---
 
@@ -274,69 +247,59 @@ The Quick Add Modal reuses the most existing infrastructure (FoodPickerModal, pr
 
 ---
 
-## Part 4 — Day Detail View Alternatives
+## Part 4 — Day Detail Panel (Decided)
 
-What happens when you click into a day to see its full picture.
-
----
-
-### Option A — Full-Screen Day Modal (Recommended)
-
-Clicking a day number (not the `+`) opens a full-width overlay modal, similar to a lightbox.
-
-**Contents:**
-- Date header + navigation arrows to go to previous/next day
-- Entry list: each entry is a card showing label, entry type badge, total kcal, and a nutrition summary bar (same %DV bar style as the meal sidebar)
-- Per-entry options: Edit grams, Remove
-- "Add entry" button at the top-right
-- Bottom summary section: Day Total — all entries combined into one %DV bar chart (50 nutrients)
-- Optional: reuse MealNutritionChart component to show the full chart view for the whole day
-
-**Pros:**
-- Maximum space for the nutrition summary
-- Can reuse MealNutritionSidebar / MealNutritionChart almost directly by passing the aggregated items array
-- Clear mental model: you're "inside" that day
-
-**Cons:**
-- Covers the calendar while open
-- Need a good close/escape UX
+Clicking any day in either Month or Week mode opens a persistent right-side panel — the calendar remains visible on the left. The panel is not a modal; it is a fixed sidebar that replaces the empty right zone of the Calendar tab layout.
 
 ---
 
-### Option B — Slide-in Right Drawer
+### Layout
 
-Clicking a day opens a right-side drawer (60% width), similar to a slide-out panel. The calendar remains visible on the left.
+The Calendar tab renders as a two-column layout when a day is selected:
 
-**Contents:** Same as Option A, but narrower.
+```
+┌─────────────────────────────┬──────────────────────────┐
+│  Month grid  /  Week strips │   Day Detail Panel       │
+│  (~65% width)               │   (~35% width)           │
+│                             │                          │
+│  [calendar content]         │  [date header]           │
+│                             │  [entry list]            │
+│                             │  [nutrition summary]     │
+└─────────────────────────────┴──────────────────────────┘
+```
 
-**Pros:**
-- Calendar context always visible
-- Less disorienting than a full-screen takeover
-
-**Cons:**
-- Narrow space for the nutrition bar chart — may need to omit the full chart view
-- On smaller screens, the drawer covers the calendar anyway
-
----
-
-### Option C — In-Place Row/Cell Expansion
-
-In the week view, clicking a day expands that row downward to show full detail. In the month view, clicking a day replaces the grid row with an expanded detail band.
-
-**Pros:**
-- No overlay — feels native to the calendar
-- Context of surrounding days is always visible
-
-**Cons:**
-- Shifts layout dramatically (jumpy UX)
-- Hard to show rich nutrition charts in an inline expansion
-- Complex to implement cleanly
+When no day is selected the panel is hidden and the calendar occupies full width.
 
 ---
 
-### Recommendation: Option A
+### Day Detail Panel Contents
 
-The full-screen modal gives the most room for the nutrition summary. Since MealNutritionSidebar and MealNutritionChart already exist and accept an `items` array, the day summary is nearly free — just aggregate all logged items across all entries for that day and pass them in.
+**Header:**
+- Date (e.g. "Tuesday, April 29") with `‹ ›` arrows to step to previous/next day without closing the panel
+- `✕` to close the panel and return to full-width calendar
+- "+ Add Entry" button
+
+**Entry list:**
+- One card per `food_log` row for that day
+- Each card shows: entry type badge (plan / meal / food), `label`, total kcal, and a compact horizontal %DV bar for protein / fat / carbs / fibre
+- Per-card actions: "Edit grams" (updates `amount_g` in place), "Remove" (deletes the `food_log` row)
+- If the entry came from a named meal/plan (`source_id` not null), the card header shows the source name as a grouping label; foods within it are listed below
+
+**Day Total nutrition section:**
+- Aggregates all `items` across all entries for that day (JOIN to `food_nutrients` for current values)
+- Renders the same `MealNutritionSidebar` component used in the Day Planner, passing the aggregated items array
+- A "Chart view" toggle (same as Day Planner) expands to `MealNutritionChart` showing the full bar chart + radar + donut for the day's eating
+- This reuse means the Day Detail panel has feature parity with the Day Planner's right-hand analysis tools
+
+---
+
+### Interaction with the Calendar
+
+- In Month mode: clicking a day cell selects it, panel slides in from the right, grid narrows to ~65%
+- In Week mode: clicking a day column highlights it, panel appears on the right alongside the week strips
+- Navigating `‹ ›` in the panel header steps through days without touching the calendar scroll position
+- Clicking a different day cell updates the panel in-place (no open/close animation)
+- The selected day is stored in `np:calendar:selected-date` localStorage so returning to the Calendar tab reopens the last-viewed day's panel
 
 ---
 
@@ -346,8 +309,8 @@ This section covers future capability — the Calendar tab can be built phase by
 
 ### Phase 1 (MVP): Log + View
 - Add/remove entries per day
-- Day detail modal with nutrition summary
-- Month/week calendar grid
+- Day Detail panel (right sidebar) with entry list + MealNutritionSidebar summary
+- Month grid view + Week rolodex view
 
 ### Phase 2: Weekly Summary
 A "Week Summary" panel (accessible from the week view header) showing:
@@ -376,9 +339,11 @@ A "Month Summary" button opening a modal/view showing:
 **`components/MainView.tsx`** — add `'calendar'` to the `Tab` type and add a third `<TabButton label="Calendar" .../>`. Mount `<CalendarView data={data} />` when active. Update the localStorage key set to include the new value.
 
 **New files needed:**
-- `components/CalendarView.tsx` — top-level orchestrator (month/week toggle, navigation, calendar grid)
-- `components/CalendarDayModal.tsx` — full-screen day detail modal
-- `components/CalendarAddModal.tsx` — add entry modal (type chooser → search/select)
+- `components/CalendarView.tsx` — top-level orchestrator: month/week toggle, two-column layout (calendar + Day Detail panel), selected-day state
+- `components/CalendarMonthGrid.tsx` — monthly calendar grid (7 × 5–6 cells, navigation arrows, entry pills)
+- `components/CalendarWeekList.tsx` — vertically scrollable week strips; renders rolling window of weeks; snap-to-current-week on mount
+- `components/CalendarDayPanel.tsx` — right-side Day Detail panel: entry list cards, MealNutritionSidebar integration, chart view toggle, day-step navigation
+- `components/CalendarAddModal.tsx` — add entry modal (type chooser: Plan / Meal / Food → search/select step)
 - `lib/foodLogStorage.ts` — CRUD for the `food_log` table (same pattern as `mealStorage.ts`)
 
 **Existing components reused:**
@@ -397,22 +362,21 @@ A "Month Summary" button opening a modal/view showing:
 
 Follow the established project pattern: lazy `useState(() => localStorage.getItem(...))` init + `useEffect` save. Keys:
 - `np:calendar:view` — `'month'` | `'week'`
-- `np:calendar:year` + `np:calendar:month` — current month in view
-- `np:calendar:week` — ISO week start date when in week view
+- `np:calendar:year` + `np:calendar:month` — current month in view (month mode)
+- `np:calendar:week` — ISO week start date for scroll-snap anchor (week mode)
+- `np:calendar:selected-date` — ISO date string of the currently open Day Detail panel; `null` if panel is closed
 
 ---
 
 ## Summary — Decided Stack
 
-| Dimension | Decision | Notes |
+| Dimension | Decision | Status |
 |---|---|---|
-| Database | Food-ID-anchored log (Part 1) | ✅ Decided — food_ids always stored; nutrient values derived live from food_nutrients; source_id soft-nulled on deletion |
-| Calendar layout | Option A — Month grid + week toggle | Pending implementation |
-| Add entry UX | Option A — Quick Add Modal (type chooser) | Pending implementation |
-| Day detail | Option A — Full-screen modal | Pending implementation |
-
-The database design prioritizes: retroactive nutrient analysis (adding creatine or fixing a value propagates to all history), data integrity on meal deletion (food IDs outlive meal records), and the ability to answer "how many times did I eat Meal X" (source_id preserved while it exists).
+| Database | Food-ID-anchored log — food_ids always in items JSONB; nutrient values derived live; source_id soft-nulled on meal deletion | ✅ Decided |
+| Calendar layout | Month grid (overview) + vertically scrollable week rolodex (comparative detail); `Month \| Week` toggle in header | ✅ Decided |
+| Add entry UX | Quick Add Modal — type chooser (Plan / Meal / Food) → search/select step | ✅ Decided |
+| Day detail | Persistent right-side panel (not a modal); two-column layout with calendar on left; MealNutritionSidebar + chart view reused directly | ✅ Decided |
 
 ---
 
-*Part 1 decided. Parts 2–5 approved as recommended. Ready for implementation.*
+*All parts decided. Ready for implementation.*
