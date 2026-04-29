@@ -174,76 +174,54 @@ The Day Detail panel (Part 4) works identically in both modes — clicking any d
 
 ---
 
-## Part 3 — Add Entry Interaction Alternatives
+## Part 3 — Add Entry Interaction (Decided)
 
-How a user adds food to a calendar day.
-
----
-
-### Option A — Quick Add Modal (Recommended)
-
-Clicking `+` on a day opens a compact modal. Step 1: choose entry type (three large buttons: Add Plan / Add Meal / Add Food). Step 2: a search/select panel matching the type chosen.
-
-**Add Plan flow:**
-- List of the user's saved plans (same as the Plan picker in Day Planner)
-- Select one → it's logged as a snapshot
-
-**Add Meal flow:**
-- Same pane as the Presets panel in Day Planner — saved templates + preset meals, same category pills, same nutrient sort dropdown
-- Select one → logged as a snapshot
-
-**Add Food flow:**
-- Same modal as FoodPickerModal — search + category filter, single food
-- Input grams or use default serving → logged
-
-**Pros:**
-- Reuses existing UI components (FoodPickerModal, preset pane logic) with minimal new code
-- Clean separation of steps
-- Works on both month and week views
-
-**Cons:**
-- Two-step flow for the common case (Add Meal)
+A Quick Add Modal triggered from two surfaces: the `+` button on a calendar cell (Part 2) and the `+ Add Entry` button in the Day Detail panel header (Part 4). Both open the same `CalendarAddModal` component pre-seeded with the target date.
 
 ---
 
-### Option B — Inline Day Drawer
+### Trigger points
 
-Clicking `+` on a day (or clicking the day cell itself) slides open a right-side drawer — a full Day Detail view that includes the add-entry controls inline. No separate modal.
-
-**The drawer shows:**
-- Day header (date, total kcal, DV% summary bar)
-- List of existing entries for that day
-- An "Add" button that expands inline into the three-type chooser
-
-**Pros:**
-- No nested modals
-- Feels more integrated — you see what's already on the day while adding
-
-**Cons:**
-- Drawer takes up screen space
-- On a month grid, opening a drawer hides part of the calendar
+- **Month mode:** hovering a day cell reveals a `+` in the corner; clicking it opens the modal for that date
+- **Week mode:** each day column has a persistent `+` at the bottom; clicking opens the modal for that date
+- **Day Detail panel:** the `+ Add Entry` button in the panel header opens the modal for the currently displayed date — the natural flow when the panel is already open
 
 ---
 
-### Option C — Drag & Drop from Presets
+### Modal flow
 
-A sidebar panel on the right lists saved plans and meals (like the Presets pane). Users drag a meal card and drop it onto a calendar day.
+**Step 1 — Choose entry type:**
 
-**Pros:**
-- Fast for power users who know their meals
-- Very visual
+Three large buttons presented in order of expected frequency:
 
-**Cons:**
-- High implementation complexity (drag-and-drop across components)
-- Doesn't work on touch/mobile
-- Not intuitive to first-time users
-- Doesn't cover the "add a single food" case naturally
+| Button | What gets logged |
+|---|---|
+| Add Meal | A single meal from presets or saved templates |
+| Add Plan | All meals from a saved Day Planner plan |
+| Add Food | A single standalone food item |
+
+**Step 2 — Select the item:**
+
+**Add Meal:**
+- The same Presets pane used in the Day Planner: category pills (preset categories + "My Templates" subcategory), nutrient sort dropdown, complement score badges
+- Selecting a meal writes one `food_log` row: `entry_type = 'meal'`, `label` = meal name at selection time, `source_id` = `saved_meals.id` or `preset_meals.id`, `items` = array of `{ food_id, food_name, amount_g, mode }` for each food in that meal
+
+**Add Plan:**
+- The same plan picker list used in the Day Planner tab bar
+- Selecting a plan writes one `food_log` row: `entry_type = 'plan'`, `label` = plan name at selection time, `source_id` = `meal_plans.id`, `items` = all foods across all meals in the plan, each with their `food_id` and `amount_g`
+
+**Add Food:**
+- Reuses `FoodPickerModal` as-is: search box + category filter, complement score badges sorted by score
+- After selecting a food, a grams input appears pre-filled with the food's default serving size from `portionSizes.ts`; user can adjust
+- Writes one `food_log` row: `entry_type = 'food'`, `label` = food name, `source_id` = NULL, `items` = single `{ food_id, food_name, amount_g, mode }`
 
 ---
 
-### Recommendation: Option A
+### Consistency with the rest of the design
 
-The Quick Add Modal reuses the most existing infrastructure (FoodPickerModal, preset/template pane). The two-step flow is worth the code reuse savings.
+- **Part 1 (Database):** Every path through the modal writes `food_id` into every item in `items`. No nutrient values are stored — the log row contains only IDs and grams. `source_id` is written where available and is the nullable soft reference described in Part 1.
+- **Part 2 (Layout):** The modal is compact and overlays the calendar without replacing it. On confirmation the modal closes, the calendar cell gains an entry pill, and if the Day Detail panel is open it refreshes its entry list in-place.
+- **Part 4 (Day Detail panel):** After adding an entry via the panel's `+ Add Entry` button, the panel's entry list and nutrition summary update immediately — no reload required.
 
 ---
 
@@ -303,36 +281,7 @@ When no day is selected the panel is hidden and the calendar occupies full width
 
 ---
 
-## Part 5 — Analytics / Summary Views
-
-This section covers future capability — the Calendar tab can be built phase by phase.
-
-### Phase 1 (MVP): Log + View
-- Add/remove entries per day
-- Day Detail panel (right sidebar) with entry list + MealNutritionSidebar summary
-- Month grid view + Week rolodex view
-
-### Phase 2: Weekly Summary
-A "Week Summary" panel (accessible from the week view header) showing:
-- Total kcal per day (bar chart across 7 days)
-- Average %DV per nutrient for the week (same bar style as the meal sidebar)
-- "Best day" and "Needs work" callouts
-
-### Phase 3: Monthly Summary
-A "Month Summary" button opening a modal/view showing:
-- Day-by-day kcal/protein line chart (Recharts `<LineChart>`)
-- Nutrient heatmap: rows = days, columns = key nutrients, color = %DV hit or miss
-- Total logged days out of the month
-- Most-logged foods / meals
-
-### Phase 4: Trends
-- Streak tracking (consecutive days logged)
-- Compare this week vs last week
-- Rolling 30-day nutrient averages
-
----
-
-## Part 6 — Technical Integration Notes
+## Part 5 — Technical Integration Notes
 
 ### What changes in the existing codebase
 
@@ -347,14 +296,14 @@ A "Month Summary" button opening a modal/view showing:
 - `lib/foodLogStorage.ts` — CRUD for the `food_log` table (same pattern as `mealStorage.ts`)
 
 **Existing components reused:**
-- `FoodPickerModal` — reused as-is for the "Add Food" flow
-- `MealNutritionSidebar` — reused in the day detail modal with aggregated items
-- `MealNutritionChart` — reused in the day detail modal for the full chart view
-- Preset/template pane logic from `MealPlanner.tsx` — extracted or duplicated for "Add Meal" flow
+- `FoodPickerModal` — reused as-is for the "Add Food" flow in `CalendarAddModal`
+- `MealNutritionSidebar` — reused in `CalendarDayPanel` with the day's aggregated items array
+- `MealNutritionChart` — reused in `CalendarDayPanel` chart view toggle
+- Preset/template pane logic from `MealPlanner.tsx` — reused in `CalendarAddModal` "Add Meal" step
 
 ### Supabase changes
 
-1. New table `food_log` (SQL above, Option A schema)
+1. New table `food_log` (schema defined in Part 1)
 2. New index `idx_food_log_user_date`
 3. RLS policy: `user_access_food_log` — same pattern as `meal_plans` (`auth.uid() = user_id`)
 
@@ -374,7 +323,7 @@ Follow the established project pattern: lazy `useState(() => localStorage.getIte
 |---|---|---|
 | Database | Food-ID-anchored log — food_ids always in items JSONB; nutrient values derived live; source_id soft-nulled on meal deletion | ✅ Decided |
 | Calendar layout | Month grid (overview) + vertically scrollable week rolodex (comparative detail); `Month \| Week` toggle in header | ✅ Decided |
-| Add entry UX | Quick Add Modal — type chooser (Plan / Meal / Food) → search/select step | ✅ Decided |
+| Add entry UX | Quick Add Modal — type chooser (Meal / Plan / Food); triggered from calendar cell `+` or Day Detail panel header; writes food_id-anchored food_log rows | ✅ Decided |
 | Day detail | Persistent right-side panel (not a modal); two-column layout with calendar on left; MealNutritionSidebar + chart view reused directly | ✅ Decided |
 
 ---
