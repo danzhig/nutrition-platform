@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-29 (session 11)
-**Current phase: Phase 3 in progress**
+**Last updated:** 2026-04-29 (session 12)
+**Current phase: Calendar Tracker complete (all 5 phases live)**
 
 ---
 
@@ -38,7 +38,7 @@ nutrition-platform/
 │   ├── page.tsx                ← Home: fetches heatmap data, renders <MainView>
 │   └── globals.css
 ├── components/
-│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View
+│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar
 │   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison)
 │   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving, DV profile
 │   ├── HeatmapCell.tsx         ← Single cell: color + tooltip; DV mode aware
@@ -58,7 +58,12 @@ nutrition-platform/
 │   ├── MacroDonutChart.tsx     ← Dual-ring PieChart: inner = macro caloric %; outer = top-5 foods per macro
 │   ├── NutrientRankingView.tsx ← Pick nutrient → ranked bar chart of all 218 foods
 │   ├── NutrientScatterPlot.tsx ← X/Y scatter; optional bubble size; category legend
-│   └── FoodComparisonView.tsx  ← Food A vs B; 3 panels (A, B, A−B net diff); centered diff bars
+│   ├── FoodComparisonView.tsx  ← Food A vs B; 3 panels (A, B, A−B net diff); centered diff bars
+│   ├── CalendarView.tsx        ← Calendar tab orchestrator: Month/Week toggle, entry fetch, day panel, add modal
+│   ├── CalendarMonthGrid.tsx   ← Month grid: 7×5–6 grid, prev/today/next nav, entry pills, +N overflow
+│   ├── CalendarWeekList.tsx    ← Week rolodex: infinite-scroll Mon–Sun strips, entry cards, scroll persistence
+│   ├── CalendarDayPanel.tsx    ← Day detail panel: entry cards (grouped by type), inline grams edit, remove, Day Total nutrition
+│   └── CalendarAddModal.tsx    ← Add entry modal: type chooser → meal / plan / food; writes food_log rows
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination
@@ -73,10 +78,12 @@ nutrition-platform/
 │   ├── savedMealStorage.ts     ← CRUD for saved_meals
 │   ├── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
 │   ├── complementScore.ts      ← computeComplementScore(): 0-100 score vs current plan gaps
-│   └── categoryColors.ts       ← CATEGORY_COLORS palette shared by ranking + scatter views
+│   ├── categoryColors.ts       ← CATEGORY_COLORS palette shared by ranking + scatter views
+│   └── foodLogStorage.ts       ← CRUD for food_log (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId)
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
-│   └── meals.ts                ← MealItem, Meal, ActiveMealPlan
+│   ├── meals.ts                ← MealItem, Meal, ActiveMealPlan
+│   └── calendar.ts             ← FoodLogEntryType, FoodLogItem, FoodLogEntry, NewFoodLogEntry
 ├── sql/                        ← schema.sql — schema reference (reflects live DB structure)
 ├── reference/                  ← CSV reference files
 └── memory/                     ← Claude memory files (not committed to git)
@@ -88,11 +95,12 @@ nutrition-platform/
 
 | Component | Status |
 |---|---|
-| Schema (all 11 tables, indexes, RLS) | ✅ Complete |
+| Schema (all 12 tables, indexes, RLS) | ✅ Complete |
 | **Calendar tab — Phase 1: DB & storage layer** | ✅ Live — `food_log` table deployed to Supabase with RLS; `types/calendar.ts` (FoodLogItem, FoodLogEntry, NewFoodLogEntry); `lib/foodLogStorage.ts` (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId); `mealStorage.ts` + `savedMealStorage.ts` updated to null source_id on delete |
-| **Calendar tab — Phase 2: Tab shell + Month Grid** | ✅ Live — Calendar tab added to MainView; `CalendarView.tsx` (Month/Week toggle, two-column layout, month entry fetch, localStorage persistence); `CalendarMonthGrid.tsx` (7×5–6 grid, prev/today/next nav, violet/teal/amber entry pills, +N overflow, hover + button, today highlight, selected-day highlight) |
-| **Calendar tab — Phase 3: Add Entry Modal** | ✅ Live — `CalendarAddModal.tsx`: type chooser → Add Meal (preset pane with category pills + nutrient sort, no complement scores) / Add Plan (saved plan list with counts) / Add Food (inline search + grams confirmation); all three write food_log rows via addEntry and trigger month re-fetch |
+| **Calendar tab — Phase 2: Tab shell + Month Grid** | ✅ Live — Calendar tab added to MainView; `CalendarView.tsx` (Month/Week toggle, two-column layout, entry fetch, localStorage persistence); `CalendarMonthGrid.tsx` (7×5–6 grid, prev/today/next nav, violet/teal/amber entry pills, +N overflow, hover + button, today highlight, selected-day highlight) |
+| **Calendar tab — Phase 3: Add Entry Modal** | ✅ Live — `CalendarAddModal.tsx`: type chooser → Add Meal (preset pane with category pills + nutrient sort, no complement scores) / Add Plan (saved plan list with counts) / Add Food (inline search + grams confirmation); all three write food_log rows via addEntry and trigger re-fetch |
 | **Calendar tab — Phase 4: Day Detail Panel** | ✅ Live — `CalendarDayPanel.tsx`: sticky panel; date header with ‹/› day navigation (cross-month aware), close, + Add Entry; entry cards grouped by type (food/meal/plan) with meal_label sub-grouping for plan entries; inline click-to-edit grams per food item; remove entry; Day Total section with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart |
+| **Calendar tab — Phase 5: Week Mode** | ✅ Live — `CalendarWeekList.tsx`: infinite-scroll Mon–Sun week strips; IntersectionObserver adds ±4 weeks at top/bottom sentinels; scroll-to-anchor on mount (restores last-viewed week from localStorage); debounced scroll saves topmost visible week; entry cards with colored left-border by type (violet/teal/amber), label + kcal, plan entries list unique meal_labels; day columns show date number + abbreviation header, entry cards, kcal total, + button; week header with "current" badge. `CalendarView.tsx` updated: fetchEntries is mode-aware (week mode fetches ±120 days from today; month mode fetches current month); CalendarWeekList wired as the week view renderer |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
@@ -158,9 +166,9 @@ nutrition-platform/
 ## Authoritative Deliverable Files
 
 ### Database
-**Live Supabase is the source of truth.** All 11 tables, all data, all RLS policies are already deployed. No seed files exist locally.
+**Live Supabase is the source of truth.** All 12 tables, all data, all RLS policies are already deployed. No seed files exist locally.
 
-- **`sql/schema.sql`** — Reference-only DDL reflecting the full live schema (11 tables, indexes, RLS). Use this to understand the structure or to recreate the DB from scratch. Do not run it against the live DB.
+- **`sql/schema.sql`** — Reference-only DDL reflecting the full live schema (12 tables, indexes, RLS). Use this to understand the structure or to recreate the DB from scratch. Do not run it against the live DB.
 - **Supabase credentials** — REST API URL + service role key stored in Claude memory (`memory/reference_supabase.md`).
 
 ### App source
@@ -193,7 +201,7 @@ nutrition-platform/
 - [x] Phase 2: Tab shell + Month Grid (display) — Calendar tab in nav; `CalendarView.tsx` (month/week toggle, two-column layout, entry fetch); `CalendarMonthGrid.tsx` (7×5–6 grid, nav, entry pills, hover +)
 - [x] Phase 3: Add Entry Modal — `CalendarAddModal.tsx` (type chooser → Add Meal / Add Plan / Add Food; preset pane with category pills + nutrient sort, no complement scores; plan picker with meal/food counts; inline food search + grams confirmation; all three paths write food_log rows via addEntry)
 - [x] Phase 4: Day Detail Panel — `CalendarDayPanel.tsx` (sticky sidebar; date header with ‹ › day nav + close + Add Entry; entry cards with type badges + kcal; meal-grouped plan/meal/food rendering; inline grams edit; remove entry; Day Total with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart)
-- [ ] Phase 5: Week Mode
+- [x] Phase 5: Week Mode — `CalendarWeekList.tsx` (infinite-scroll week strips Mon–Sun; IntersectionObserver load-more sentinels ±4 weeks; scroll-to-anchor on mount + scroll save to localStorage; entry cards with colored left-border; kcal totals; + button per day); `CalendarView.tsx` fetchEntries now mode-aware (week = ±120 days, month = current month)
 
 ### Phase 3 — Polish backlog
 - [ ] Food row click → slide-in detail panel
@@ -401,7 +409,7 @@ SELECT name FROM nutrients ORDER BY name;
 ## Cold-Start Instructions
 
 **To pick up where we left off:**
-> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 218 foods × 50 nutrients. Two live features: interactive heatmap and meal planner. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (101 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 218 foods × 50 nutrients. Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
 
 **To add a new feature:**
 > Read PROJECT_STATE.md. I want to add: [DESCRIBE FEATURE]. Before writing any code: (1) which existing files will you modify? (2) what new files are needed? (3) does this need a new Supabase table/query or is it front-end only? Wait for my approval.

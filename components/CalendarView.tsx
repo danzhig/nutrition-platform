@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAuth } from './AuthProvider'
 import CalendarMonthGrid from './CalendarMonthGrid'
+import CalendarWeekList from './CalendarWeekList'
 import CalendarDayPanel from './CalendarDayPanel'
 import CalendarAddModal from './CalendarAddModal'
 import type { HeatmapData } from '@/types/nutrition'
@@ -71,13 +72,23 @@ export default function CalendarView({ data }: Props) {
     return map
   }, [data.foods])
 
-  // Fetch entries for the visible month
+  // Fetch entries — month mode: current month only; week mode: ±120 days from today
   const fetchEntries = useCallback(async () => {
     if (!user) { setEntries([]); return }
-    const mm = String(month + 1).padStart(2, '0')
-    const lastDay = new Date(year, month + 1, 0).getDate()
-    const start = `${year}-${mm}-01`
-    const end   = `${year}-${mm}-${String(lastDay).padStart(2, '0')}`
+    let start: string
+    let end: string
+    if (viewMode === 'week') {
+      const base = new Date()
+      const s = new Date(base); s.setDate(base.getDate() - 120)
+      const e = new Date(base); e.setDate(base.getDate() + 120)
+      start = s.toISOString().split('T')[0]
+      end   = e.toISOString().split('T')[0]
+    } else {
+      const mm = String(month + 1).padStart(2, '0')
+      const lastDay = new Date(year, month + 1, 0).getDate()
+      start = `${year}-${mm}-01`
+      end   = `${year}-${mm}-${String(lastDay).padStart(2, '0')}`
+    }
     setLoading(true)
     try {
       setEntries(await getEntriesForDateRange(start, end))
@@ -86,7 +97,7 @@ export default function CalendarView({ data }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [user, year, month])
+  }, [user, year, month, viewMode])
 
   useEffect(() => { fetchEntries() }, [fetchEntries])
 
@@ -170,9 +181,14 @@ export default function CalendarView({ data }: Props) {
             />
           )}
           {viewMode === 'week' && (
-            <div className="flex items-center justify-center h-48 rounded-xl border border-slate-700/50 text-slate-600 text-sm">
-              Week mode — Phase 5
-            </div>
+            <CalendarWeekList
+              entries={entries}
+              nutrients={data.nutrients}
+              foodsById={foodsById}
+              selectedDate={selectedDate}
+              onDateSelect={handleDaySelect}
+              onAddClick={setAddTargetDate}
+            />
           )}
         </div>
 
