@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { MealItem } from '@/types/meals'
+import { nullSourceId } from './foodLogStorage'
 
 export interface SavedMeal {
   id: string
@@ -34,6 +35,8 @@ export async function createSavedMeal(name: string, items: MealItem[]): Promise<
 }
 
 export async function deleteSavedMeal(id: string): Promise<void> {
+  await nullSourceId(id)
+
   const { error } = await supabase
     .from('saved_meals')
     .delete()

@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-26 (session 10)
+**Last updated:** 2026-04-29 (session 11)
 **Current phase: Phase 3 in progress**
 
 ---
@@ -89,6 +89,7 @@ nutrition-platform/
 | Component | Status |
 |---|---|
 | Schema (all 11 tables, indexes, RLS) | ✅ Complete |
+| **Calendar tab — Phase 1: DB & storage layer** | ✅ Live — `food_log` table deployed to Supabase with RLS; `types/calendar.ts` (FoodLogItem, FoodLogEntry, NewFoodLogEntry); `lib/foodLogStorage.ts` (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId); `mealStorage.ts` + `savedMealStorage.ts` updated to null source_id on delete |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
@@ -184,6 +185,13 @@ nutrition-platform/
 - [x] Saved filter views
 - [x] Meal Planner — multi-meal plan builder with %DV bar chart sidebar
 
+### Calendar Tracker — Build Phases (see CALENDAR_BUILD.md)
+- [x] Phase 1: DB & storage layer — `food_log` table + RLS + `foodLogStorage.ts` + source-null wiring
+- [ ] Phase 2: Tab shell + Month Grid (display)
+- [ ] Phase 3: Add Entry Modal
+- [ ] Phase 4: Day Detail Panel
+- [ ] Phase 5: Week Mode
+
 ### Phase 3 — Polish backlog
 - [ ] Food row click → slide-in detail panel
 - [ ] % RDA in hover tooltips
@@ -228,6 +236,7 @@ user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
 meal_plans          (per user)    — Saved meal plans (JSONB meals array)
 saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
 preset_meals        (system)      — 113 curated meals across 12 categories (JSONB items array)
+food_log            (per user)    — Calendar food log entries (JSONB items array; food_id-anchored; source_id soft ref)
 
 nutrients table has 3 extra columns beyond the original schema:
   body_role             — broad thematic function in the body
