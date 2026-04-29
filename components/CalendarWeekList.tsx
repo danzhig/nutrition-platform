@@ -86,43 +86,55 @@ export default function CalendarWeekList({
     buildWindow(anchorRef.current, 8, 8)
   )
 
-  // Refs for each week strip (keyed by ISO Monday) and sentinels
-  const weekRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  // Refs for each week strip (keyed by ISO Monday), sentinels, and the scroll container
+  const containerRef      = useRef<HTMLDivElement>(null)
+  const weekRefs          = useRef<Map<string, HTMLDivElement>>(new Map())
   const topSentinelRef    = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
   const hasScrolledRef    = useRef(false)
 
-  // ── Scroll to anchor on first mount ────────────────────────────────────────
+  // ── Scroll to anchor on first mount (within the container, not the page) ───
   useEffect(() => {
     if (hasScrolledRef.current) return
-    const target = weekRefs.current.get(anchorRef.current)
-    if (target) {
-      target.scrollIntoView({ behavior: 'instant', block: 'start' })
+    const container = containerRef.current
+    const target    = weekRefs.current.get(anchorRef.current)
+    if (container && target) {
+      const containerTop = container.getBoundingClientRect().top
+      const targetTop    = target.getBoundingClientRect().top
+      container.scrollTop = targetTop - containerTop + container.scrollTop
       hasScrolledRef.current = true
     }
   })
 
-  // ── Save scroll position to localStorage ───────────────────────────────────
+  // ── Save scroll position to localStorage (container scroll, not page scroll)
   useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
     let timer: ReturnType<typeof setTimeout>
     function onScroll() {
       clearTimeout(timer)
       timer = setTimeout(() => {
+        const c = containerRef.current
+        if (!c) return
+        const containerRect = c.getBoundingClientRect()
         for (const [weekDate, el] of weekRefs.current) {
-          const rect = el.getBoundingClientRect()
-          if (rect.top >= -20 && rect.top < window.innerHeight * 0.4) {
+          const rect   = el.getBoundingClientRect()
+          const relTop = rect.top - containerRect.top
+          if (relTop >= -20 && relTop < c.clientHeight * 0.4) {
             localStorage.setItem(WEEK_KEY, weekDate)
             break
           }
         }
       }, 250)
     }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(timer) }
+    container.addEventListener('scroll', onScroll, { passive: true })
+    return () => { container.removeEventListener('scroll', onScroll); clearTimeout(timer) }
   }, [])
 
-  // ── IntersectionObserver: extend window at top/bottom ──────────────────────
+  // ── IntersectionObserver: extend window at top/bottom (root = container) ───
   useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
     const observer = new IntersectionObserver(
       (observed) => {
         for (const obs of observed) {
@@ -141,7 +153,7 @@ export default function CalendarWeekList({
           }
         }
       },
-      { rootMargin: '400px' },
+      { root: container, rootMargin: '200px' },
     )
     if (topSentinelRef.current)    observer.observe(topSentinelRef.current)
     if (bottomSentinelRef.current) observer.observe(bottomSentinelRef.current)
@@ -178,7 +190,7 @@ export default function CalendarWeekList({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div>
+    <div ref={containerRef} className="overflow-y-auto" style={{ height: 'calc(100vh - 160px)' }}>
       {/* Top sentinel */}
       <div ref={topSentinelRef} className="h-1" />
 

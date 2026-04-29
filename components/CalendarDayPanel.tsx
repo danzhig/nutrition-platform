@@ -246,7 +246,7 @@ export default function CalendarDayPanel({
 
   return (
     <div className="sticky top-4 rounded-xl border border-slate-700 bg-slate-800/60 flex flex-col overflow-hidden"
-      style={{ maxHeight: 'calc(100vh - 88px)' }}
+      style={{ height: 'calc(100vh - 100px)' }}
     >
       {/* Header */}
       <div className="flex-shrink-0 border-b border-slate-700 px-4 py-3">
