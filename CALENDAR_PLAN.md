@@ -11,15 +11,31 @@ A new top-level tab ("Calendar") sitting alongside Day Planner and Data View. Us
 
 ---
 
-## Part 1 — Database Schema Alternatives
+## Part 1 — Database Schema (Decided)
 
 This is the most consequential decision. Everything else flows from it.
 
 ---
 
-### Option A — Snapshot Log (Recommended)
+### Design Principles
 
-One row per calendar entry. Every entry stores a **full JSONB snapshot** of what was logged — the actual food items and grams — regardless of source type. References to the source (plan ID, saved meal ID) are stored as metadata only, not as foreign key dependencies.
+Before the schema options, these requirements constrain the design:
+
+1. **Food IDs must always be preserved.** Every logged item must store `food_id` (integer FK to `foods`). Nutrient values are never snapshotted — they are derived at query time by JOINing `food_id` to the live `food_nutrients` table. This means adding a new nutrient (e.g. creatine) retroactively surfaces in all historical calendar entries with no data migration.
+
+2. **Quantities (grams) are locked at log time.** The `amount_g` stored at the moment of logging is immutable. Changing portion sizes in the app does not alter what was actually eaten.
+
+3. **Meal/plan source IDs are stored but soft.** `source_id` records which saved meal or plan the entry came from, enabling future queries like "how many times did I eat the Tuna Bowl." If that meal is later deleted from the planner, the application clears `source_id` (sets it to NULL) on the affected food_log rows but leaves food items, quantities, and the label intact.
+
+4. **Label is a captured string, not a live reference.** The meal/plan name is written to `label` at log time for display grouping. It never changes after logging, even if the source is renamed or deleted. This gives the calendar a faithful "what I called it at the time" record.
+
+5. **Editing a saved meal never retroactively changes logged history.** The log records what was consumed, not what the current version of a meal contains. A user updating their "Tuna Bowl" recipe does not mutate past calendar entries.
+
+---
+
+### Schema
+
+One row per calendar entry. The `items` JSONB array always contains `food_id` — the stable FK that anchors all analytics.
 
 ```sql
 CREATE TABLE food_log (
@@ -27,9 +43,10 @@ CREATE TABLE food_log (
     user_id       UUID        NOT NULL,
     log_date      DATE        NOT NULL,
     entry_type    TEXT        NOT NULL,   -- 'plan' | 'meal' | 'food'
-    label         TEXT,                   -- display name (plan name, meal name, or food name)
-    items         JSONB       NOT NULL,   -- snapshot: [{ food_id, food_name, amount_g, mode }]
-    source_id     UUID,                   -- optional: meal_plans.id or saved_meals.id it came from
+    label         TEXT,                   -- display name captured at log time; never updated
+    items         JSONB       NOT NULL,   -- [{ food_id, food_name, amount_g, mode }] — food_id always present
+    source_id     UUID,                   -- soft ref: meal_plans.id, saved_meals.id, or preset_meals.id
+                                          -- NULLed by app logic on source deletion; never a hard FK
     notes         TEXT,
     created_at    TIMESTAMPTZ DEFAULT NOW()
 );
@@ -38,94 +55,74 @@ CREATE INDEX idx_food_log_user_date ON food_log (user_id, log_date);
 CREATE INDEX idx_food_log_user      ON food_log (user_id);
 ```
 
+**`items` array shape — every element:**
+
+```json
+{
+  "food_id":   42,           // integer FK → foods.id — REQUIRED, never null
+  "food_name": "Tuna",       // string captured at log time for display only
+  "amount_g":  170.0,        // grams at time of logging — immutable
+  "mode":      "weight"      // "weight" | "serving" (from meal planner)
+}
+```
+
+`food_name` is stored for display convenience so the UI does not need to JOIN to `foods` just to render a label. `food_id` is the authoritative reference for all calculations.
+
 **How the three entry types work:**
 
 | Entry type | `label` | `items` | `source_id` |
 |---|---|---|---|
-| `plan` | Plan name | All foods from all meals in the plan | `meal_plans.id` |
-| `meal` | Meal name | Foods in that single meal | `saved_meals.id` or `preset_meals.id` |
-| `food` | Food name | Single food item with grams | NULL |
+| `plan` | Plan name (captured) | All foods from all meals, each with `food_id` + `amount_g` | `meal_plans.id` — NULLed if plan deleted |
+| `meal` | Meal name (captured) | Foods in that meal, each with `food_id` + `amount_g` | `saved_meals.id` or `preset_meals.id` — NULLed if meal deleted |
+| `food` | Food name (captured) | Single item with `food_id` + `amount_g` | NULL |
 
-**Pros:**
-- Future-proof: editing or deleting a plan later does not corrupt the log — the snapshot is what was actually eaten
-- Simple to query for analytics: every row has `items` JSONB, easy to SUM nutrients across a date range
-- Flexible: supports all three entry types with the same structure
-- No cascade delete risk
+**On source deletion (app-level logic in `lib/foodLogStorage.ts`):**
 
-**Cons:**
-- Some data duplication (items are stored in both the source table and the log)
-- If a user wants to "re-link" a logged entry to an updated plan, there's no automatic sync (this is intentional — a log is a record of the past)
-
----
-
-### Option B — Reference-Only (Thin Log)
-
-One row per calendar entry, storing only a foreign key reference to the source — no data duplication.
+When a meal plan or saved meal is deleted, before committing the delete the app runs:
 
 ```sql
-CREATE TABLE food_log (
-    id               UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id          UUID  NOT NULL,
-    log_date         DATE  NOT NULL,
-    entry_type       TEXT  NOT NULL,   -- 'plan' | 'meal' | 'food'
-    meal_plan_id     UUID  REFERENCES meal_plans(id) ON DELETE SET NULL,
-    saved_meal_id    UUID  REFERENCES saved_meals(id) ON DELETE SET NULL,
-    preset_meal_id   UUID  REFERENCES preset_meals(id) ON DELETE SET NULL,
-    food_id          INTEGER REFERENCES foods(id),
-    amount_g         DECIMAL,
-    notes            TEXT,
-    created_at       TIMESTAMPTZ DEFAULT NOW()
-);
+UPDATE food_log
+SET source_id = NULL
+WHERE source_id = $deleted_id AND user_id = $user_id;
 ```
 
-**Pros:**
-- No data duplication
-- Always reflects the "latest" version of a saved meal if the user edits it
-
-**Cons:**
-- Can't run nutrition analytics directly — must JOIN back to the source at query time
-- If a meal plan or saved meal is deleted, the log entry loses its data (SET NULL means nutrient history disappears)
-- Analytics queries are significantly more complex (JSONB traversal across three possible sources)
-- A logged day no longer reflects what the person actually ate if the source was later modified
-
-**Verdict:** Not recommended. The snapshot approach is safer for an activity log.
+The row remains. `label` and `items` (including all `food_id` values) are untouched. The calendar still shows the entry grouped under its original name; nutrient math still works; the only thing lost is the ability to re-open the source in the planner.
 
 ---
 
-### Option C — Day-Level Document
+### Why nutrient values are never stored in the snapshot
 
-One row per user per day — a single JSONB blob containing everything eaten that day.
+Storing values per 100g in the log would freeze the nutritional profile at the time of logging. The design explicitly avoids this so that:
 
-```sql
-CREATE TABLE food_log_days (
-    id          UUID  PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id     UUID  NOT NULL,
-    log_date    DATE  NOT NULL,
-    entries     JSONB NOT NULL,   -- array of entry objects (same shape as Option A items)
-    notes       TEXT,
-    created_at  TIMESTAMPTZ DEFAULT NOW(),
-    updated_at  TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE (user_id, log_date)
-);
-```
+- Adding a new nutrient (e.g. creatine) surfaces in all past calendar entries automatically
+- Correcting an error in a food's nutrient values (e.g. fixing a wrong iron entry) propagates to historical analytics
+- The `food_nutrients` table remains the single source of truth for all nutritional math
 
-**Pros:**
-- One read fetches everything for a day
-- Clean "upsert" pattern for the frontend
-
-**Cons:**
-- Harder to query at the entry level (can't easily filter "all days that contained chicken")
-- Analytics require JSONB array unpacking (`jsonb_array_elements`) for every query
-- Concurrency issues if multiple browser tabs write simultaneously (last-write-wins overwrites the whole day)
-- Doesn't scale as cleanly for future analytics
-
-**Verdict:** Simpler upfront but limits future analytics. Not recommended for this use case.
+The tradeoff is that if USDA revises a food's values, historical calorie/macro totals will shift. This is acceptable — the log records *what was eaten* (food + quantity), not *what we knew about it at the time*.
 
 ---
 
-### Recommendation: Option A
+### Pros
 
-Use the snapshot log (Option A). It treats the calendar as a genuine time-stamped activity record, enables clean analytics queries, and protects log data from future edits to plans.
+- Food IDs preserved forever → retroactive nutrient analysis always possible
+- Adding new nutrients (e.g. creatine) immediately surfaces across all historical entries
+- Source IDs enable "how many times did I eat Meal X" queries
+- Meal deletions leave the log intact — only the soft FK is cleared
+- Label + items captured at log time give a faithful historical record
+- Simple analytics queries: every row has a flat `items` array; SUM nutrients by JOINing `food_id` to `food_nutrients`
+
+### Cons
+
+- Nutrient math requires a JOIN to `food_nutrients` at query time (not a raw number read from the log)
+- Deleting a meal requires an explicit `UPDATE food_log SET source_id = NULL` step in app logic (no DB-level cascade)
+
+---
+
+### Rejected Alternatives
+
+**Option B — Reference-Only (Thin Log):** Stores only FK references, no food items. Ruled out because deleting a meal would erase all food data from those calendar entries — the core requirement is that food IDs must survive meal deletion.
+
+**Option C — Day-Level Document:** One JSONB blob per user per day. Ruled out because it complicates entry-level queries, has concurrency issues with concurrent tab writes, and doesn't scale cleanly for analytics like "all days I ate salmon."
 
 ---
 
@@ -405,17 +402,17 @@ Follow the established project pattern: lazy `useState(() => localStorage.getIte
 
 ---
 
-## Summary — Recommended Stack
+## Summary — Decided Stack
 
-| Dimension | Recommendation | Alternative |
+| Dimension | Decision | Notes |
 |---|---|---|
-| Database | Option A — Snapshot log | Option C (day doc) if analytics are deprioritized |
-| Calendar layout | Option A — Month grid + week toggle | Option B (scrollable week list) for mobile-first |
-| Add entry UX | Option A — Quick Add Modal (type chooser) | Option B (drawer) for fewer clicks |
-| Day detail | Option A — Full-screen modal | Option B (right drawer) if side-by-side context matters |
+| Database | Food-ID-anchored log (Part 1) | ✅ Decided — food_ids always stored; nutrient values derived live from food_nutrients; source_id soft-nulled on deletion |
+| Calendar layout | Option A — Month grid + week toggle | Pending implementation |
+| Add entry UX | Option A — Quick Add Modal (type chooser) | Pending implementation |
+| Day detail | Option A — Full-screen modal | Pending implementation |
 
-The recommended stack prioritizes: reuse of existing components, clean analytics foundation, and a calendar UX that matches user mental models from mainstream calendar apps.
+The database design prioritizes: retroactive nutrient analysis (adding creatine or fixing a value propagates to all history), data integrity on meal deletion (food IDs outlive meal records), and the ability to answer "how many times did I eat Meal X" (source_id preserved while it exists).
 
 ---
 
-*Review this document and provide feedback before implementation begins.*
+*Part 1 decided. Parts 2–5 approved as recommended. Ready for implementation.*
