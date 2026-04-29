@@ -23,7 +23,7 @@ Before the schema options, these requirements constrain the design:
 
 1. **Food IDs must always be preserved.** Every logged item must store `food_id` (integer FK to `foods`). Nutrient values are never snapshotted — they are derived at query time by JOINing `food_id` to the live `food_nutrients` table. This means adding a new nutrient (e.g. creatine) retroactively surfaces in all historical calendar entries with no data migration.
 
-2. **Quantities (grams) are locked at log time.** The `amount_g` stored at the moment of logging is immutable. Changing portion sizes in the app does not alter what was actually eaten.
+2. **Quantities (grams) are set at log time and owned by the user.** The `amount_g` written when an entry is logged reflects what was eaten at that moment. App-wide changes (e.g. updating a food's default serving size in `portionSizes.ts`) never retroactively alter logged amounts. Users can manually edit `amount_g` on any logged entry directly in the calendar at any time.
 
 3. **Meal/plan source IDs are stored but soft.** `source_id` records which saved meal or plan the entry came from, enabling future queries like "how many times did I eat the Tuna Bowl." If that meal is later deleted from the planner, the application clears `source_id` (sets it to NULL) on the affected food_log rows but leaves food items, quantities, and the label intact.
 
@@ -59,22 +59,24 @@ CREATE INDEX idx_food_log_user      ON food_log (user_id);
 
 ```json
 {
-  "food_id":   42,           // integer FK → foods.id — REQUIRED, never null
-  "food_name": "Tuna",       // string captured at log time for display only
-  "amount_g":  170.0,        // grams at time of logging — immutable
-  "mode":      "weight"      // "weight" | "serving" (from meal planner)
+  "food_id":    42,           // integer FK → foods.id — REQUIRED, never null
+  "food_name":  "Tuna",       // string captured at log time for display only
+  "amount_g":   170.0,        // grams at time of logging; editable by user in the calendar
+  "mode":       "weight",     // "weight" | "serving" (from meal planner)
+  "meal_label": "Lunch"       // name of the meal this food came from — REQUIRED for plan entries;
+                               // set to the meal name for meal entries; omitted for standalone food entries
 }
 ```
 
-`food_name` is stored for display convenience so the UI does not need to JOIN to `foods` just to render a label. `food_id` is the authoritative reference for all calculations.
+`food_name` is stored for display convenience so the UI does not need to JOIN to `foods` just to render a label. `food_id` is the authoritative reference for all calculations. `meal_label` is the grouping key that all views (month, week, day panel) use to display foods in the context of the meal they belonged to — it is captured at log time and never changes.
 
 **How the three entry types work:**
 
 | Entry type | `label` | `items` | `source_id` |
 |---|---|---|---|
-| `plan` | Plan name (captured) | All foods from all meals, each with `food_id` + `amount_g` | `meal_plans.id` — NULLed if plan deleted |
-| `meal` | Meal name (captured) | Foods in that meal, each with `food_id` + `amount_g` | `saved_meals.id` or `preset_meals.id` — NULLed if meal deleted |
-| `food` | Food name (captured) | Single item with `food_id` + `amount_g` | NULL |
+| `plan` | Plan name (captured) | All foods from all meals; each item carries `food_id`, `amount_g`, and `meal_label` = the name of the meal it came from | `meal_plans.id` — NULLed if plan deleted |
+| `meal` | Meal name (captured) | Foods in that meal; each item carries `food_id`, `amount_g`, and `meal_label` = the meal name (same as `label`) | `saved_meals.id` or `preset_meals.id` — NULLed if meal deleted |
+| `food` | Food name (captured) | Single item with `food_id` and `amount_g`; `meal_label` omitted | NULL |
 
 **On source deletion (app-level logic in `lib/foodLogStorage.ts`):**
 
@@ -138,10 +140,10 @@ A standard monthly calendar grid (7 columns × 5–6 rows). Navigate between mon
 
 **Day cell:**
 - Date number in top-left corner
-- Up to 3 entry pills, colored by type: violet = plan, teal = meal, amber = food
+- Up to 3 entry pills, colored by type: violet = plan, teal = meal, amber = food; pill label shows the `label` field (plan name, meal name, or food name)
 - Overflow indicator: "+2 more" if more than 3 entries on that day
 - `+` button on hover to add an entry
-- Clicking the date number or anywhere in the cell (not the `+`) opens the Day Detail panel on the right (see Part 4)
+- Clicking the date number or anywhere in the cell (not the `+`) opens the Day Detail panel on the right (see Part 4), where full meal grouping is always shown
 
 **Purpose:** High-level habit overview. See which days have logged entries, spot gaps, understand the shape of a month at a glance.
 
@@ -155,10 +157,10 @@ A vertically scrollable stack of week strips — not a single isolated week. Eac
 - Week header row: "Week of Apr 21" with a `← →` nudge or anchor-scroll to that week (optional)
 - 7 day columns, each showing:
   - Date number
-  - Entry cards (not pills) — enough vertical height to show label + kcal badge per entry
+  - Entry cards (not pills) — enough vertical height to show `label` + kcal badge per entry; plan cards list their meal names beneath the plan title as sub-labels
   - Total kcal for the day as a compact badge at the bottom of the column
   - `+` button to add an entry
-- Clicking a day column (not the `+`) opens the Day Detail panel on the right
+- Clicking a day column (not the `+`) opens the Day Detail panel on the right, where full meal grouping is shown
 
 **Scrolling behavior:** The list renders enough weeks to cover a rolling window (e.g. current week ± 8 weeks = ~17 strips). A "Load more" trigger at the top and bottom extends the window. The scroll position on first open snaps to the current week. Returning to Week mode after navigating away restores the previous scroll position via `np:calendar:week` localStorage key.
 
@@ -203,12 +205,12 @@ Three large buttons presented in order of expected frequency:
 **Step 2 — Select the item:**
 
 **Add Meal:**
-- The same Presets pane used in the Day Planner: category pills (preset categories + "My Templates" subcategory), nutrient sort dropdown, complement score badges
-- Selecting a meal writes one `food_log` row: `entry_type = 'meal'`, `label` = meal name at selection time, `source_id` = `saved_meals.id` or `preset_meals.id`, `items` = array of `{ food_id, food_name, amount_g, mode }` for each food in that meal
+- The same Presets pane used in the Day Planner: category pills (preset categories + "My Templates" subcategory), nutrient sort dropdown. Complement score badges are not shown — you are recording what you ate, not deciding what to eat.
+- Selecting a meal writes one `food_log` row: `entry_type = 'meal'`, `label` = meal name at selection time, `source_id` = `saved_meals.id` or `preset_meals.id`, `items` = array of `{ food_id, food_name, amount_g, mode, meal_label }` where `meal_label` is the meal name for every item
 
 **Add Plan:**
 - The same plan picker list used in the Day Planner tab bar
-- Selecting a plan writes one `food_log` row: `entry_type = 'plan'`, `label` = plan name at selection time, `source_id` = `meal_plans.id`, `items` = all foods across all meals in the plan, each with their `food_id` and `amount_g`
+- Selecting a plan writes one `food_log` row: `entry_type = 'plan'`, `label` = plan name at selection time, `source_id` = `meal_plans.id`, `items` = all foods across all meals in the plan; each item carries `food_id`, `amount_g`, and `meal_label` set to the name of the meal it came from. This preserves full meal-level grouping: in every view, "Salmon Bowl" foods and "Green Juice" foods remain visually distinct even though they are stored in one flat array
 
 **Add Food:**
 - Reuses `FoodPickerModal` as-is: search box + category filter, complement score badges sorted by score
@@ -260,8 +262,11 @@ When no day is selected the panel is hidden and the calendar occupies full width
 **Entry list:**
 - One card per `food_log` row for that day
 - Each card shows: entry type badge (plan / meal / food), `label`, total kcal, and a compact horizontal %DV bar for protein / fat / carbs / fibre
-- Per-card actions: "Edit grams" (updates `amount_g` in place), "Remove" (deletes the `food_log` row)
-- If the entry came from a named meal/plan (`source_id` not null), the card header shows the source name as a grouping label; foods within it are listed below
+- Per-card actions: "Edit grams" (updates `amount_g` on that item in-place), "Remove" (deletes the `food_log` row)
+- **Meal grouping is always preserved using `meal_label`:**
+  - `food` entries: show the single food item directly under the card header (no sub-grouping needed)
+  - `meal` entries: show the meal name as the card header; list all foods in that meal beneath it
+  - `plan` entries: show the plan name as the card header; foods are sub-grouped by `meal_label` into named meal sections beneath it — e.g. "Breakfast", "Lunch", "Dinner" each appear as a sub-header with their foods listed below. No food ever appears without its meal context.
 
 **Day Total nutrition section:**
 - Aggregates all `items` across all entries for that day (JOIN to `food_nutrients` for current values)
