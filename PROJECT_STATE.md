@@ -90,6 +90,7 @@ nutrition-platform/
 |---|---|
 | Schema (all 11 tables, indexes, RLS) | ✅ Complete |
 | **Calendar tab — Phase 1: DB & storage layer** | ✅ Live — `food_log` table deployed to Supabase with RLS; `types/calendar.ts` (FoodLogItem, FoodLogEntry, NewFoodLogEntry); `lib/foodLogStorage.ts` (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId); `mealStorage.ts` + `savedMealStorage.ts` updated to null source_id on delete |
+| **Calendar tab — Phase 2: Tab shell + Month Grid** | ✅ Live — Calendar tab added to MainView; `CalendarView.tsx` (Month/Week toggle, two-column layout, month entry fetch, localStorage persistence); `CalendarMonthGrid.tsx` (7×5–6 grid, prev/today/next nav, violet/teal/amber entry pills, +N overflow, hover + button, today highlight, selected-day highlight) |
 | Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
@@ -187,7 +188,7 @@ nutrition-platform/
 
 ### Calendar Tracker — Build Phases (see CALENDAR_BUILD.md)
 - [x] Phase 1: DB & storage layer — `food_log` table + RLS + `foodLogStorage.ts` + source-null wiring
-- [ ] Phase 2: Tab shell + Month Grid (display)
+- [x] Phase 2: Tab shell + Month Grid (display) — Calendar tab in nav; `CalendarView.tsx` (month/week toggle, two-column layout, entry fetch); `CalendarMonthGrid.tsx` (7×5–6 grid, nav, entry pills, hover +)
 - [ ] Phase 3: Add Entry Modal
 - [ ] Phase 4: Day Detail Panel
 - [ ] Phase 5: Week Mode

@@ -4,12 +4,13 @@ import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
 import DataView from './DataView'
 import MealPlanner from './MealPlanner'
+import CalendarView from './CalendarView'
 
 interface Props {
   data: HeatmapData
 }
 
-type Tab = 'data' | 'meals'
+type Tab = 'data' | 'meals' | 'calendar'
 
 const TAB_KEY = 'np:mainTab'
 
@@ -17,7 +18,7 @@ export default function MainView({ data }: Props) {
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === 'undefined') return 'meals'
     const saved = localStorage.getItem(TAB_KEY)
-    return saved === 'data' || saved === 'meals' ? saved : 'meals'
+    return saved === 'data' || saved === 'meals' || saved === 'calendar' ? saved : 'meals'
   })
 
   function handleTabChange(next: Tab) {
@@ -39,10 +40,16 @@ export default function MainView({ data }: Props) {
           active={tab === 'data'}
           onClick={() => handleTabChange('data')}
         />
+        <TabButton
+          label="Calendar"
+          active={tab === 'calendar'}
+          onClick={() => handleTabChange('calendar')}
+        />
       </div>
 
-      {tab === 'meals' && <MealPlanner data={data} />}
-      {tab === 'data'  && <DataView   data={data} />}
+      {tab === 'meals'    && <MealPlanner   data={data} />}
+      {tab === 'data'     && <DataView      data={data} />}
+      {tab === 'calendar' && <CalendarView />}
     </div>
   )
 }
