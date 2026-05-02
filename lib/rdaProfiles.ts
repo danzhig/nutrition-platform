@@ -32,6 +32,9 @@ export interface RDAProfile {
 export type NutrientBehavior = 'normal' | 'limit' | 'normal-with-ul'
 
 export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
+  // Creatine — higher dietary intake from animal foods is generally better; no safety UL from food
+  'Creatine': 'normal',
+
   // Net Carbs — treated as 'normal' so the RDA target is what you're aiming for.
   // On a low-carb profile the RDA is 50g, making high-net-carb foods visually red,
   // which is exactly the signal a keto user needs.
@@ -141,6 +144,7 @@ const MALE_AVG: RDAValues = {
   'Choline':          550,
 
   // Amino acids — WHO/FAO EAR mg/kg × 80 kg reference male
+  'Creatine':       null,  // no established DRI; body synthesises ~1–2 g/day endogenously
   'Histidine':      800,
   'Isoleucine':     1600,
   'Leucine':        3100,
@@ -198,6 +202,7 @@ const FEMALE_AVG: RDAValues = {
   'Vitamin B12':      2.4,
   'Choline':          425,
   // WHO/FAO EAR × 65 kg reference female
+  'Creatine':       null,
   'Histidine':      650,
   'Isoleucine':     1300,
   'Leucine':        2500,
@@ -253,6 +258,7 @@ const MALE_LOWCARB: RDAValues = {
   'Folate':           400,
   'Vitamin B12':      2.4,
   'Choline':          550,
+  'Creatine':         null,
   'Histidine':      800,
   'Isoleucine':     1600,
   'Leucine':        3100,
@@ -307,6 +313,7 @@ const FEMALE_LOWCARB: RDAValues = {
   'Folate':           400,
   'Vitamin B12':      2.4,
   'Choline':          425,
+  'Creatine':         null,
   'Histidine':      650,
   'Isoleucine':     1300,
   'Leucine':        2500,

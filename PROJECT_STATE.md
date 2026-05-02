@@ -105,6 +105,7 @@ nutrition-platform/
 | Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
 | Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
 | Tortillas (Corn + Flour, all 50 nutrients) | ✅ Complete |
+| **Creatine nutrient** | ✅ Live — nutrient id 52, Amino Acid category, unit mg; values for all 218 foods; sources: Harris et al. (1992) Clinical Science, Greenhaff (1997), Brosnan & Brosnan (2016) Annual Review of Nutrition; animal foods 30–750 mg/100g (Herring highest at 750; plant foods, dairy, eggs = 0); no official DRI so RDA = null in all profiles; behavior = 'normal' |
 | **Next.js app scaffold** | ✅ Complete |
 | **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
 | **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
@@ -158,7 +159,8 @@ nutrition-platform/
 | **My Templates merged into Presets pane** | ✅ Live — "My Templates" is now a subcategory within the Presets selection pane rather than a separate panel; appears as a violet pill at the end of the category pill row (only visible when the user has saved templates); selecting it shows saved meal templates with delete buttons, score badges, and the same nutrient sort; preset and template sort-by-rank buttons remain independent; loading a template closes the Presets pane |
 
 **Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
-**Total food_nutrients rows: ~10,725** (212 foods × 50 nutrients + 25 supplement rows + 100 tortilla rows)  
+**Total nutrients: 52** (original 50 + Net Carbohydrates + Creatine)  
+**Total food_nutrients rows: ~10,943** (~10,725 + 218 creatine rows)  
 **Total preset meals: 113** (107 original + 6 Low Sug Juices)
 
 ---
@@ -237,7 +239,7 @@ nutrition-platform/
 
 ```
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
-nutrients            (50 rows)    — All nutrients with unit, category, description
+nutrients            (52 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
 foods               (218 rows)    — 212 whole foods + 4 supplements + 2 tortillas
 food_nutrients   (~10,725 rows)   — food_id × nutrient_id × value_per_100g
