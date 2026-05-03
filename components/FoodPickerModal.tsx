@@ -5,12 +5,13 @@ import type { FoodRow, NutrientMeta } from '@/types/nutrition'
 import type { Meal } from '@/types/meals'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { FOOD_CATEGORY_LIST } from '@/lib/filterConstants'
-import { getPortionSize } from '@/lib/portionSizes'
+import { getPortionSize, type SizeVariant } from '@/lib/portionSizes'
 import { computeComplementScore } from '@/lib/complementScore'
+import SizeButtons from './SizeButtons'
 
 interface Props {
   foods: FoodRow[]
-  onAdd: (food: FoodRow) => void
+  onAdd: (food: FoodRow, portionOverride?: { grams: number; label: string }) => void
   onClose: () => void
   currentMeals: Meal[]
   nutrients: NutrientMeta[]
@@ -37,6 +38,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All')
   const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
+  const [addedSizes, setAddedSizes] = useState<Map<number, 's' | 'm' | 'l'>>(new Map())
   const [nutrientSortId, setNutrientSortId] = useState<number | null>(null)
 
   const handleAdd = useCallback((food: FoodRow) => {
@@ -45,6 +47,18 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
     setTimeout(() => {
       setRecentlyAdded((prev) => {
         const next = new Set(prev)
+        next.delete(food.food_id)
+        return next
+      })
+    }, 1200)
+  }, [onAdd])
+
+  const handleAddSize = useCallback((food: FoodRow, key: 's' | 'm' | 'l', variant: SizeVariant) => {
+    onAdd(food, { grams: variant.grams, label: variant.label })
+    setAddedSizes((prev) => new Map(prev).set(food.food_id, key))
+    setTimeout(() => {
+      setAddedSizes((prev) => {
+        const next = new Map(prev)
         next.delete(food.food_id)
         return next
       })
@@ -196,6 +210,48 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
             <div className="space-y-0.5">
               {filtered.map((food) => {
                 const portion = getPortionSize(food.food_id)
+
+                // Nutrient sort badge
+                const nutrientBadge = nutrientSortId !== null && activeSortMeta ? (() => {
+                  const v = food.nutrients[nutrientSortId]
+                  if (v == null) return null
+                  const sv = (v as number) * portion.grams / 100
+                  const d = sv < 1 ? sv.toFixed(2) : sv < 100 ? sv.toFixed(1) : Math.round(sv).toString()
+                  return (
+                    <span className="text-[10px] text-violet-300 font-medium tabular-nums">
+                      {d}{activeSortMeta.unit}
+                    </span>
+                  )
+                })() : null
+
+                // Complement score badge
+                const scoreBadge = rdaProfile && foodScores.has(food.food_id) ? (
+                  <ScoreBadge score={foodScores.get(food.food_id)!} />
+                ) : null
+
+                if (portion.sizes) {
+                  return (
+                    <div
+                      key={food.food_id}
+                      className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-700"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-slate-100">{food.food_name}</span>
+                        <span className="text-[11px] text-slate-500 ml-2">{food.category}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {nutrientBadge}
+                        {scoreBadge}
+                        <SizeButtons
+                          sizes={portion.sizes}
+                          addedKey={addedSizes.get(food.food_id) ?? null}
+                          onSelect={(key, variant) => handleAddSize(food, key, variant)}
+                        />
+                      </div>
+                    </div>
+                  )
+                }
+
                 const added = recentlyAdded.has(food.food_id)
                 return (
                   <button
@@ -213,20 +269,8 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                       <span className="text-[11px] text-slate-400">
                         {portion.label} · {portion.grams}g
                       </span>
-                      {nutrientSortId !== null && activeSortMeta && (() => {
-                        const v = food.nutrients[nutrientSortId]
-                        if (v == null) return null
-                        const servingVal = (v as number) * portion.grams / 100
-                        const d = servingVal < 1 ? servingVal.toFixed(2) : servingVal < 100 ? servingVal.toFixed(1) : Math.round(servingVal).toString()
-                        return (
-                          <span className="text-[10px] text-violet-300 font-medium tabular-nums">
-                            {d}{activeSortMeta.unit}
-                          </span>
-                        )
-                      })()}
-                      {rdaProfile && foodScores.has(food.food_id) && (
-                        <ScoreBadge score={foodScores.get(food.food_id)!} />
-                      )}
+                      {nutrientBadge}
+                      {scoreBadge}
                       <span className={`text-[11px] font-medium transition-opacity ${
                         added
                           ? 'text-green-400 opacity-100'

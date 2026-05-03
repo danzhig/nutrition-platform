@@ -12,6 +12,7 @@ import { addEntry } from '@/lib/foodLogStorage'
 import { FOOD_CATEGORY_LIST } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import { useAuth } from './AuthProvider'
+import SizeButtons from './SizeButtons'
 
 type Step      = 'type' | 'select'
 type EntryType = 'meal' | 'plan' | 'food'
@@ -232,6 +233,29 @@ export default function CalendarAddModal({
           food_id:   selectedFood.food_id,
           food_name: selectedFood.food_name,
           amount_g:  g,
+          mode:      'grams',
+        }],
+        source_id: null,
+        notes: null,
+      })
+      onAdded()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to log entry')
+      setSubmitting(false)
+    }
+  }
+
+  async function handleLogFoodDirectly(food: FoodRow, grams: number) {
+    setSubmitting(true); setError(null)
+    try {
+      await addEntry({
+        log_date:   targetDate,
+        entry_type: 'food',
+        label:      food.food_name,
+        items: [{
+          food_id:   food.food_id,
+          food_name: food.food_name,
+          amount_g:  grams,
           mode:      'grams',
         }],
         source_id: null,
@@ -536,6 +560,30 @@ export default function CalendarAddModal({
                             return `${d}${nutrientSortMeta.unit}`
                           })()
                         : null
+
+                      if (portion.sizes) {
+                        return (
+                          <div
+                            key={food.food_id}
+                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-700"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm text-slate-100">{food.food_name}</span>
+                              <span className="text-[11px] text-slate-500 ml-2">{food.category}</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {nvBadge && (
+                                <span className="text-[10px] text-violet-300 font-medium tabular-nums">{nvBadge}</span>
+                              )}
+                              <SizeButtons
+                                sizes={portion.sizes}
+                                onSelect={(_key, variant) => handleLogFoodDirectly(food, variant.grams)}
+                              />
+                            </div>
+                          </div>
+                        )
+                      }
+
                       return (
                         <button
                           key={food.food_id}

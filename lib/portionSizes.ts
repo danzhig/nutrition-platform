@@ -1,67 +1,75 @@
 /**
- * Standard serving sizes for all 212 foods, keyed by food_id.
+ * Standard serving sizes for all foods, keyed by food_id.
  * Sources: USDA standard reference portions, common culinary conventions.
  *
- * grams  — serving weight used for per-serving calculations
+ * grams  — serving weight used for per-serving calculations (medium size for size-variable foods)
  * label  — human-readable description shown in the Serving column
+ * sizes  — optional S/M/L variants for foods that naturally come in different sizes
+ *          (USDA SR Legacy measured weights for each size class)
  *
  * Per-serving value = (value_per_100g / 100) × grams
  */
-export interface PortionSize {
+export interface SizeVariant {
   grams: number
   label: string
 }
 
+export interface PortionSize {
+  grams: number
+  label: string
+  sizes?: { s: SizeVariant; m: SizeVariant; l: SizeVariant }
+}
+
 export const PORTION_SIZES: Record<number, PortionSize> = {
   // ── Fruits ────────────────────────────────────────────────────────────────
-  1:  { grams: 182, label: '1 medium' },        // Apple
-  2:  { grams: 118, label: '1 medium' },        // Banana
-  3:  { grams: 131, label: '1 medium' },        // Orange
+  1:  { grams: 182, label: '1 medium', sizes: { s: { grams: 138, label: '1 small' }, m: { grams: 182, label: '1 medium' }, l: { grams: 223, label: '1 large' } } },   // Apple
+  2:  { grams: 118, label: '1 medium', sizes: { s: { grams: 101, label: '1 small' }, m: { grams: 118, label: '1 medium' }, l: { grams: 136, label: '1 large' } } },   // Banana
+  3:  { grams: 131, label: '1 medium', sizes: { s: { grams: 96,  label: '1 small' }, m: { grams: 131, label: '1 medium' }, l: { grams: 184, label: '1 large' } } },   // Orange
   4:  { grams: 152, label: '1 cup' },           // Strawberry
   5:  { grams: 148, label: '1 cup' },           // Blueberry
   6:  { grams: 165, label: '1 cup sliced' },    // Mango
-  7:  { grams: 150, label: '1 medium' },        // Avocado
+  7:  { grams: 150, label: '1 medium', sizes: { s: { grams: 136, label: '1 small' }, m: { grams: 150, label: '1 medium' }, l: { grams: 201, label: '1 large' } } },   // Avocado
   8:  { grams: 280, label: '2 cups diced' },    // Watermelon
   9:  { grams: 165, label: '1 cup chunks' },    // Pineapple
   10: { grams: 92,  label: '1 cup' },           // Grape
-  11: { grams: 150, label: '1 medium' },        // Peach
-  12: { grams: 178, label: '1 medium' },        // Pear
+  11: { grams: 150, label: '1 medium', sizes: { s: { grams: 130, label: '1 small' }, m: { grams: 150, label: '1 medium' }, l: { grams: 175, label: '1 large' } } },   // Peach
+  12: { grams: 178, label: '1 medium', sizes: { s: { grams: 139, label: '1 small' }, m: { grams: 178, label: '1 medium' }, l: { grams: 209, label: '1 large' } } },   // Pear
   13: { grams: 138, label: '1 cup' },           // Cherry
-  14: { grams: 76,  label: '1 medium' },        // Kiwi
-  15: { grams: 58,  label: '1 medium' },        // Lemon
-  16: { grams: 44,  label: '1 medium' },        // Lime
-  17: { grams: 236, label: '½ fruit' },         // Grapefruit
+  14: { grams: 76,  label: '1 medium', sizes: { s: { grams: 69,  label: '1 small' }, m: { grams: 76,  label: '1 medium' }, l: { grams: 91,  label: '1 large' } } },   // Kiwi
+  15: { grams: 58,  label: '1 medium', sizes: { s: { grams: 48,  label: '1 small' }, m: { grams: 58,  label: '1 medium' }, l: { grams: 84,  label: '1 large' } } },   // Lemon
+  16: { grams: 44,  label: '1 medium', sizes: { s: { grams: 38,  label: '1 small' }, m: { grams: 44,  label: '1 medium' }, l: { grams: 67,  label: '1 large' } } },   // Lime
+  17: { grams: 236, label: '½ fruit',  sizes: { s: { grams: 200, label: '½ small' }, m: { grams: 236, label: '½ medium' }, l: { grams: 280, label: '½ large' } } },   // Grapefruit
   18: { grams: 145, label: '1 cup cubed' },     // Papaya
-  19: { grams: 66,  label: '1 medium' },        // Plum
-  20: { grams: 35,  label: '1 medium' },        // Apricot
+  19: { grams: 66,  label: '1 medium', sizes: { s: { grams: 55,  label: '1 small' }, m: { grams: 66,  label: '1 medium' }, l: { grams: 83,  label: '1 large' } } },   // Plum
+  20: { grams: 35,  label: '1 medium', sizes: { s: { grams: 28,  label: '1 small' }, m: { grams: 35,  label: '1 medium' }, l: { grams: 45,  label: '1 large' } } },   // Apricot
   21: { grams: 24,  label: '1 date' },          // Date (Medjool)
-  22: { grams: 50,  label: '1 medium' },        // Fig
-  23: { grams: 87,  label: '½ fruit' },         // Pomegranate
+  22: { grams: 50,  label: '1 medium', sizes: { s: { grams: 40,  label: '1 small' }, m: { grams: 50,  label: '1 medium' }, l: { grams: 64,  label: '1 large' } } },   // Fig
+  23: { grams: 87,  label: '½ fruit',  sizes: { s: { grams: 75,  label: '½ small' }, m: { grams: 87,  label: '½ medium' }, l: { grams: 115, label: '½ large' } } },   // Pomegranate
   24: { grams: 123, label: '1 cup' },           // Raspberry
   25: { grams: 144, label: '1 cup' },           // Blackberry
   26: { grams: 110, label: '1 cup' },           // Cranberry
   27: { grams: 177, label: '1 cup diced' },     // Cantaloupe
   28: { grams: 177, label: '1 cup diced' },     // Honeydew Melon
   29: { grams: 18,  label: '1 fruit' },         // Passion Fruit
-  30: { grams: 55,  label: '1 medium' },        // Guava
+  30: { grams: 55,  label: '1 medium', sizes: { s: { grams: 45,  label: '1 small' }, m: { grams: 55,  label: '1 medium' }, l: { grams: 75,  label: '1 large' } } },   // Guava
 
   // ── Vegetables ────────────────────────────────────────────────────────────
   31: { grams: 91,  label: '1 cup chopped' },   // Broccoli
-  32: { grams: 61,  label: '1 medium' },        // Carrot
-  33: { grams: 130, label: '1 medium' },        // Sweet Potato
-  34: { grams: 213, label: '1 medium' },        // Potato
-  35: { grams: 123, label: '1 medium' },        // Tomato
+  32: { grams: 61,  label: '1 medium', sizes: { s: { grams: 50,  label: '1 small' }, m: { grams: 61,  label: '1 medium' }, l: { grams: 72,  label: '1 large' } } },   // Carrot
+  33: { grams: 130, label: '1 medium', sizes: { s: { grams: 100, label: '1 small' }, m: { grams: 130, label: '1 medium' }, l: { grams: 180, label: '1 large' } } },   // Sweet Potato
+  34: { grams: 213, label: '1 medium', sizes: { s: { grams: 148, label: '1 small' }, m: { grams: 213, label: '1 medium' }, l: { grams: 369, label: '1 large' } } },   // Potato
+  35: { grams: 123, label: '1 medium', sizes: { s: { grams: 91,  label: '1 small' }, m: { grams: 123, label: '1 medium' }, l: { grams: 182, label: '1 large' } } },   // Tomato
   36: { grams: 119, label: '½ medium' },        // Cucumber
-  37: { grams: 119, label: '1 medium' },        // Red Bell Pepper
-  38: { grams: 110, label: '1 medium' },        // Onion
+  37: { grams: 119, label: '1 medium', sizes: { s: { grams: 93,  label: '1 small' }, m: { grams: 119, label: '1 medium' }, l: { grams: 164, label: '1 large' } } },   // Red Bell Pepper
+  38: { grams: 110, label: '1 medium', sizes: { s: { grams: 70,  label: '1 small' }, m: { grams: 110, label: '1 medium' }, l: { grams: 150, label: '1 large' } } },   // Onion
   39: { grams: 3,   label: '1 clove' },         // Garlic
   40: { grams: 40,  label: '1 stalk' },         // Celery
   41: { grams: 89,  label: '1 cup shredded' },  // White Cabbage
   42: { grams: 107, label: '1 cup' },           // Cauliflower
-  43: { grams: 124, label: '1 medium' },        // Zucchini
+  43: { grams: 124, label: '1 medium', sizes: { s: { grams: 90,  label: '1 small' }, m: { grams: 124, label: '1 medium' }, l: { grams: 196, label: '1 large' } } },   // Zucchini
   44: { grams: 82,  label: '1 cup cubed' },     // Eggplant
   45: { grams: 134, label: '5 spears' },        // Asparagus
-  46: { grams: 136, label: '1 medium' },        // Beetroot
+  46: { grams: 136, label: '1 medium', sizes: { s: { grams: 82,  label: '1 small' }, m: { grams: 136, label: '1 medium' }, l: { grams: 164, label: '1 large' } } },   // Beetroot
   47: { grams: 145, label: '1 cup' },           // Peas (Green)
   48: { grams: 110, label: '1 cup' },           // Green Beans
   49: { grams: 154, label: '1 ear' },           // Corn
@@ -69,12 +77,12 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   51: { grams: 205, label: '1 cup cubed' },     // Butternut Squash
   52: { grams: 88,  label: '1 cup' },           // Brussels Sprouts
   53: { grams: 70,  label: '1 cup sliced' },    // Mushroom (White Button)
-  54: { grams: 120, label: '1 medium' },        // Artichoke
-  55: { grams: 89,  label: '1 medium' },        // Leek
+  54: { grams: 120, label: '1 medium', sizes: { s: { grams: 90,  label: '1 small' }, m: { grams: 120, label: '1 medium' }, l: { grams: 150, label: '1 large' } } },   // Artichoke
+  55: { grams: 89,  label: '1 medium', sizes: { s: { grams: 74,  label: '1 small' }, m: { grams: 89,  label: '1 medium' }, l: { grams: 104, label: '1 large' } } },   // Leek
   56: { grams: 87,  label: '1 cup sliced' },    // Fennel
   57: { grams: 45,  label: '1 cup sliced' },    // Radish
-  58: { grams: 130, label: '1 medium' },        // Turnip
-  59: { grams: 133, label: '1 medium' },        // Parsnip
+  58: { grams: 130, label: '1 medium', sizes: { s: { grams: 100, label: '1 small' }, m: { grams: 130, label: '1 medium' }, l: { grams: 160, label: '1 large' } } },   // Turnip
+  59: { grams: 133, label: '1 medium', sizes: { s: { grams: 85,  label: '1 small' }, m: { grams: 133, label: '1 medium' }, l: { grams: 166, label: '1 large' } } },   // Parsnip
   60: { grams: 100, label: '1 cup' },           // Okra
   61: { grams: 14,  label: '1 pepper' },        // Jalapeño Pepper
   62: { grams: 145, label: '1 cup' },           // Shiitake Mushroom
@@ -171,9 +179,9 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   137: { grams: 85,  label: '3 oz' },           // Bison
 
   // ── Poultry ───────────────────────────────────────────────────────────────
-  138: { grams: 172, label: '1 breast' },       // Chicken Breast (skinless)
-  139: { grams: 116, label: '1 thigh' },        // Chicken Thigh (skinless)
-  140: { grams: 110, label: '1 drumstick' },    // Chicken Drumstick
+  138: { grams: 172, label: '1 breast',    sizes: { s: { grams: 113, label: '1 small breast' },    m: { grams: 172, label: '1 breast' },    l: { grams: 226, label: '1 large breast' } } },   // Chicken Breast (skinless)
+  139: { grams: 116, label: '1 thigh',     sizes: { s: { grams: 78,  label: '1 small thigh' },     m: { grams: 116, label: '1 thigh' },     l: { grams: 155, label: '1 large thigh' } } },   // Chicken Thigh (skinless)
+  140: { grams: 110, label: '1 drumstick', sizes: { s: { grams: 74,  label: '1 small drumstick' }, m: { grams: 110, label: '1 drumstick' }, l: { grams: 147, label: '1 large drumstick' } } }, // Chicken Drumstick
   141: { grams: 85,  label: '3 oz' },           // Turkey Breast
   142: { grams: 113, label: '4 oz' },           // Turkey Ground
   143: { grams: 163, label: '1 breast' },       // Duck Breast
@@ -204,9 +212,9 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   162: { grams: 85,  label: '3 oz' },           // Squid
 
   // ── Eggs ──────────────────────────────────────────────────────────────────
-  163: { grams: 50, label: '1 large egg' },     // Chicken Egg (whole)
-  164: { grams: 33, label: '1 large white' },   // Chicken Egg White
-  165: { grams: 17, label: '1 large yolk' },    // Chicken Egg Yolk
+  163: { grams: 50, label: '1 large egg',   sizes: { s: { grams: 38, label: '1 small egg' },   m: { grams: 50, label: '1 large egg' },   l: { grams: 63, label: '1 jumbo egg' } } },   // Chicken Egg (whole)
+  164: { grams: 33, label: '1 large white', sizes: { s: { grams: 25, label: '1 small white' }, m: { grams: 33, label: '1 large white' }, l: { grams: 42, label: '1 jumbo white' } } }, // Chicken Egg White
+  165: { grams: 17, label: '1 large yolk',  sizes: { s: { grams: 13, label: '1 small yolk' },  m: { grams: 17, label: '1 large yolk' },  l: { grams: 21, label: '1 jumbo yolk' } } },  // Chicken Egg Yolk
   166: { grams: 70, label: '1 egg' },           // Duck Egg
   167: { grams: 9,  label: '1 egg' },           // Quail Egg
 
@@ -308,4 +316,14 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
 /** Returns the portion size for a food, falling back to 100g if not defined. */
 export function getPortionSize(foodId: number): PortionSize {
   return PORTION_SIZES[foodId] ?? { grams: 100, label: '100g' }
+}
+
+/** Returns which size key matches the given gram weight, or null if none matches. */
+export function getSizeKey(foodId: number, grams: number): 's' | 'm' | 'l' | null {
+  const sizes = PORTION_SIZES[foodId]?.sizes
+  if (!sizes) return null
+  if (grams === sizes.s.grams) return 's'
+  if (grams === sizes.m.grams) return 'm'
+  if (grams === sizes.l.grams) return 'l'
+  return null
 }

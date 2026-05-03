@@ -4,8 +4,9 @@ import { useState } from 'react'
 import type { Meal, MealItem } from '@/types/meals'
 import type { FoodRow, NutrientMeta } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
-import { getPortionSize } from '@/lib/portionSizes'
+import { getPortionSize, getSizeKey } from '@/lib/portionSizes'
 import FoodPickerModal from './FoodPickerModal'
+import SizeButtons from './SizeButtons'
 
 interface Props {
   meal: Meal
@@ -58,17 +59,19 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
     onChange({ ...meal, items: meal.items.filter((i) => i.id !== id) })
   }
 
-  function handleAddFood(food: FoodRow) {
+  function handleAddFood(food: FoodRow, portionOverride?: { grams: number; label: string }) {
     const portion = getPortionSize(food.food_id)
+    const effectiveGrams = portionOverride?.grams ?? portion.grams
+    const effectiveLabel = portionOverride?.label ?? portion.label
     const item: MealItem = {
       id: crypto.randomUUID(),
       food_id: food.food_id,
       food_name: food.food_name,
-      grams: portion.grams,
+      grams: effectiveGrams,
       mode: 'servings',
       servings: 1,
-      portion_grams: portion.grams,
-      portion_label: portion.label,
+      portion_grams: effectiveGrams,
+      portion_label: effectiveLabel,
     }
     onChange({ ...meal, items: [...meal.items, item] })
   }
@@ -171,7 +174,10 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
               <p className="text-slate-600 text-xs text-center py-4">No foods added yet.</p>
             ) : (
               <div className="divide-y divide-slate-700/60">
-                {meal.items.map((item) => (
+                {meal.items.map((item) => {
+                  const itemSizes = getPortionSize(item.food_id).sizes ?? null
+                  const activeKey = itemSizes ? getSizeKey(item.food_id, Math.round(item.grams)) : null
+                  return (
                   <div key={item.id} className="flex items-center gap-2 px-3 py-1.5">
                     {/* Food name */}
                     <span
@@ -180,6 +186,21 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                     >
                       {item.food_name}
                     </span>
+
+                    {/* S/M/L size buttons for applicable foods */}
+                    {itemSizes && (
+                      <SizeButtons
+                        sizes={itemSizes}
+                        activeKey={activeKey}
+                        onSelect={(_key, variant) => updateItem(item.id, {
+                          grams: variant.grams,
+                          portion_grams: variant.grams,
+                          portion_label: variant.label,
+                          servings: 1,
+                          mode: 'servings',
+                        })}
+                      />
+                    )}
 
                     {/* Mode toggle: srv | g */}
                     <div className="flex rounded overflow-hidden border border-slate-600 flex-shrink-0 text-[10px]">
@@ -252,7 +273,8 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                       ✕
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 

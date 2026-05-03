@@ -5,9 +5,10 @@ import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { Meal, MealItem } from '@/types/meals'
 import type { FoodLogEntry, FoodLogItem, FoodLogEntryType } from '@/types/calendar'
 import { updateEntryItemGrams, deleteEntry } from '@/lib/foodLogStorage'
-import { getPortionSize } from '@/lib/portionSizes'
+import { getPortionSize, getSizeKey } from '@/lib/portionSizes'
 import MealNutritionSidebar from './MealNutritionSidebar'
 import MealNutritionChart from './MealNutritionChart'
+import SizeButtons from './SizeButtons'
 
 interface Props {
   date: string
@@ -134,12 +135,31 @@ export default function CalendarDayPanel({
   function FoodItemRow({ item, entryId }: { item: FoodLogItem; entryId: string }) {
     const key = itemKey(entryId, item)
     const isEditing = editingKey === key
+    const itemSizes = getPortionSize(item.food_id).sizes ?? null
+    const activeKey = itemSizes ? getSizeKey(item.food_id, Math.round(item.amount_g)) : null
+
+    async function handleSizeClick(grams: number) {
+      try {
+        await updateEntryItemGrams(entryId, item.food_id, item.meal_label, grams)
+        onEntriesChanged()
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
     return (
       <div className="flex items-center justify-between pl-4 pr-3 py-1 hover:bg-slate-700/30 group">
         <span className="text-xs text-slate-300 flex-1 min-w-0 truncate pr-2">
           {item.food_name}
         </span>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {itemSizes && (
+            <SizeButtons
+              sizes={itemSizes}
+              activeKey={activeKey}
+              onSelect={(_key, variant) => handleSizeClick(variant.grams)}
+            />
+          )}
           {isEditing ? (
             <input
               type="number"
