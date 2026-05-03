@@ -154,13 +154,14 @@ nutrition-platform/
 | **Preset portion fixes (critical)** | ✅ Live — Chickpea & Spinach Curry reduced from 200g to 80g dry chickpeas (200g dry ≈ 500g cooked, was 3+ servings); Lamb Chop & Collard Greens reduced from 250g to 170g lamb; patched directly in Supabase |
 | **Meal Comparison food drill-down** | ✅ Live — in Meal A and Meal B panels, food pill buttons appear in the panel header (one per food in the meal + an "All" pill); clicking a food shows only that food's standalone nutrient contribution as %DV; selection resets when the meal changes; diff panel always compares full meals unchanged (`components/MealComparisonView.tsx`) |
 | **Meal expansion roadmap** | ✅ Documented — `meal_ideas.md` at project root documents ~25–28 planned new presets across 5 categories: Snacks (6), Wraps & Tacos (5), Smoothies (5), Breakfast variety (5), Underused Foods inventory; execution order defined |
+| **Cooked versions of dry foods** | ✅ Live — 25 new cooked food entries (IDs 219–243) for all legumes and grains that existed only in dry form; dry food names updated with "(dry)" suffix (23 renames, 2 already labeled); nutrients scaled per USDA dry-to-cooked caloric ratio; water and GI overridden to actual cooked values; portion sizes added to `portionSizes.ts` using standard cooked servings (½ cup for legumes, 1 cup for grains); searching "buckwheat" or "chickpeas" now shows both dry and cooked variants |
 | **Cross-tab state persistence** | ✅ Live — all user selections survive tab switches for the full browser session: Food Comparison (food A/B, weight mode, custom grams, DV profile); Meal Comparison (meal A/B, food drill-down within each meal, DV profile); Charts — Nutrient Ranking (nutrient, N, top/bottom, category filter, per-serving); Charts — Scatter Plot (X axis, Y axis, bubble size, category highlight, per-serving, axis limits); Day Builder chart view (cap-at-100% toggle). All persisted via localStorage so they also survive page refresh. |
 | **Nutrient sort in preset & food picker panes** | ✅ Live — nutrient sort dropdown in the Preset Meals panel and the food picker modal; selecting a nutrient sorts meals/foods by total content of that nutrient (descending); nutrient amount badge shown on each item; sort-by-score (rank) button is disabled while nutrient sort is active; both panes share the same grouped optgroup dropdown (nutrient category → nutrient name) |
 | **My Templates merged into Presets pane** | ✅ Live — "My Templates" is now a subcategory within the Presets selection pane rather than a separate panel; appears as a violet pill at the end of the category pill row (only visible when the user has saved templates); selecting it shows saved meal templates with delete buttons, score badges, and the same nutrient sort; preset and template sort-by-rank buttons remain independent; loading a template closes the Presets pane |
 
-**Total foods: 218** (212 whole foods + 4 supplements + 2 tortillas)  
+**Total foods: 243** (218 original + 25 cooked versions of dry legumes/grains)  
 **Total nutrients: 52** (original 50 + Net Carbohydrates + Creatine)  
-**Total food_nutrients rows: ~10,943** (~10,725 + 218 creatine rows)  
+**Total food_nutrients rows: ~12,457** (11,157 pre-existing + 1,300 cooked food rows)  
 **Total preset meals: 113** (107 original + 6 Low Sug Juices)
 
 ---
