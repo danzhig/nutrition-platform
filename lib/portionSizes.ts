@@ -275,18 +275,19 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   216: { grams: 100, label: '1 capsule' },       // Vitamin K2 + D3
 
   // ── Legumes (cooked) ──────────────────────────────────────────────────────
-  219: { grams: 100, label: '½ cup cooked' },    // Lentils, Red (cooked)
-  220: { grams: 100, label: '½ cup cooked' },    // Lentils, Green (cooked)
-  221: { grams: 130, label: '½ cup cooked' },    // Chickpeas (cooked)
-  222: { grams: 130, label: '½ cup cooked' },    // Black Beans (cooked)
-  223: { grams: 130, label: '½ cup cooked' },    // Kidney Beans (cooked)
-  224: { grams: 90,  label: '½ cup cooked' },    // Soybeans (cooked)
-  225: { grams: 100, label: '½ cup cooked' },    // Mung Beans (cooked)
-  226: { grams: 130, label: '½ cup cooked' },    // Navy Beans (cooked)
-  227: { grams: 130, label: '½ cup cooked' },    // Pinto Beans (cooked)
-  228: { grams: 130, label: '½ cup cooked' },    // Lima Beans (cooked)
-  229: { grams: 100, label: '½ cup cooked' },    // Green Split Peas (cooked)
-  230: { grams: 130, label: '½ cup cooked' },    // Fava Beans (cooked)
+  // Weights = USDA SR Legacy ½ cup drained (home-cooked from dry)
+  219: { grams: 99,  label: '½ cup cooked' },    // Lentils, Red (cooked)
+  220: { grams: 99,  label: '½ cup cooked' },    // Lentils, Green (cooked)
+  221: { grams: 82,  label: '½ cup cooked' },    // Chickpeas (cooked)
+  222: { grams: 86,  label: '½ cup cooked' },    // Black Beans (cooked)
+  223: { grams: 89,  label: '½ cup cooked' },    // Kidney Beans (cooked)
+  224: { grams: 86,  label: '½ cup cooked' },    // Soybeans (cooked)
+  225: { grams: 93,  label: '½ cup cooked' },    // Mung Beans (cooked)
+  226: { grams: 91,  label: '½ cup cooked' },    // Navy Beans (cooked)
+  227: { grams: 86,  label: '½ cup cooked' },    // Pinto Beans (cooked)
+  228: { grams: 94,  label: '½ cup cooked' },    // Lima Beans (cooked)
+  229: { grams: 98,  label: '½ cup cooked' },    // Green Split Peas (cooked)
+  230: { grams: 85,  label: '½ cup cooked' },    // Fava Beans (cooked)
 
   // ── Grains (cooked) ───────────────────────────────────────────────────────
   231: { grams: 185, label: '1 cup cooked' },    // Quinoa (cooked)
@@ -299,7 +300,7 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   238: { grams: 246, label: '1 cup cooked' },    // Amaranth (cooked)
   239: { grams: 182, label: '1 cup cooked' },    // Bulgur Wheat (cooked)
   240: { grams: 157, label: '1 cup cooked' },    // Couscous (cooked)
-  241: { grams: 240, label: '1 cup cooked' },    // Sorghum (cooked)
+  241: { grams: 204, label: '1 cup cooked' },    // Sorghum (cooked)
   242: { grams: 164, label: '1 cup cooked' },    // Wild Rice (cooked)
   243: { grams: 140, label: '1 cup cooked' },    // Pasta, White (cooked)
 }
