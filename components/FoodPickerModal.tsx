@@ -241,12 +241,12 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {nutrientBadge}
-                        {scoreBadge}
                         <SizeButtons
                           sizes={portion.sizes}
                           addedKey={addedSizes.get(food.food_id) ?? null}
                           onSelect={(key, variant) => handleAddSize(food, key, variant)}
                         />
+                        {scoreBadge}
                       </div>
                     </div>
                   )
