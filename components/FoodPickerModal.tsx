@@ -233,7 +233,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                   return (
                     <div
                       key={food.food_id}
-                      className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-slate-700"
+                      className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-700"
                     >
                       <div className="flex-1 min-w-0">
                         <span className="text-sm text-slate-100">{food.food_name}</span>
@@ -246,6 +246,8 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                           addedKey={addedSizes.get(food.food_id) ?? null}
                           onSelect={(key, variant) => handleAddSize(food, key, variant)}
                         />
+                      </div>
+                      <div className="w-8 flex justify-center flex-shrink-0">
                         {scoreBadge}
                       </div>
                     </div>
@@ -257,7 +259,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                   <button
                     key={food.food_id}
                     onClick={() => handleAdd(food)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left transition-colors group ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group ${
                       added ? 'bg-violet-900/40' : 'hover:bg-slate-700'
                     }`}
                   >
@@ -270,7 +272,6 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                         {portion.label} · {portion.grams}g
                       </span>
                       {nutrientBadge}
-                      {scoreBadge}
                       <span className={`text-[11px] font-medium transition-opacity ${
                         added
                           ? 'text-green-400 opacity-100'
@@ -278,6 +279,9 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                       }`}>
                         {added ? '✓ Added' : '+ Add'}
                       </span>
+                    </div>
+                    <div className="w-8 flex justify-center flex-shrink-0">
+                      {scoreBadge}
                     </div>
                   </button>
                 )
