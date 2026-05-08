@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-08 (session 13)
+**Last updated:** 2026-05-08 (session 14)
 **Current phase: Calendar Tracker complete (all 5 phases live)**
 
 ---
@@ -35,14 +35,15 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 nutrition-platform/
 ├── app/
 │   ├── layout.tsx              ← Root layout; wraps children in <AuthProvider>
-│   ├── page.tsx                ← Home: fetches heatmap data, renders <MainView>
+│   ├── page.tsx                ← Home: fetches heatmap data server-side, renders <AppShell>
 │   └── globals.css
 ├── components/
-│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar
-│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison)
-│   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving, DV profile
+│   ├── AppShell.tsx            ← Client shell: global DV profile state, header (title + DV button + auth), section with MainView
+│   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar; passes rdaProfile down
+│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison); passes rdaProfile down
+│   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving; receives rdaProfile from global
 │   ├── HeatmapCell.tsx         ← Single cell: color + tooltip; DV mode aware
-│   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views
+│   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views (DV profile removed — now global)
 │   ├── NutrientSidebar.tsx     ← Vertical avg-profile column right of table
 │   ├── AuthProvider.tsx        ← React context: user, loading, signIn, signUp, signOut
 │   ├── AuthModal.tsx           ← Login/signup modal
@@ -137,7 +138,8 @@ nutrition-platform/
 | **Low Carb & Keto preset meals** | ✅ Live — 6 Low Carb + 6 Keto meals deployed to Supabase |
 | **Expanded preset meal library** | ✅ Live — 60 additional meals (101 total at that point) deployed to Supabase; categories: Soups & Stews (10), Stir-Fries (7), Curries (7); expanded Breakfast, Salads, Bowls, High Protein, Pastas, Low Carb, Keto, Juices |
 | **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
-| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · DV Profile ▾`; all four controls grouped left; plan picker dropdown has inline name edit, save/update, plan list, new plan; DV picker lists saved profiles first then built-ins |
+| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · Save/Update · New Plan`; plan picker dropdown has inline name edit, plan list; save/update and new-plan buttons on bar |
+| **Global DV Profile** | ✅ Live — DV profile selector moved to the top header banner (beside "Nutrition Platform" title); single global selection shared across all tabs (Day Planner, Heatmap, Food Comparison, Meal Comparison); persisted to `np:global-rda-selection` + `np:global-custom-rda` in localStorage; loading a saved meal plan syncs the global profile to that plan's saved selection; profile management (built-in profiles, custom editor, saved profiles) via `DVProfilePanel` overlay from the header button; `AppShell.tsx` owns the state; `FilterPanel` no longer has a DV profile section |
 | **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
 | **Custom DV editor multi-column** | ✅ Live — custom DV profile editor renders nutrient groups as cards in a 3-column grid (editorOnly/inline mode); sidebar mode retains single-column layout |
 | **Complement score — preset & saved meals** | ✅ Live — each preset and saved meal card shows a 0-100 complement score badge (green ≥65, amber ≥35, grey <35); score reflects how well the meal fills remaining DV gaps in the current plan, with hard penalty for normal-with-ul nutrients crossing 125% DV (+flat −5 pts per nutrient crossing 200%) and soft penalty for limit nutrients; implemented in `lib/complementScore.ts` |

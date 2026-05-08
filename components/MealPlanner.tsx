@@ -9,26 +9,26 @@ import type { SavedMeal } from '@/lib/savedMealStorage'
 import { loadSavedMeals, createSavedMeal, deleteSavedMeal } from '@/lib/savedMealStorage'
 import type { PresetMeal } from '@/lib/presetMealStorage'
 import { loadPresetMeals } from '@/lib/presetMealStorage'
-import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
-import { RDA_PROFILES, getProfile } from '@/lib/rdaProfiles'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import { getPortionSize } from '@/lib/portionSizes'
-import type { SavedProfile } from '@/lib/profileStorage'
-import { loadSavedProfiles } from '@/lib/profileStorage'
 import { computeComplementScore } from '@/lib/complementScore'
 import { useAuth } from './AuthProvider'
 import MealCard from './MealCard'
 import MealNutritionSidebar from './MealNutritionSidebar'
 import MealNutritionChart from './MealNutritionChart'
-import DVProfilePanel from './DVProfilePanel'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
+  rdaSelection: string
+  onRdaSelectionChange: (sel: string) => void
+  onOpenDVProfile: () => void
 }
 
 const DEFAULT_MEAL_NAMES = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Pre-workout', 'Post-workout']
 
 function newPlan(): ActiveMealPlan {
-  return { id: null, name: 'My Meal Plan', meals: [], rda_selection: 'male-avg' }
+  return { id: null, name: 'My Meal Plan', meals: [], rda_selection: '' }
 }
 
 function ScoreBadge({ score }: { score: number }) {
@@ -43,7 +43,7 @@ function ScoreBadge({ score }: { score: number }) {
   )
 }
 
-export default function MealPlanner({ data }: Props) {
+export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelectionChange, onOpenDVProfile }: Props) {
   const { user } = useAuth()
   const [plan, setPlan] = useState<ActiveMealPlan>(() => {
     if (typeof window === 'undefined') return newPlan()
@@ -54,15 +54,6 @@ export default function MealPlanner({ data }: Props) {
     return newPlan()
   })
   const [savedPlans, setSavedPlans] = useState<SavedMealPlan[]>([])
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
-  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>(() => {
-    if (typeof window === 'undefined') return {}
-    try {
-      const draft = localStorage.getItem('np:draft-custom-rda')
-      if (draft) return JSON.parse(draft) as RDAValues
-    } catch { /* corrupt draft — ignore */ }
-    return {}
-  })
   // Snapshot of plan at last save/load — used to detect unsaved changes
   const [savedSnapshot, setSavedSnapshot] = useState<string>(() => {
     if (typeof window === 'undefined') return JSON.stringify(newPlan())
@@ -98,7 +89,6 @@ export default function MealPlanner({ data }: Props) {
   })
   const [showPlanDropdown, setShowPlanDropdown] = useState(false)
   const planDropdownRef = useRef<HTMLDivElement>(null)
-  const [showDVOverlay, setShowDVOverlay] = useState(false)
   // Guards plan restore so tab-switch auth refreshes don't overwrite in-progress edits
   const planRestoredRef = useRef(false)
 
@@ -106,12 +96,6 @@ export default function MealPlanner({ data }: Props) {
   useEffect(() => {
     localStorage.setItem('np:draft-plan', JSON.stringify(plan))
   }, [plan])
-
-  useEffect(() => {
-    if (Object.keys(customRdaValues).length > 0) {
-      localStorage.setItem('np:draft-custom-rda', JSON.stringify(customRdaValues))
-    }
-  }, [customRdaValues])
 
   // Restore view mode from localStorage on mount
   useEffect(() => {
@@ -146,10 +130,8 @@ export default function MealPlanner({ data }: Props) {
   useEffect(() => {
     if (!user) {
       setSavedPlans([])
-      setSavedProfiles([])
       setPlan(newPlan())
       localStorage.removeItem('np:draft-plan')
-      localStorage.removeItem('np:draft-custom-rda')
       localStorage.removeItem('np:draft-snapshot')
       localStorage.removeItem('nutrition-active-plan-id')
       planRestoredRef.current = false
@@ -170,32 +152,14 @@ export default function MealPlanner({ data }: Props) {
             if (match) {
               setPlan({ id: match.id, name: match.name, meals: match.meals, rda_selection: match.rda_selection })
               setCollapsedMeals(new Set(match.meals.map((m) => m.id)))
+              if (match.rda_selection) onRdaSelectionChange(match.rda_selection)
             }
           }
         }
       }
     }).catch(console.error)
-    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
     loadSavedMeals().then(setSavedMeals).catch(console.error)
-  }, [user])
-
-  // Resolve the active RDA profile
-  const rdaProfile = useMemo<RDAProfile | null>(() => {
-    const sel = plan.rda_selection
-    if (!sel) return null
-    if (sel === 'custom') return getProfile('custom', customRdaValues)
-    if (sel.startsWith('saved:')) {
-      const savedId = sel.slice(6)
-      const saved = savedProfiles.find((p) => p.id === savedId)
-      if (saved) {
-        const label = saved.name
-        const shortLabel = label.length > 13 ? label.slice(0, 12) + '…' : label
-        return { id: 'custom', label, shortLabel, description: 'Saved custom profile', values: saved.values }
-      }
-      return null
-    }
-    return getProfile(sel as ProfileId, undefined)
-  }, [plan.rda_selection, savedProfiles, customRdaValues])
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Preset categories derived from loaded data
   const presetCategories = useMemo(() => {
@@ -384,17 +348,17 @@ export default function MealPlanner({ data }: Props) {
     setSaveError(null)
     try {
       if (plan.id) {
-        await updateMealPlan(plan.id, plan.name, plan.meals, plan.rda_selection)
+        await updateMealPlan(plan.id, plan.name, plan.meals, rdaSelection)
         setSavedPlans((prev) =>
           prev.map((sp) =>
             sp.id === plan.id
-              ? { ...sp, name: plan.name, meals: plan.meals, rda_selection: plan.rda_selection }
+              ? { ...sp, name: plan.name, meals: plan.meals, rda_selection: rdaSelection }
               : sp
           )
         )
         updateSnapshot(plan)
       } else {
-        const saved = await createMealPlan(plan.name, plan.meals, plan.rda_selection)
+        const saved = await createMealPlan(plan.name, plan.meals, rdaSelection)
         setSavedPlans((prev) => [saved, ...prev])
         const savedPlan = { ...plan, id: saved.id }
         setPlan(savedPlan)
@@ -427,6 +391,7 @@ export default function MealPlanner({ data }: Props) {
     setCollapsedMeals(new Set(sp.meals.map((m) => m.id)))
     localStorage.setItem('nutrition-active-plan-id', sp.id)
     updateSnapshot(loaded)
+    if (sp.rda_selection) onRdaSelectionChange(sp.rda_selection)
   }
 
   // ── Not logged in ─────────────────────────────────────────────────────────
@@ -555,64 +520,28 @@ export default function MealPlanner({ data }: Props) {
         </button>
       </div>
 
-      {/* DV profile picker — pushed to far right, violet-tinted when nothing selected */}
-      <div className="ml-auto pb-px flex items-center gap-2">
-        <div className="w-px h-4 bg-slate-600 self-center flex-shrink-0" />
-        <button
-          onClick={() => setShowDVOverlay(true)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs border transition-colors ${
-            rdaProfile
-              ? 'bg-slate-700/60 hover:bg-slate-700 border-slate-600 text-slate-300'
-              : 'bg-violet-600/10 hover:bg-violet-600/20 border-violet-500/50 hover:border-violet-400/70 text-violet-300'
-          }`}
-        >
-          <span className={`text-[10px] ${rdaProfile ? 'text-slate-500' : 'text-violet-400/80'}`}>DV Profile</span>
-          <span className={rdaProfile ? 'text-violet-300 font-semibold' : 'text-violet-300/60'}>
-            {rdaProfile ? rdaProfile.shortLabel : 'None'}
-          </span>
-          <span className="text-slate-500 text-[9px]">▾</span>
-        </button>
-      </div>
     </div>
   )
-
-  const dvOverlay = showDVOverlay ? (
-    <DVProfilePanel
-      onClose={() => setShowDVOverlay(false)}
-      nutrients={data.nutrients}
-      rdaSelection={plan.rda_selection}
-      customRdaValues={customRdaValues}
-      savedProfiles={savedProfiles}
-      isLoggedIn={!!user}
-      onRdaSelectionChange={(sel) => setPlan((p) => ({ ...p, rda_selection: sel }))}
-      onCustomValuesChange={setCustomRdaValues}
-      onSavedProfilesChange={setSavedProfiles}
-    />
-  ) : null
 
   // ── Chart mode ────────────────────────────────────────────────────────────
 
   if (viewMode === 'chart') {
     return (
-      <>
-        <div>
-          {viewTabBar}
-          <MealNutritionChart
-            nutrients={data.nutrients}
-            meals={plan.meals}
-            foodsById={foodsById}
-            rdaProfile={rdaProfile}
-          />
-        </div>
-        {dvOverlay}
-      </>
+      <div>
+        {viewTabBar}
+        <MealNutritionChart
+          nutrients={data.nutrients}
+          meals={plan.meals}
+          foodsById={foodsById}
+          rdaProfile={rdaProfile}
+        />
+      </div>
     )
   }
 
   // ── Sidebar mode ──────────────────────────────────────────────────────────
 
   return (
-    <>
     <div>
       {viewTabBar}
     <div className="flex gap-4 items-start">
@@ -861,11 +790,9 @@ export default function MealPlanner({ data }: Props) {
         meals={plan.meals}
         foodsById={foodsById}
         rdaProfile={rdaProfile}
-        onOpenDVProfile={() => setShowDVOverlay(true)}
+        onOpenDVProfile={onOpenDVProfile}
       />
     </div>
     </div>
-    {dvOverlay}
-    </>
   )
 }

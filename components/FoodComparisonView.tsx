@@ -8,19 +8,16 @@ import {
 import type { HeatmapData, NutrientMeta, FoodRow } from '@/types/nutrition'
 import { PORTION_SIZES } from '@/lib/portionSizes'
 import {
-  RDA_PROFILES,
   NUTRIENT_BEHAVIORS,
   FOOD_METRIC_TARGETS,
   NUTRIENT_UPPER_LIMITS,
 } from '@/lib/rdaProfiles'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
-import { useAuth } from './AuthProvider'
-import { loadSavedProfiles } from '@/lib/profileStorage'
-import type { SavedProfile } from '@/lib/profileStorage'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
 }
 
 const CATEGORY_ORDER = [
@@ -484,8 +481,7 @@ function CustomXTick({ x, y, payload }: { x?: number; y?: number; payload?: { va
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function FoodComparisonView({ data }: Props) {
-  const { user } = useAuth()
+export default function FoodComparisonView({ data, rdaProfile }: Props) {
   const [foodAId, setFoodAId] = useState<number | null>(() => {
     if (typeof window === 'undefined') return null
     const v = localStorage.getItem('np:foodComp:foodAId')
@@ -511,13 +507,6 @@ export default function FoodComparisonView({ data }: Props) {
     const v = localStorage.getItem('np:foodComp:customGramsB')
     return v !== null ? parseInt(v, 10) : 100
   })
-  const [profileId, setProfileId] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'none'
-    return localStorage.getItem('np:foodComp:profileId') ?? 'none'
-  })
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
-  const profileRef = useRef<HTMLDivElement>(null)
   const scrollRefA = useRef<HTMLDivElement>(null)
   const scrollRefB = useRef<HTMLDivElement>(null)
   const scrollRefDiff = useRef<HTMLDivElement>(null)
@@ -533,27 +522,6 @@ export default function FoodComparisonView({ data }: Props) {
     }
   }, [])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  // Load saved profiles when user logs in; clear on logout
-  useEffect(() => {
-    if (!user) {
-      setSavedProfiles([])
-      // If currently using a saved profile, reset to none
-      setProfileId((id) => (id.startsWith('saved:') ? 'none' : id))
-      return
-    }
-    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
-  }, [user])
-
   // Persist selections across tab switches
   useEffect(() => {
     if (foodAId === null) localStorage.removeItem('np:foodComp:foodAId')
@@ -566,8 +534,6 @@ export default function FoodComparisonView({ data }: Props) {
   useEffect(() => { localStorage.setItem('np:foodComp:weightMode', weightMode) }, [weightMode])
   useEffect(() => { localStorage.setItem('np:foodComp:customGramsA', String(customGramsA)) }, [customGramsA])
   useEffect(() => { localStorage.setItem('np:foodComp:customGramsB', String(customGramsB)) }, [customGramsB])
-  useEffect(() => { localStorage.setItem('np:foodComp:profileId', profileId) }, [profileId])
-
   const foodsById = useMemo(() => {
     const m = new Map<number, FoodRow>()
     for (const f of data.foods) m.set(f.food_id, f)
@@ -576,18 +542,6 @@ export default function FoodComparisonView({ data }: Props) {
 
   const foodA = foodAId != null ? (foodsById.get(foodAId) ?? null) : null
   const foodB = foodBId != null ? (foodsById.get(foodBId) ?? null) : null
-
-  const rdaProfile: RDAProfile | null = useMemo(() => {
-    if (profileId === 'none') return null
-    if (profileId.startsWith('saved:')) {
-      const savedId = profileId.slice(6)
-      const sp = savedProfiles.find((p) => p.id === savedId)
-      if (!sp) return null
-      const shortLabel = sp.name.length > 13 ? sp.name.slice(0, 12) + '…' : sp.name
-      return { id: 'custom', label: sp.name, shortLabel, description: 'Saved custom profile', values: sp.values }
-    }
-    return RDA_PROFILES.find((p) => p.id === profileId) ?? null
-  }, [profileId, savedProfiles])
 
   function getGrams(food: FoodRow | null, custom: number): number {
     if (!food) return 100
@@ -723,78 +677,6 @@ export default function FoodComparisonView({ data }: Props) {
             </div>
           </div>
 
-          <div className="w-px self-stretch bg-slate-700 mx-1 flex-shrink-0" />
-
-          {/* DV Profile dropdown */}
-          <div ref={profileRef} className="relative flex-shrink-0">
-            <p className="text-[10px] text-slate-500 mb-1.5 font-medium uppercase tracking-wider">
-              DV Profile
-            </p>
-            <button
-              onClick={() => setProfileOpen((v) => !v)}
-              className="bg-slate-700 border border-slate-600 hover:border-slate-500 rounded px-3 py-1.5 text-xs text-slate-200 flex items-center gap-2 transition-colors whitespace-nowrap"
-            >
-              {rdaProfile ? rdaProfile.shortLabel : 'None (Raw Values)'}
-              <span className="text-slate-500 text-[10px]">▾</span>
-            </button>
-            {profileOpen && (
-              <div className="absolute z-50 top-full right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden min-w-[200px]">
-                <button
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                    profileId === 'none' ? 'text-violet-300' : 'text-slate-300'
-                  }`}
-                  onClick={() => { setProfileId('none'); setProfileOpen(false) }}
-                >
-                  None (Raw Values)
-                </button>
-
-                {/* Saved custom profiles — only shown when logged in */}
-                {savedProfiles.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-700">
-                      Saved Profiles
-                    </div>
-                    {savedProfiles.map((sp) => {
-                      const key = `saved:${sp.id}`
-                      return (
-                        <button
-                          key={sp.id}
-                          className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                            profileId === key ? 'text-violet-300' : 'text-slate-300'
-                          }`}
-                          onClick={() => { setProfileId(key); setProfileOpen(false) }}
-                        >
-                          {sp.name}
-                        </button>
-                      )
-                    })}
-                  </>
-                )}
-
-                {/* Built-in profiles */}
-                <div className="px-3 py-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-700">
-                  Built-in Profiles
-                </div>
-                {RDA_PROFILES.map((p) => (
-                  <button
-                    key={p.id}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                      profileId === p.id ? 'text-violet-300' : 'text-slate-300'
-                    }`}
-                    onClick={() => { setProfileId(p.id); setProfileOpen(false) }}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-
-                {!user && (
-                  <p className="px-3 py-2 text-[10px] text-slate-500 border-t border-slate-700 italic">
-                    Sign in to use saved profiles
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

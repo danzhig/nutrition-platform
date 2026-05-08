@@ -2,19 +2,24 @@
 
 import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import DataView from './DataView'
 import MealPlanner from './MealPlanner'
 import CalendarView from './CalendarView'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
+  rdaSelection: string
+  onRdaSelectionChange: (sel: string) => void
+  onOpenDVProfile: () => void
 }
 
 type Tab = 'data' | 'meals' | 'calendar'
 
 const TAB_KEY = 'np:mainTab'
 
-export default function MainView({ data }: Props) {
+export default function MainView({ data, rdaProfile, rdaSelection, onRdaSelectionChange, onOpenDVProfile }: Props) {
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === 'undefined') return 'meals'
     const saved = localStorage.getItem(TAB_KEY)
@@ -47,9 +52,17 @@ export default function MainView({ data }: Props) {
         />
       </div>
 
-      {tab === 'meals'    && <MealPlanner   data={data} />}
-      {tab === 'data'     && <DataView      data={data} />}
-      {tab === 'calendar' && <CalendarView  data={data} />}
+      {tab === 'meals' && (
+        <MealPlanner
+          data={data}
+          rdaProfile={rdaProfile}
+          rdaSelection={rdaSelection}
+          onRdaSelectionChange={onRdaSelectionChange}
+          onOpenDVProfile={onOpenDVProfile}
+        />
+      )}
+      {tab === 'data' && <DataView data={data} rdaProfile={rdaProfile} />}
+      {tab === 'calendar' && <CalendarView data={data} />}
     </div>
   )
 }

@@ -4,10 +4,8 @@ import { useState, useMemo, useEffect } from 'react'
 import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
-import type { ProfileId, RDAValues } from '@/lib/rdaProfiles'
-import { getProfile, NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
-import type { SavedProfile } from '@/lib/profileStorage'
-import { loadSavedProfiles, saveNewProfile, updateSavedProfile, deleteSavedProfile } from '@/lib/profileStorage'
+import type { RDAProfile } from '@/lib/rdaProfiles'
+import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import type { SavedFilterSet } from '@/lib/filterSetStorage'
 import { loadFilterSets, saveFilterSet, deleteFilterSet } from '@/lib/filterSetStorage'
 import { useAuth } from './AuthProvider'
@@ -17,6 +15,7 @@ import NutrientSidebar from './NutrientSidebar'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
 }
 
 /** Linear-interpolation percentile on a pre-sorted array. */
@@ -29,7 +28,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo)
 }
 
-export default function HeatmapTable({ data }: Props) {
+export default function HeatmapTable({ data, rdaProfile }: Props) {
   // Filter / view state
   const [selectedFoods, setSelectedFoods] = useState<string[]>([...FOOD_CATEGORY_LIST])
   const [selectedNutrients, setSelectedNutrients] = useState<NutrientCategory[]>([...ALL_NUTRIENT_CATEGORIES])
@@ -40,76 +39,26 @@ export default function HeatmapTable({ data }: Props) {
   const [sortNutrientId, setSortNutrientId] = useState<number | null>(null)
   const [sortAsc, setSortAsc] = useState(false)
 
-  // % Daily Value profile state
-  const [rdaProfileId, setRdaProfileId] = useState<ProfileId | null>(null)
-  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
-
-  // Saved RDA profiles + filter sets from Supabase
+  // Filter sets from Supabase
   const { user } = useAuth()
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
-  const [savedProfileId, setSavedProfileId] = useState<string | null>(null)
   const [savedFilterSets, setSavedFilterSets] = useState<SavedFilterSet[]>([])
 
-  // Load / clear all user data when auth changes
+  // Load / clear filter sets when auth changes
   useEffect(() => {
     if (!user) {
-      setSavedProfiles([])
-      setSavedProfileId(null)
       setSavedFilterSets([])
       return
     }
-    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
     loadFilterSets().then(setSavedFilterSets).catch(console.error)
   }, [user])
-
-  const activeRdaProfile = useMemo(() => {
-    if (savedProfileId) {
-      const saved = savedProfiles.find((p) => p.id === savedProfileId)
-      if (saved) {
-        const label = saved.name.length > 14 ? saved.name.slice(0, 13) + '…' : saved.name
-        return { id: 'custom' as ProfileId, label: saved.name, shortLabel: label, description: 'Saved profile', values: saved.values }
-      }
-    }
-    return getProfile(rdaProfileId, customRdaValues)
-  }, [rdaProfileId, savedProfileId, savedProfiles, customRdaValues])
-
-  async function handleSaveProfile(name: string) {
-    const profile = await saveNewProfile(name, customRdaValues)
-    setSavedProfiles((prev) => [...prev, profile])
-    setSavedProfileId(profile.id)
-    setRdaProfileId(null)
-  }
-
-  async function handleUpdateSavedProfile(id: string, name: string, values: RDAValues) {
-    await updateSavedProfile(id, name, values)
-    setSavedProfiles((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name, values } : p))
-    )
-  }
-
-  async function handleDeleteSavedProfile(id: string) {
-    await deleteSavedProfile(id)
-    setSavedProfiles((prev) => prev.filter((p) => p.id !== id))
-    if (savedProfileId === id) setSavedProfileId(null)
-  }
-
-  function handleSelectSavedProfile(id: string | null) {
-    setSavedProfileId(id)
-    if (id) setRdaProfileId(null)
-  }
-
-  function handleRdaProfileChange(id: ProfileId | null) {
-    setRdaProfileId(id)
-    setSavedProfileId(null)
-  }
 
   async function handleSaveFilterSet(name: string) {
     const fs = await saveFilterSet(name, {
       selectedFoods,
       selectedNutrients,
       perServing,
-      rdaProfileId,
-      savedRdaProfileId: savedProfileId,
+      rdaProfileId: null,
+      savedRdaProfileId: null,
     })
     setSavedFilterSets((prev) => [...prev, fs])
   }
@@ -124,15 +73,7 @@ export default function HeatmapTable({ data }: Props) {
     setSelectedFoods(state.selectedFoods)
     setSelectedNutrients(state.selectedNutrients as NutrientCategory[])
     setPerServing(state.perServing)
-    // Apply DV profile — prefer saved profile, fall back to built-in
-    if (state.savedRdaProfileId) {
-      const exists = savedProfiles.some((p) => p.id === state.savedRdaProfileId)
-      setSavedProfileId(exists ? state.savedRdaProfileId : null)
-      setRdaProfileId(exists ? null : (state.rdaProfileId as ProfileId | null))
-    } else {
-      setSavedProfileId(null)
-      setRdaProfileId(state.rdaProfileId as ProfileId | null)
-    }
+    // DV profile is now managed globally — filter sets do not change it
   }
 
   const visibleNutrients = useMemo(() => {
@@ -208,23 +149,12 @@ export default function HeatmapTable({ data }: Props) {
         selectedNutrients={selectedNutrients}
         search={search}
         perServing={perServing}
-        rdaProfileId={rdaProfileId}
-        customRdaValues={customRdaValues}
-        nutrients={data.nutrients}
-        savedProfiles={savedProfiles}
-        savedProfileId={savedProfileId}
         savedFilterSets={savedFilterSets}
         isLoggedIn={!!user}
         onFoodsChange={setSelectedFoods}
         onNutrientsChange={setSelectedNutrients}
         onSearchChange={setSearch}
         onPerServingChange={setPerServing}
-        onRdaProfileChange={handleRdaProfileChange}
-        onCustomRdaValuesChange={setCustomRdaValues}
-        onSavedProfileSelect={handleSelectSavedProfile}
-        onSaveProfile={handleSaveProfile}
-        onUpdateSavedProfile={handleUpdateSavedProfile}
-        onDeleteSavedProfile={handleDeleteSavedProfile}
         onSaveFilterSet={handleSaveFilterSet}
         onDeleteFilterSet={handleDeleteFilterSet}
         onApplyFilterSet={handleApplyFilterSet}
@@ -236,9 +166,9 @@ export default function HeatmapTable({ data }: Props) {
           {visibleFoods.length} food{visibleFoods.length !== 1 ? 's' : ''} ·{' '}
           {visibleNutrients.length} nutrient{visibleNutrients.length !== 1 ? 's' : ''}
           {perServing && <span className="ml-2 text-emerald-500">· per serving</span>}
-          {activeRdaProfile && (
+          {rdaProfile && (
             <span className="ml-2 text-violet-400">
-              · % DV — {activeRdaProfile.label}
+              · % DV — {rdaProfile.label}
             </span>
           )}
           {sortNutrientId !== null && (
@@ -319,8 +249,8 @@ export default function HeatmapTable({ data }: Props) {
                       {n.nutrient_name.replace('Vitamin ', 'Vit. ')}
                     </span>
                     <span className="block text-[9px] text-slate-500 font-normal">
-                      {activeRdaProfile
-                        ? (activeRdaProfile.values[n.nutrient_name] != null ? '% DV' : n.unit)
+                      {rdaProfile
+                        ? (rdaProfile.values[n.nutrient_name] != null ? '% DV' : n.unit)
                         : n.unit}
                     </span>
                     {sortNutrientId === n.nutrient_id && (
@@ -363,8 +293,8 @@ export default function HeatmapTable({ data }: Props) {
                       const range = activeRanges[n.nutrient_id] ?? { min: 0, max: 0 }
 
                       // DV mode props
-                      const rdaTarget = activeRdaProfile
-                        ? (activeRdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null)
+                      const rdaTarget = rdaProfile
+                        ? (rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null)
                         : undefined
                       const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
                       const ulValue  = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
@@ -407,7 +337,7 @@ export default function HeatmapTable({ data }: Props) {
           visibleFoods={visibleFoods}
           columnRanges={activeRanges}
           perServing={perServing}
-          rdaProfile={activeRdaProfile}
+          rdaProfile={rdaProfile}
         />
 
       </div>

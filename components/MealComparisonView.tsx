@@ -7,7 +7,6 @@ import {
 } from 'recharts'
 import type { HeatmapData, NutrientMeta, FoodRow } from '@/types/nutrition'
 import {
-  RDA_PROFILES,
   NUTRIENT_BEHAVIORS,
   FOOD_METRIC_TARGETS,
   NUTRIENT_UPPER_LIMITS,
@@ -15,8 +14,6 @@ import {
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import { useAuth } from './AuthProvider'
-import { loadSavedProfiles } from '@/lib/profileStorage'
-import type { SavedProfile } from '@/lib/profileStorage'
 import { loadPresetMeals } from '@/lib/presetMealStorage'
 import type { PresetMeal } from '@/lib/presetMealStorage'
 import { loadSavedMeals } from '@/lib/savedMealStorage'
@@ -25,6 +22,7 @@ import { buildJuiceFactorMap } from '@/lib/juiceFactors'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
 }
 
 const CATEGORY_ORDER = [
@@ -571,7 +569,7 @@ function CustomXTick({ x, y, payload }: { x?: number; y?: number; payload?: { va
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
-export default function MealComparisonView({ data }: Props) {
+export default function MealComparisonView({ data, rdaProfile }: Props) {
   const { user } = useAuth()
   const [mealAId, setMealAId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null
@@ -591,17 +589,10 @@ export default function MealComparisonView({ data }: Props) {
     const v = localStorage.getItem('np:mealComp:selectedFoodB')
     return v !== null ? parseInt(v, 10) : null
   })
-  const [profileId, setProfileId] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'none'
-    return localStorage.getItem('np:mealComp:profileId') ?? 'none'
-  })
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [presetMeals, setPresetMeals] = useState<PresetMeal[]>([])
   const [savedMeals, setSavedMeals] = useState<SavedMeal[]>([])
   const [loadingMeals, setLoadingMeals] = useState(true)
 
-  const profileRef = useRef<HTMLDivElement>(null)
   const scrollRefA = useRef<HTMLDivElement>(null)
   const scrollRefB = useRef<HTMLDivElement>(null)
   const scrollRefDiff = useRef<HTMLDivElement>(null)
@@ -617,16 +608,6 @@ export default function MealComparisonView({ data }: Props) {
     }
   }, [])
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setProfileOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
   // Load preset meals once
   useEffect(() => {
     loadPresetMeals()
@@ -635,16 +616,13 @@ export default function MealComparisonView({ data }: Props) {
       .finally(() => setLoadingMeals(false))
   }, [])
 
-  // Load saved meals and profiles when user logs in; clear on logout
+  // Load saved meals when user logs in; clear on logout
   useEffect(() => {
     if (!user) {
       setSavedMeals([])
-      setSavedProfiles([])
-      setProfileId((id) => (id.startsWith('saved:') ? 'none' : id))
       return
     }
     loadSavedMeals().then(setSavedMeals).catch(console.error)
-    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
   }, [user])
 
   // Persist selections across tab switches
@@ -664,8 +642,6 @@ export default function MealComparisonView({ data }: Props) {
     if (selectedFoodB === null) localStorage.removeItem('np:mealComp:selectedFoodB')
     else localStorage.setItem('np:mealComp:selectedFoodB', String(selectedFoodB))
   }, [selectedFoodB])
-  useEffect(() => { localStorage.setItem('np:mealComp:profileId', profileId) }, [profileId])
-
   const foodsById = useMemo(() => {
     const m = new Map<number, FoodRow>()
     for (const f of data.foods) m.set(f.food_id, f)
@@ -701,18 +677,6 @@ export default function MealComparisonView({ data }: Props) {
 
   const mealA = mealAId != null ? (mealsById.get(mealAId) ?? null) : null
   const mealB = mealBId != null ? (mealsById.get(mealBId) ?? null) : null
-
-  const rdaProfile: RDAProfile | null = useMemo(() => {
-    if (profileId === 'none') return null
-    if (profileId.startsWith('saved:')) {
-      const savedId = profileId.slice(6)
-      const sp = savedProfiles.find((p) => p.id === savedId)
-      if (!sp) return null
-      const shortLabel = sp.name.length > 13 ? sp.name.slice(0, 12) + '…' : sp.name
-      return { id: 'custom', label: sp.name, shortLabel, description: 'Saved custom profile', values: sp.values }
-    }
-    return RDA_PROFILES.find((p) => p.id === profileId) ?? null
-  }, [profileId, savedProfiles])
 
   // Reset food drill-down only when meal selection actually changes (not on initial mount)
   const mealAMountedRef = useRef(false)
@@ -802,76 +766,6 @@ export default function MealComparisonView({ data }: Props) {
             </>
           )}
 
-          <div className="w-px self-stretch bg-slate-700 mx-1 flex-shrink-0" />
-
-          {/* DV Profile dropdown */}
-          <div ref={profileRef} className="relative flex-shrink-0">
-            <p className="text-[10px] text-slate-500 mb-1.5 font-medium uppercase tracking-wider">
-              DV Profile
-            </p>
-            <button
-              onClick={() => setProfileOpen((v) => !v)}
-              className="bg-slate-700 border border-slate-600 hover:border-slate-500 rounded px-3 py-1.5 text-xs text-slate-200 flex items-center gap-2 transition-colors whitespace-nowrap"
-            >
-              {rdaProfile ? rdaProfile.shortLabel : 'None (Raw Values)'}
-              <span className="text-slate-500 text-[10px]">▾</span>
-            </button>
-            {profileOpen && (
-              <div className="absolute z-50 top-full right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl overflow-hidden min-w-[200px]">
-                <button
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                    profileId === 'none' ? 'text-violet-300' : 'text-slate-300'
-                  }`}
-                  onClick={() => { setProfileId('none'); setProfileOpen(false) }}
-                >
-                  None (Raw Values)
-                </button>
-
-                {savedProfiles.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-700">
-                      Saved Profiles
-                    </div>
-                    {savedProfiles.map((sp) => {
-                      const key = `saved:${sp.id}`
-                      return (
-                        <button
-                          key={sp.id}
-                          className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                            profileId === key ? 'text-violet-300' : 'text-slate-300'
-                          }`}
-                          onClick={() => { setProfileId(key); setProfileOpen(false) }}
-                        >
-                          {sp.name}
-                        </button>
-                      )
-                    })}
-                  </>
-                )}
-
-                <div className="px-3 py-1 text-[10px] text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-700">
-                  Built-in Profiles
-                </div>
-                {RDA_PROFILES.map((p) => (
-                  <button
-                    key={p.id}
-                    className={`w-full text-left px-3 py-2 text-xs hover:bg-slate-700 ${
-                      profileId === p.id ? 'text-violet-300' : 'text-slate-300'
-                    }`}
-                    onClick={() => { setProfileId(p.id); setProfileOpen(false) }}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-
-                {!user && (
-                  <p className="px-3 py-2 text-[10px] text-slate-500 border-t border-slate-700 italic">
-                    Sign in to use saved profiles and My Meals
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import HeatmapTable from './HeatmapTable'
 import NutrientRankingView from './NutrientRankingView'
 import NutrientScatterPlot from './NutrientScatterPlot'
@@ -10,13 +11,14 @@ import MealComparisonView from './MealComparisonView'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
 }
 
 type DataTab = 'heatmap' | 'charts' | 'comparison' | 'meal_comparison'
 
 const DATA_TAB_KEY = 'np:dataTab'
 
-export default function DataView({ data }: Props) {
+export default function DataView({ data, rdaProfile }: Props) {
   const [tab, setTab] = useState<DataTab>(() => {
     if (typeof window === 'undefined') return 'heatmap'
     const saved = localStorage.getItem(DATA_TAB_KEY)
@@ -74,7 +76,7 @@ export default function DataView({ data }: Props) {
         </button>
       </div>
 
-      {tab === 'heatmap' && <HeatmapTable data={data} />}
+      {tab === 'heatmap' && <HeatmapTable data={data} rdaProfile={rdaProfile} />}
       {tab === 'charts' && (
         <div className="px-1">
           <NutrientRankingView data={data} />
@@ -83,12 +85,12 @@ export default function DataView({ data }: Props) {
       )}
       {tab === 'comparison' && (
         <div className="px-1">
-          <FoodComparisonView data={data} />
+          <FoodComparisonView data={data} rdaProfile={rdaProfile} />
         </div>
       )}
       {tab === 'meal_comparison' && (
         <div className="px-1">
-          <MealComparisonView data={data} />
+          <MealComparisonView data={data} rdaProfile={rdaProfile} />
         </div>
       )}
     </div>
