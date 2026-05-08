@@ -7,7 +7,7 @@
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (218 foods × 50 nutrients). The app has two main features: an interactive heatmap table and a meal planner.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (243 foods × 52 nutrients). The app has three main features: an interactive heatmap table, a meal/day planner, and a calendar food log tracker.
 
 **Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
 **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
@@ -35,12 +35,12 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 nutrition-platform/
 ├── app/
 │   ├── layout.tsx              ← Root layout; wraps children in <AuthProvider>
-│   ├── page.tsx                ← Home: fetches heatmap data server-side, renders <AppShell>
+│   ├── page.tsx                ← Home: fetches heatmap data server-side, renders <AppShell>; revalidate = 300
 │   └── globals.css
 ├── components/
 │   ├── AppShell.tsx            ← Client shell: global DV profile state, header (title + DV button + auth), section with MainView
 │   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar; passes rdaProfile down
-│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison); passes rdaProfile down
+│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison | Meal Comparison); passes rdaProfile down
 │   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving; receives rdaProfile from global
 │   ├── HeatmapCell.tsx         ← Single cell: color + tooltip; DV mode aware
 │   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views (DV profile removed — now global)
@@ -56,10 +56,11 @@ nutrition-platform/
 │   ├── NutrientInfoCard.tsx    ← Floating info card: viewport-clamped; body role, deficiency/excess; food-source bar
 │   ├── MealNutritionChart.tsx  ← Full-width chart dashboard: bar chart + radar + donut
 │   ├── MealCategoryRadar.tsx   ← Custom SVG pentagonal radar: avg %DV per category, gradient edges
-│   ├── MacroDonutChart.tsx     ← Dual-ring PieChart: inner = macro caloric %; outer = top-5 foods per macro
-│   ├── NutrientRankingView.tsx ← Pick nutrient → ranked bar chart of all 218 foods
-│   ├── NutrientScatterPlot.tsx ← X/Y scatter; optional bubble size; category legend
+│   ├── MacroDonutChart.tsx     ← Dual-ring PieChart: inner = 4 macro slices (Net Carbs/Fibre/Protein/Fat); outer = top-5 foods per macro
+│   ├── NutrientRankingView.tsx ← Pick nutrient → ranked bar chart of all foods; N selector, top/bottom, category filter, per-serving toggle
+│   ├── NutrientScatterPlot.tsx ← X/Y scatter; optional bubble size; category legend; clickable legend highlights/dims
 │   ├── FoodComparisonView.tsx  ← Food A vs B; 3 panels (A, B, A−B net diff); centered diff bars
+│   ├── MealComparisonView.tsx  ← Meal A vs B; food-drill-down pill buttons per panel; diff panel always compares full meals
 │   ├── CalendarView.tsx        ← Calendar tab orchestrator: Month/Week toggle, entry fetch, day panel, add modal
 │   ├── CalendarMonthGrid.tsx   ← Month grid: 7×5–6 grid, prev/today/next nav, entry pills, +N overflow
 │   ├── CalendarWeekList.tsx    ← Week rolodex: infinite-scroll Mon–Sun strips, entry cards, scroll persistence
@@ -68,10 +69,10 @@ nutrition-platform/
 │   └── SizeButtons.tsx         ← Inline S/M/L size buttons for variable-size foods; highlights active size
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
-│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination
+│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all
 │   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
 │   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
-│   ├── portionSizes.ts         ← Per-food serving sizes (all 218 foods, keyed by food_id) ← CRITICAL
+│   ├── portionSizes.ts         ← Per-food serving sizes (all 243 foods, keyed by food_id) + S/M/L size variants ← CRITICAL
 │   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
 │   ├── rdaColorScale.ts        ← %DV color scale: normal / limit / normal-with-ul
 │   ├── profileStorage.ts       ← CRUD for user_rda_profiles
@@ -93,75 +94,30 @@ nutrition-platform/
 
 ---
 
-## Current Completion Status
+## Current Feature State
 
 | Component | Status |
 |---|---|
-| Schema (all 12 tables, indexes, RLS) | ✅ Complete |
-| **Calendar tab — Phase 1: DB & storage layer** | ✅ Live — `food_log` table deployed to Supabase with RLS; `types/calendar.ts` (FoodLogItem, FoodLogEntry, NewFoodLogEntry); `lib/foodLogStorage.ts` (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId); `mealStorage.ts` + `savedMealStorage.ts` updated to null source_id on delete |
-| **Calendar tab — Phase 2: Tab shell + Month Grid** | ✅ Live — Calendar tab added to MainView; `CalendarView.tsx` (Month/Week toggle, two-column layout, entry fetch, localStorage persistence); `CalendarMonthGrid.tsx` (7×5–6 grid, prev/today/next nav, violet/teal/amber entry pills, +N overflow, hover + button, today highlight, selected-day highlight) |
-| **Calendar tab — Phase 3: Add Entry Modal** | ✅ Live — `CalendarAddModal.tsx`: type chooser → Add Meal (preset pane with category pills + nutrient sort, no complement scores) / Add Plan (saved plan list with counts) / Add Food (inline search + grams confirmation); all three write food_log rows via addEntry and trigger re-fetch |
-| **Calendar tab — Phase 4: Day Detail Panel** | ✅ Live — `CalendarDayPanel.tsx`: sticky panel; date header with ‹/› day navigation (cross-month aware), close, + Add Entry; entry cards grouped by type (food/meal/plan) with meal_label sub-grouping for plan entries; inline click-to-edit grams per food item; remove entry; Day Total section with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart |
-| **Calendar tab — Phase 5: Week Mode** | ✅ Live — `CalendarWeekList.tsx`: infinite-scroll Mon–Sun week strips; IntersectionObserver adds ±4 weeks at top/bottom sentinels; scroll-to-anchor on mount (restores last-viewed week from localStorage); debounced scroll saves topmost visible week; entry cards with colored left-border by type (violet/teal/amber), label + kcal, plan entries list unique meal_labels; day columns show date number + abbreviation header, entry cards, kcal total, + button; week header with "current" badge. `CalendarView.tsx` updated: fetchEntries is mode-aware (week mode fetches ±120 days from today; month mode fetches current month); CalendarWeekList wired as the week view renderer |
-| Reference data (nutrient categories, nutrients, food categories) | ✅ Complete |
-| Food data — all 10 batches (212 foods × 50 nutrients) | ✅ Complete |
-| Supplement foods (4 supplements, new Supplements category) | ✅ Complete |
-| Tortillas (Corn + Flour, all 50 nutrients) | ✅ Complete |
-| **Creatine nutrient** | ✅ Live — nutrient id 52, Amino Acid category, unit mg; values for all 218 foods; sources: Harris et al. (1992) Clinical Science, Greenhaff (1997), Brosnan & Brosnan (2016) Annual Review of Nutrition; animal foods 30–750 mg/100g (Herring highest at 750; plant foods, dairy, eggs = 0); no official DRI so RDA = null in all profiles; behavior = 'normal' |
-| **Next.js app scaffold** | ✅ Complete |
-| **GitHub repo** | ✅ Complete — github.com/danzhig/nutrition-platform |
-| **Supabase project + database deployed** | ✅ Complete — 10,600 rows verified |
-| **Vercel project connected to GitHub** | ✅ Complete — auto-deploys on push to `main` |
-| **Top-level tab rename** | ✅ Live — "Nutrient Heatmap" top-level tab renamed to "Data View"; now hosts a second-level tab bar (Nutrient Heatmap · Charts) |
-| **Nutrient Ranking View** | ✅ Live — Charts tab: pick any nutrient → ranked bar chart of all 218 foods; N selector (50/100); top/bottom toggle; category filter; per-100g vs per-serving toggle; bars colored by food category |
-| **Nutrient Scatter Plot** | ✅ Live — Charts tab (below Ranking): pick X + Y nutrient axes; optional bubble size (third nutrient); dots colored by food category (shared palette); clickable legend highlights/dims categories; per-100g vs per-serving toggle |
+| **Calendar — food_log DB** | ✅ Live — Supabase table + RLS deployed; entries have JSONB items array; source_id soft-refs meals/plans and is nulled on plan/meal delete |
+| **Calendar — Month Grid** | ✅ Live — CalendarView (month/week toggle, two-column layout, entry fetch, localStorage persistence); CalendarMonthGrid (7×5–6 grid, nav, violet/teal/amber entry pills, +N overflow, today/selected-day highlight) |
+| **Calendar — Add Entry Modal** | ✅ Live — type chooser → Add Meal (preset pane, no complement scores) / Add Plan (saved plan list) / Add Food (search + grams confirmation); all three paths write food_log rows |
+| **Calendar — Day Detail Panel** | ✅ Live — sticky panel; ‹/› day nav (cross-month aware); entry cards grouped by type; inline grams edit; remove; Day Total with sidebar/chart toggle |
+| **Calendar — Week Mode** | ✅ Live — infinite-scroll Mon–Sun strips; IntersectionObserver ±4-week load sentinels; scroll-to-anchor on mount; week mode fetches ±120 days, month mode fetches current month |
+| **Creatine nutrient** | ✅ Live — nutrient id 52, Amino Acid category, unit mg; animal foods 30–750 mg/100g (Herring highest; plant foods/dairy/eggs = 0); no official DRI so RDA = null in all profiles; behavior = 'normal' |
 | **Net Carbohydrates** | ✅ Live — `Carbohydrates` hidden from display (kept in DB); `Net Carbohydrates` (= Carbs − Fibre) added as nutrient; all 4 RDA profiles updated |
-| **Macro split donut (updated)** | ✅ Live — inner ring now shows 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald); both at 4 kcal/g (USDA convention); GI weighting in sidebar uses Net Carbs |
-| **Filter Deselect All fix** | ✅ Live — Food Category and Nutrient Group "Deselect all" now truly clears to empty (previous bug kept last item selected) |
-| **Tab persistence** | ✅ Live — active top-level tab and Data View sub-tab saved to localStorage; page reopens to last-visited tab on reload |
-| **Day Planner draft persistence** | ✅ Live — in-progress plan (meals, foods, DV profile, custom RDA values) written to `np:draft-plan` / `np:draft-custom-rda` on every change; survives switching to Data View and back without losing unsaved work; cleared on logout or "New Plan" |
-| **Seed serving sizes** | ✅ Live — Flaxseeds and Hemp Seeds standardised to 2 tbsp (matching Chia Seeds) for consistent per-serving comparison; Sunflower/Pumpkin stay at 1 oz (snack use); Sesame/Poppy stay at 1 tbsp (condiment use) |
-| **MVP Heatmap Table** | ✅ Live — all 218 foods, dark mode, column sort, filters, search |
-| **Nutrient Avg Profile Sidebar** | ✅ Live — all 50 nutrients grouped, color-coded avg across filtered foods |
-| **% Daily Value mode** | ✅ Live — 4 built-in RDA profiles + custom; per-nutrient UL warnings; new color scale |
-| **Supabase Auth + saved RDA profiles** | ✅ Live — email/password sign up/in; saved custom RDA profiles in `user_rda_profiles` |
-| **Saved filter views** | ✅ Live — logged-in users can save/load/delete named filter sets |
-| **Day Planner** | ✅ Live — multi-meal plans, food picker, %DV bar chart sidebar, save/load/edit (top-level tab renamed from "Meal Planner" to "Day Planner") |
-| **Saved meal templates** | ✅ Live — save individual meals as reusable templates; load into any plan |
-| **Nutrient info cards** | ✅ Live — click any nutrient in the meal sidebar to see function, deficiency symptoms, and excess symptoms |
-| **Meal planner chart view** | ✅ Live — toggle between sidebar and full-width chart dashboard; bar chart of all 50 nutrients by %DV, sorted within category; cap Y-axis at 100% toggle |
-| **Category fulfilment radar** | ✅ Live — pentagonal web chart below bar chart showing avg %DV per category (Macronutrient, Vitamin, Mineral, Fatty Acid, Amino Acid); per-vertex colour and gradient edges via rdaCellColor scale |
-| **Preset meal templates** | ✅ Live — 113 curated system meals across 12 categories (Juices, Low Sug Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto, Soups & Stews, Stir-Fries, Curries) deployed to Supabase |
-| **Collapsible meal cards** | ✅ Live — ▸/▾ toggle on each meal card; loaded presets/templates appear at top, expanded; other meals collapse; header shows food count + total grams when collapsed |
-| **Preset item enrichment fix** | ✅ Live — preset items resolved to full MealItem on load (food_name, mode, portion_grams, portion_label) via foodsById + getPortionSize |
-| **Macro split donut** | ✅ Live (superseded — see updated entry above) |
-| **Low Carb & Keto preset meals** | ✅ Live — 6 Low Carb + 6 Keto meals deployed to Supabase |
-| **Expanded preset meal library** | ✅ Live — 60 additional meals (101 total at that point) deployed to Supabase; categories: Soups & Stews (10), Stir-Fries (7), Curries (7); expanded Breakfast, Salads, Bowls, High Protein, Pastas, Low Carb, Keto, Juices |
-| **Nutrient tooltip improvements** | ✅ Live — tooltip clamps to viewport (useLayoutEffect measures card height before positioning); stacked food-source bar shows top-5 foods contributing to that nutrient in the active plan |
-| **Tab bar UI** | ✅ Live — single tab bar at top of Meal Planner: `▤ Day Builder · ▦ Charts | Plan ▾ · Save/Update · New Plan`; plan picker dropdown has inline name edit, plan list; save/update and new-plan buttons on bar |
-| **Global DV Profile** | ✅ Live — DV profile selector moved to the top header banner (beside "Nutrition Platform" title); single global selection shared across all tabs (Day Planner, Heatmap, Food Comparison, Meal Comparison); persisted to `np:global-rda-selection` + `np:global-custom-rda` in localStorage; loading a saved meal plan syncs the global profile to that plan's saved selection; profile management (built-in profiles, custom editor, saved profiles) via `DVProfilePanel` overlay from the header button; `AppShell.tsx` owns the state; `FilterPanel` no longer has a DV profile section |
-| **Header cleanup** | ✅ Live — removed "values per 100g raw", hover/sort tips, and global colour-scale legend bar from page header; colour scale legend now lives inline in the heatmap status bar |
+| **Macro split donut** | ✅ Live — inner ring: 4 slices: Net Carbs (amber) + Dietary Fibre (lime) + Protein (violet) + Fat (emerald) at 4 kcal/g (USDA); GI weighting in sidebar uses Net Carbs |
+| **Day Planner draft persistence** | ✅ Live — in-progress plan written to `np:draft-plan` / `np:draft-custom-rda` on every change; survives tab switches; cleared on logout or "New Plan" |
+| **Preset meal templates** | ✅ Live — 113 curated system meals across 12 categories (Juices, Low Sug Juices, Salads, Pastas, Bowls, High Protein, Breakfast, Low Carb, Keto, Soups & Stews, Stir-Fries, Curries) in Supabase |
+| **Global DV Profile** | ✅ Live — selector in header banner; single global state owned by `AppShell.tsx`; shared across all tabs; persisted to `np:global-rda-selection` + `np:global-custom-rda`; loading a saved plan syncs the global profile; `FilterPanel` no longer has a DV profile section |
 | **Custom DV editor multi-column** | ✅ Live — custom DV profile editor renders nutrient groups as cards in a 3-column grid (editorOnly/inline mode); sidebar mode retains single-column layout |
-| **Complement score — preset & saved meals** | ✅ Live — each preset and saved meal card shows a 0-100 complement score badge (green ≥65, amber ≥35, grey <35); score reflects how well the meal fills remaining DV gaps in the current plan, with hard penalty for normal-with-ul nutrients crossing 125% DV (+flat −5 pts per nutrient crossing 200%) and soft penalty for limit nutrients; implemented in `lib/complementScore.ts` |
-| **Complement score — food picker** | ✅ Live — FoodPickerModal shows a live score badge per food calculated at default serving size; list sorted by score descending when a DV profile is active; updates instantly as plan changes (portion adjustments, new foods added) |
-| **Update Plan / New Plan on tab bar** | ✅ Live — "Update Plan" and "New Plan" buttons moved from Plan dropdown to the tab bar itself; Update Plan button is grey when no unsaved changes and turns purple when the plan has been modified; dirty state survives tab switches via `np:draft-snapshot` in localStorage |
-| **Tooltip animation fix** | ✅ Live — Recharts Tooltip on Nutrient Scatter Plot no longer flies in from top-left; `isAnimationActive={false}` on `<Tooltip>` |
-| **Meals collapsed on tab return** | ✅ Live — when returning to the Day Planner tab, all meal cards default to collapsed; collapse state initialized from draft localStorage key |
-| **ISR revalidate 300** | ✅ Live — replaced `export const dynamic = 'force-dynamic'` with `export const revalidate = 300`; page re-renders at most every 5 minutes; new foods/nutrients are reflected after the next revalidation cycle |
-| **Parallel Supabase pagination** | ✅ Live — `fetchHeatmapData.ts` counts rows first then fetches all pages in parallel via `Promise.all`; reduces initial load time |
-| **Bacon preset name fix** | ✅ Fixed — `'Bacon (pork)'` corrected to `'Bacon (pork, raw)'` in preset_meals (Supabase) |
-| **Food Comparison** | ✅ Live — third sub-tab under Data View; pick Food A & Food B; weight mode (per 100g / per serving / custom g per food); optional DV profile; three side-by-side panels (Food A, Food B, Net Difference A−B) each grouped by nutrient category with colour bars; net difference panel uses centered bars (green = A has more, red = B has more); bar chart below sorted largest positive → largest negative %DV difference (`components/FoodComparisonView.tsx`) |
-| **Preset meal portion audit** | ✅ Live — 34 portion corrections applied and deployed; fixes: spinach ≤90g in salads / 60g elsewhere, arugula 40–60g, kale 67g in juices, dry legumes ≤104g (~2 servings), turkey/mackerel 170g, bacon 56g (4 slices), heavy cream 60g, lamb 170g in stews, egg whites 165g; all corrections are live in Supabase |
-| **Juice portion audit** | ✅ Live — all 8 existing Juice presets corrected to realistic single-serving cold-press sizes (300–410g produce total); Berry Antioxidant Boost restructured with apple as juice base (berry-only had no drinkable liquid); all 8 patches live in Supabase |
-| **Low Sug Juices preset category** | ✅ Live — 6 new low-sugar cold-press juice presets in a new "Low Sug Juices" category: Cucumber Mint Refresher, Celery Lemon Detox, Green Alkaline Juice, Beet Ginger Shots, Tomato Herb Juice, Carrot Turmeric Zinger; all deployed to Supabase |
-| **Preset portion fixes (critical)** | ✅ Live — Chickpea & Spinach Curry reduced from 200g to 80g dry chickpeas (200g dry ≈ 500g cooked, was 3+ servings); Lamb Chop & Collard Greens reduced from 250g to 170g lamb; patched directly in Supabase |
-| **Meal Comparison food drill-down** | ✅ Live — in Meal A and Meal B panels, food pill buttons appear in the panel header (one per food in the meal + an "All" pill); clicking a food shows only that food's standalone nutrient contribution as %DV; selection resets when the meal changes; diff panel always compares full meals unchanged (`components/MealComparisonView.tsx`) |
-| **Meal expansion roadmap** | ✅ Documented — `meal_ideas.md` at project root documents ~25–28 planned new presets across 5 categories: Snacks (6), Wraps & Tacos (5), Smoothies (5), Breakfast variety (5), Underused Foods inventory; execution order defined |
-| **Cooked versions of dry foods** | ✅ Live — 25 new cooked food entries (IDs 219–243) for all legumes and grains that existed only in dry form; dry food names updated with "(dry)" suffix (23 renames, 2 already labeled); nutrients scaled per USDA dry-to-cooked caloric ratio; water and GI overridden to actual cooked values; portion sizes added to `portionSizes.ts` using standard cooked servings (½ cup for legumes, 1 cup for grains); searching "buckwheat" or "chickpeas" now shows both dry and cooked variants |
-| **Cross-tab state persistence** | ✅ Live — all user selections survive tab switches for the full browser session: Food Comparison (food A/B, weight mode, custom grams, DV profile); Meal Comparison (meal A/B, food drill-down within each meal, DV profile); Charts — Nutrient Ranking (nutrient, N, top/bottom, category filter, per-serving); Charts — Scatter Plot (X axis, Y axis, bubble size, category highlight, per-serving, axis limits); Day Builder chart view (cap-at-100% toggle). All persisted via localStorage so they also survive page refresh. |
-| **Nutrient sort in preset & food picker panes** | ✅ Live — nutrient sort dropdown in the Preset Meals panel and the food picker modal; selecting a nutrient sorts meals/foods by total content of that nutrient (descending); nutrient amount badge shown on each item; sort-by-score (rank) button is disabled while nutrient sort is active; both panes share the same grouped optgroup dropdown (nutrient category → nutrient name) |
-| **My Templates merged into Presets pane** | ✅ Live — "My Templates" is now a subcategory within the Presets selection pane rather than a separate panel; appears as a violet pill at the end of the category pill row (only visible when the user has saved templates); selecting it shows saved meal templates with delete buttons, score badges, and the same nutrient sort; preset and template sort-by-rank buttons remain independent; loading a template closes the Presets pane |
-| **S/M/L size selector** | ✅ Live — inline S, M, L size buttons appear on foods that naturally vary in size (fruits, vegetables, chicken, eggs); sourced from USDA SR Legacy; active size highlights violet; newly-applied size shows green ✓; present in all four contexts: FoodPickerModal (Add Food), CalendarAddModal (direct-log on click), MealCard (Day Builder food rows), CalendarDayPanel (calendar day food rows); non-variable foods are unchanged; implemented in `components/SizeButtons.tsx` + `lib/portionSizes.ts` size variants |
+| **Complement score — preset & saved meals** | ✅ Live — 0-100 badge per meal card (green ≥65, amber ≥35, grey <35); measures how well the meal fills remaining DV gaps; hard penalty for normal-with-ul nutrients >125% DV; implemented in `lib/complementScore.ts` |
+| **Complement score — food picker** | ✅ Live — live score badge per food at default serving size; sorted by score descending when DV profile is active; updates on every plan change |
+| **Low Sug Juices preset category** | ✅ Live — 6 low-sugar cold-press juice presets: Cucumber Mint Refresher, Celery Lemon Detox, Green Alkaline Juice, Beet Ginger Shots, Tomato Herb Juice, Carrot Turmeric Zinger |
+| **Meal Comparison food drill-down** | ✅ Live — food pill buttons per meal panel (one per food + "All"); clicking shows that food's standalone %DV contribution; diff panel always compares full meals (`MealComparisonView.tsx`) |
+| **Cooked versions of dry foods** | ✅ Live — 25 cooked food entries (IDs 219–243) for all legumes and grains that existed only in dry form; dry food names updated with "(dry)" suffix; nutrients scaled per USDA dry-to-cooked caloric ratio; water/GI overridden to cooked values; portion sizes in `portionSizes.ts` (½ cup legumes, 1 cup grains) |
+| **Nutrient sort in preset & food picker panes** | ✅ Live — sort dropdown sorts meals/foods by total content of a chosen nutrient (descending); nutrient amount badge shown; sort-by-score disabled while nutrient sort is active |
+| **My Templates merged into Presets pane** | ✅ Live — saved templates appear as a violet pill in the category row (only when user has templates); same nutrient sort, score badges, delete buttons; loading a template closes the Presets pane |
+| **S/M/L size selector** | ✅ Live — inline S/M/L buttons on variable-size foods (fruits, vegetables, chicken, eggs); present in FoodPickerModal, CalendarAddModal, MealCard, CalendarDayPanel; implemented in `SizeButtons.tsx` + `portionSizes.ts` size variants |
 
 **Total foods: 243** (218 original + 25 cooked versions of dry legumes/grains)  
 **Total nutrients: 52** (original 50 + Net Carbohydrates + Creatine)  
@@ -184,43 +140,16 @@ nutrition-platform/
 
 ### Human-readable reference
 - **`ideas.md`** — Full visualization roadmap for future features
+- **`meal_ideas.md`** — Planned new presets: Snacks, Wraps & Tacos, Smoothies, Breakfast variety
 
 ---
 
-## Prioritized Next Steps
+## Open Backlog Items
 
-### Phase 1 — Foundation & Deploy ✅ Complete
-
-### Phase 2 — Heatmap Polish + Auth + Meal Planner ✅ Complete
-- [x] Dark mode theme
-- [x] P10/P90 percentile colour scale
-- [x] Per-serving toggle
-- [x] Slide-out filter panel
-- [x] Multi-select food category + nutrient group filters
-- [x] Nutrient average profile sidebar
-- [x] % Daily Value mode — 4 built-in RDA profiles + custom + UL warnings
-- [x] Supabase Auth — email/password; saved custom RDA profiles
-- [x] Saved filter views
-- [x] Meal Planner — multi-meal plan builder with %DV bar chart sidebar
-
-### Calendar Tracker — Build Phases (see CALENDAR_BUILD.md)
-- [x] Phase 1: DB & storage layer — `food_log` table + RLS + `foodLogStorage.ts` + source-null wiring
-- [x] Phase 2: Tab shell + Month Grid (display) — Calendar tab in nav; `CalendarView.tsx` (month/week toggle, two-column layout, entry fetch); `CalendarMonthGrid.tsx` (7×5–6 grid, nav, entry pills, hover +)
-- [x] Phase 3: Add Entry Modal — `CalendarAddModal.tsx` (type chooser → Add Meal / Add Plan / Add Food; preset pane with category pills + nutrient sort, no complement scores; plan picker with meal/food counts; inline food search + grams confirmation; all three paths write food_log rows via addEntry)
-- [x] Phase 4: Day Detail Panel — `CalendarDayPanel.tsx` (sticky sidebar; date header with ‹ › day nav + close + Add Entry; entry cards with type badges + kcal; meal-grouped plan/meal/food rendering; inline grams edit; remove entry; Day Total with sidebar/chart toggle reusing MealNutritionSidebar + MealNutritionChart)
-- [x] Phase 5: Week Mode — `CalendarWeekList.tsx` (infinite-scroll week strips Mon–Sun; IntersectionObserver load-more sentinels ±4 weeks; scroll-to-anchor on mount + scroll save to localStorage; entry cards with colored left-border; kcal totals; + button per day); `CalendarView.tsx` fetchEntries now mode-aware (week = ±120 days, month = current month)
-
-### Phase 3 — Polish backlog
 - [ ] Food row click → slide-in detail panel
 - [ ] % RDA in hover tooltips
 - [ ] Mobile-responsive collapse
 - [ ] Nutrient name tooltips from `nutrients.description`
-- [x] Nutrient Ranking View — pick a nutrient, ranked bar chart of all 218 foods (`NutrientRankingView.tsx` in Charts sub-tab)
-- [x] Net Carbohydrates — replaces Carbohydrates in display; formula Carbs − Fibre; all RDA profiles updated
-- [x] Macro split donut — updated: 4 slices (Net Carbs + Fibre + Protein + Fat); GI weighting fixed
-- [x] Deselect All filter bug — truly clears to empty selection
-- [x] Tab persistence — localStorage saves active tab + sub-tab across reloads
-- [x] Seed serving size audit — Flaxseeds + Hemp Seeds standardised to 2 tbsp
 
 ---
 
@@ -246,8 +175,8 @@ nutrition-platform/
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
 nutrients            (52 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
-foods               (218 rows)    — 212 whole foods + 4 supplements + 2 tortillas
-food_nutrients   (~10,725 rows)   — food_id × nutrient_id × value_per_100g
+foods               (243 rows)    — 218 original + 25 cooked versions of dry legumes/grains
+food_nutrients   (~12,457 rows)   — food_id × nutrient_id × value_per_100g
 food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
@@ -416,12 +345,6 @@ SELECT name FROM nutrients ORDER BY name;
 ## Cold-Start Instructions
 
 **To pick up where we left off:**
-> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 218 foods × 50 nutrients. Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
-
-**To add a new feature:**
-> Read PROJECT_STATE.md. I want to add: [DESCRIBE FEATURE]. Before writing any code: (1) which existing files will you modify? (2) what new files are needed? (3) does this need a new Supabase table/query or is it front-end only? Wait for my approval.
-
-**To add a new food:**
-> Read PROJECT_STATE.md — pay attention to the Data Maintenance section. I want to add [FOOD NAME] to [CATEGORY]. Write the SQL, the portionSizes.ts entry, and update the reference CSV. Wait for approval before writing anything.
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 243 foods × 52 nutrients. Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
 
 **IMPORTANT:** Before adding any food, nutrient, or food category, read the **Data Maintenance** section above — multiple files must be updated in sync or things silently break.
