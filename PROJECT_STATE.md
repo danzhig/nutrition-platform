@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-04-29 (session 12)
+**Last updated:** 2026-05-08 (session 13)
 **Current phase: Calendar Tracker complete (all 5 phases live)**
 
 ---
@@ -63,7 +63,8 @@ nutrition-platform/
 │   ├── CalendarMonthGrid.tsx   ← Month grid: 7×5–6 grid, prev/today/next nav, entry pills, +N overflow
 │   ├── CalendarWeekList.tsx    ← Week rolodex: infinite-scroll Mon–Sun strips, entry cards, scroll persistence
 │   ├── CalendarDayPanel.tsx    ← Day detail panel: entry cards (grouped by type), inline grams edit, remove, Day Total nutrition
-│   └── CalendarAddModal.tsx    ← Add entry modal: type chooser → meal / plan / food; writes food_log rows
+│   ├── CalendarAddModal.tsx    ← Add entry modal: type chooser → meal / plan / food; writes food_log rows
+│   └── SizeButtons.tsx         ← Inline S/M/L size buttons for variable-size foods; highlights active size
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination
@@ -158,6 +159,7 @@ nutrition-platform/
 | **Cross-tab state persistence** | ✅ Live — all user selections survive tab switches for the full browser session: Food Comparison (food A/B, weight mode, custom grams, DV profile); Meal Comparison (meal A/B, food drill-down within each meal, DV profile); Charts — Nutrient Ranking (nutrient, N, top/bottom, category filter, per-serving); Charts — Scatter Plot (X axis, Y axis, bubble size, category highlight, per-serving, axis limits); Day Builder chart view (cap-at-100% toggle). All persisted via localStorage so they also survive page refresh. |
 | **Nutrient sort in preset & food picker panes** | ✅ Live — nutrient sort dropdown in the Preset Meals panel and the food picker modal; selecting a nutrient sorts meals/foods by total content of that nutrient (descending); nutrient amount badge shown on each item; sort-by-score (rank) button is disabled while nutrient sort is active; both panes share the same grouped optgroup dropdown (nutrient category → nutrient name) |
 | **My Templates merged into Presets pane** | ✅ Live — "My Templates" is now a subcategory within the Presets selection pane rather than a separate panel; appears as a violet pill at the end of the category pill row (only visible when the user has saved templates); selecting it shows saved meal templates with delete buttons, score badges, and the same nutrient sort; preset and template sort-by-rank buttons remain independent; loading a template closes the Presets pane |
+| **S/M/L size selector** | ✅ Live — inline S, M, L size buttons appear on foods that naturally vary in size (fruits, vegetables, chicken, eggs); sourced from USDA SR Legacy; active size highlights violet; newly-applied size shows green ✓; present in all four contexts: FoodPickerModal (Add Food), CalendarAddModal (direct-log on click), MealCard (Day Builder food rows), CalendarDayPanel (calendar day food rows); non-variable foods are unchanged; implemented in `components/SizeButtons.tsx` + `lib/portionSizes.ts` size variants |
 
 **Total foods: 243** (218 original + 25 cooked versions of dry legumes/grains)  
 **Total nutrients: 52** (original 50 + Net Carbohydrates + Creatine)  
