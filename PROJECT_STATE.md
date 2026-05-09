@@ -1,13 +1,13 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-09 (session 17)
-**Current phase: Diet Evaluator — Phase 5 complete (calculation engine live)**
+**Last updated:** 2026-05-09 (session 18)
+**Current phase: Diet Evaluator — ALL 10 PHASES COMPLETE**
 
 ---
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 59 nutrient definitions; 58 nutrients have food data). The app has three main features: an interactive heatmap table, a meal/day planner, and a calendar food log tracker.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 59 nutrient definitions; 58 nutrients have food data). The app has four main features: an interactive heatmap table, a meal/day planner, a calendar food log tracker, and a Diet Evaluator tab.
 
 **Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
 **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
@@ -70,7 +70,10 @@ nutrition-platform/
 │   ├── DietView.tsx            ← Diet tab orchestrator: three-column layout, selectedFoods state, foodNutrients map, dietResults memo
 │   ├── DietFoodBrowser.tsx     ← Panel 1: category accordion + search; click-to-add/remove with checkmark indicator
 │   ├── DietSelectedFoods.tsx   ← Panel 2: weight indicator bar (4-band color), food list with rating + remove, footer
-│   └── DietRatingControl.tsx   ← 5-pip 1–5 rating selector; hover tooltip shows serving multiplier label
+│   ├── DietRatingControl.tsx   ← 5-pip 1–5 rating selector; hover tooltip shows serving multiplier label
+│   ├── DietNutrientPanel.tsx   ← Panel 3: scrollable nutrient bars; All/Gaps/Fulfilled filter; Gap-first/Category sort; source count badges; NutrientInfoCard click-through; diet color scale (30/70 thresholds)
+│   ├── DietCategoryCards.tsx   ← Category Overview: 3×2 grid of cards; category-avg bar + mini bars per nutrient; diet color scale; "—" for nutrients without RDA targets; live updates
+│   └── DietSuggestionsPanel.tsx ← Suggestions: horizontal scroll row of up to 10 food cards; "↑ Nutrient" gap tags; [+ Add] button; four states (no-profile / no-selection / all-fulfilled / card list)
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all
@@ -88,7 +91,8 @@ nutrition-platform/
 │   ├── categoryColors.ts       ← CATEGORY_COLORS palette shared by ranking + scatter views
 │   ├── foodLogStorage.ts       ← CRUD for food_log (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId)
 │   ├── dietStorage.ts          ← DietFood type; loadDietList(userId?) / saveDietList(foods, userId?) / clearLocalDietList(); localStorage + Supabase upsert
-│   └── dietProfile.ts          ← RATING_MULTIPLIERS/LABELS; FoodNutrientMap; DietNutrientResult; computeDietProfile() engine
+│   ├── dietProfile.ts          ← RATING_MULTIPLIERS/LABELS; FoodNutrientMap; DietNutrientResult; computeDietProfile() engine
+│   └── dietSuggestions.ts      ← computeDietSuggestions(): scores non-selected foods by gap-fill ratio; SuggestedFood type; returns top 10
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
 │   ├── meals.ts                ← MealItem, Meal, ActiveMealPlan
@@ -131,6 +135,11 @@ nutrition-platform/
 | **Diet Evaluator — Phase 3** | ✅ Live — `DietFoodBrowser.tsx` built: 16-category accordion (FOOD_CATEGORY_LIST order), all collapsed by default; search bar filters food names across all categories and auto-expands matching ones (clearing restores collapsed state); food rows show violet checkmark/tint when selected; category headers show "(N selected)" count; click-to-add / click-to-remove wired to DietView state; `DietView` now accepts `data: HeatmapData` prop (MainView updated) to feed food list to browser and future phases |
 | **Diet Evaluator — Phase 4** | ✅ Live — `lib/dietProfile.ts` created with `RATING_MULTIPLIERS` and `RATING_LABELS`; `DietRatingControl.tsx`: 5-pip selector (1–5), active pip violet-filled, inactive outlined, hover tooltip shows multiplier label above control; `DietSelectedFoods.tsx`: weight indicator (monthly target vs implied weight as fill bar, 4-band amber/green/amber/red coloring with guidance text), scrollable food list (food name + rating control + × remove), empty-state prompt, footer with food count + "Clear all"; `DietView` updated with `foodMeta` Map and `dailyWeightG` fallback (1700 if no profile) |
 | **Diet Evaluator — Phase 5** | ✅ Live — `computeDietProfile()` added to `lib/dietProfile.ts`; `FoodNutrientMap` type (foodId → nutrientId → value_per_100g); `DietNutrientResult` interface (adds `nutrientCategory` for Phase 7 grouping); engine iterates all nutrients, resolves RDA from profile then `FOOD_METRIC_TARGETS` fallback, skips null-target nutrients, uses `getPortionSize()` + `RATING_MULTIPLIERS`, applies ≥5% DV rated-contribution threshold for `sourcesCount`; results sorted by `NUTRIENT_GROUP_LIST` category order; `DietView` wires `foodNutrients` FoodNutrientMap and `dietResults` useMemo (keyed on selectedFoods + rdaProfile); hand-verified: chicken breast 174g × rating 3 → 96.3% protein DV |
+| **Diet Evaluator — Phase 6** | ✅ Live — `DietNutrientPanel.tsx` created; scrollable nutrient bar list with diet-optimized color scale (`< 30%` red · `30–70%` amber · `≥ 70%` green; `normal-with-ul` nutrients use `rdaCellColor` UL logic; `limit` nutrients use `rdaCellColor` limit color); filter toggles `[All][Gaps][Fulfilled]` (gap threshold = 70% DV); sort dropdown `Gap-first` (ascending pctDV) or `Category` (canonical order); source count badge per row (0 → red, 1 → amber, 2+ → green); clicking a row with `body_role` opens existing `NutrientInfoCard` flyout (meals=[]); filter + sort state persisted to `np:diet:filter` + `np:diet:sort` in localStorage; empty states for no-profile and no-selection; `DietView` wired: Panel 3 placeholder replaced, `allNutrients`/`foodsById`/`hasSelection`/`hasProfile` props passed down |
+| **Diet Evaluator — Phase 7** | ✅ Live — `DietCategoryCards.tsx` created; 3×2 grid of cards (Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acids, Food Metrics); each card shows category label, category-average %DV bar (averaged only over nutrients with RDA targets), divider, then mini bar rows for every nutrient in the category; nutrients without RDA targets (e.g. Creatine) show "—" rather than a 0% bar; same dietBarColor logic as Phase 6 (limit/UL behaviors delegate to rdaCellColor); cards update live as food list changes; at 0% when no foods are selected; `DietView` Category Overview placeholder replaced |
+| **Diet Evaluator — Phase 8** | ✅ Live — `DietNutrientPanel.tsx` extended with hover tooltip; `computeTopSources()` ranks all non-selected foods by per-serving %DV for the hovered nutrient, returns top 3; `SourceTooltip` internal component: fixed-positioned, viewport-clamped (prefers left of row), 150ms debounced hide so mouse can travel to tooltip, `onMouseEnter`/`onMouseLeave` keep it open; [+] button adds food at rating 3 via `onAddFood` and dismisses; clicking a row still opens `NutrientInfoCard` (click dismisses hover tooltip first); shows "No food data available" when all foods have null/zero for that nutrient; three new props on `DietNutrientPanel`: `allFoodNutrients`, `selectedFoodIds`, `onAddFood`; `DietView` passes `foodNutrients`, `selectedFoodIds`, `handleAdd` |
+| **Diet Evaluator — Phase 9** | ✅ Live — `lib/dietSuggestions.ts` created with `computeDietSuggestions()`; scores each non-selected food by `Σ min(food_contrib_ratio, remaining_gap_ratio) / totalGapCapacity` across all gap nutrients (pctDV < 70%); `topGapNutrients` = top 3 gap nutrients the food fills the most; returns top 10 ranked by score; `DietSuggestionsPanel.tsx` created: horizontal scroll row of up to 10 food cards (food name + category + "↑ Nutrient" tags + [+ Add] button); four states: no-profile, no-selection, all-fulfilled congratulations, and card list; `DietView` wires `dietSuggestions` useMemo (keyed on selectedFoods + dietResults) and replaces Suggestions placeholder |
+| **Diet Evaluator — Phase 10** | ✅ Live — **Logout handling:** `DietView` tracks `prevUserIdRef`; on user ID transition to undefined, calls `clearLocalDietList()` and resets selectedFoods (Supabase data is safe; localStorage cleared for clean guest slate); **Zero-state bars:** `dietResults` useMemo now computes with empty `selectedFoods` when `rdaProfile` is set (returns full list at 0%); `DietNutrientPanel` removes early-return message, instead renders all 0% bars with "Add foods to see your actual coverage" italic banner; hover tooltip gated on `hasSelection` (no point showing top-sources when diet is empty); **Consistency verified:** `dailyWeightG ?? 1700` fallback confirmed in DietView + `getProfile()` in rdaProfiles; all localStorage keys consistent (`np:diet:foods`, `np:diet:filter`, `np:diet:sort`); `rdaProfile` prop chain DietView ← MainView ← AppShell matches all other tabs; `tsc --noEmit` clean; production build clean |
 
 **Total foods: 253** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables)  
 **Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  

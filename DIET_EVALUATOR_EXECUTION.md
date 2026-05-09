@@ -278,7 +278,7 @@ export function computeDietProfile(
 
 ---
 
-## Phase 6 — Panel 3: Nutrient Coverage Bars
+## Phase 6 — Panel 3: Nutrient Coverage Bars ✅ COMPLETE
 
 **What it does:** Builds the right-hand results panel — the scrollable nutrient bar list with filter controls, source count badges, diet-optimized color thresholds, and the NutrientInfoCard click-through.
 
@@ -315,18 +315,18 @@ export function computeDietProfile(
 - Also pass results to category cards (Phase 7) and suggestions (Phases 8–9)
 
 ### Done criteria
-- Panel 3 shows all 58 nutrients with correct bar fill and color
-- Source count badge is correct color and count
-- Filter buttons correctly show/hide nutrients
-- Sort options work correctly
-- Clicking a bar opens NutrientInfoCard
-- Bars update live when a food is added/removed or rating changes in Panel 2
-- UL color logic fires correctly for normal-with-ul nutrients above their limit
-- `tsc --noEmit` passes
+- [x] Panel 3 shows all 58 nutrients with correct bar fill and color
+- [x] Source count badge is correct color and count
+- [x] Filter buttons correctly show/hide nutrients
+- [x] Sort options work correctly
+- [x] Clicking a bar opens NutrientInfoCard
+- [x] Bars update live when a food is added/removed or rating changes in Panel 2
+- [x] UL color logic fires correctly for normal-with-ul nutrients above their limit
+- [x] `tsc --noEmit` passes
 
 ---
 
-## Phase 7 — Category Overview Cards
+## Phase 7 — Category Overview Cards ✅ COMPLETE
 
 **What it does:** Builds the full-width category cards row below the three panels, showing a nutrient category summary at a glance.
 
@@ -351,15 +351,15 @@ export function computeDietProfile(
 - Replace Category Overview placeholder with `<DietCategoryCards results={dietResults} />`
 
 ### Done criteria
-- All 6 category cards render with correct nutrients grouped inside
-- Category-average bar and mini bars are correctly colored
-- Cards update live with food list changes
-- Empty state (no foods selected): bars show at 0% across all cards
-- `tsc --noEmit` passes
+- [x] All 6 category cards render with correct nutrients grouped inside
+- [x] Category-average bar and mini bars are correctly colored
+- [x] Cards update live with food list changes
+- [x] Empty state (no foods selected): bars show at 0% across all cards
+- [x] `tsc --noEmit` passes
 
 ---
 
-## Phase 8 — Per-Nutrient Hover Tooltip (Top 3 Sources)
+## Phase 8 — Per-Nutrient Hover Tooltip (Top 3 Sources) ✅ COMPLETE
 
 **What it does:** Adds the hover tooltip to each nutrient bar in Panel 3 showing the top 3 foods not in the user's list that are the best sources for that specific nutrient.
 
@@ -385,16 +385,16 @@ This lookup can be computed on hover (not pre-computed) since it only runs for o
 - Pass full `allFoodNutrients` data and `selectedFoodIds` down to `DietNutrientPanel` so it can compute the top-3 ranking on hover
 
 ### Done criteria
-- Hovering a nutrient bar shows the tooltip with 3 food suggestions
-- Suggestions are foods not already in Panel 2
-- %DV per serving values are correct
-- [+] button adds the food to Panel 2 at rating 3 and dismisses the tooltip
-- Tooltip does not appear when 0 foods are in the list (or shows an appropriate empty state)
-- `tsc --noEmit` passes
+- [x] Hovering a nutrient bar shows the tooltip with 3 food suggestions
+- [x] Suggestions are foods not already in Panel 2
+- [x] %DV per serving values are correct
+- [x] [+] button adds the food to Panel 2 at rating 3 and dismisses the tooltip
+- [x] Tooltip does not appear when 0 foods are in the list (or shows an appropriate empty state)
+- [x] `tsc --noEmit` passes
 
 ---
 
-## Phase 9 — Top 10 Global Suggestions Panel
+## Phase 9 — Top 10 Global Suggestions Panel ✅ COMPLETE
 
 **What it does:** Builds the full-width "Foods that would strengthen your diet" panel at the bottom of the page.
 
@@ -442,16 +442,16 @@ A `SuggestedFood` includes: `foodId`, `foodName`, `category`, `topGapNutrients: 
 - Compute suggestions via `useMemo` keyed on `selectedFoods` and `dietResults`
 
 ### Done criteria
-- Panel shows up to 10 food cards not currently in the user's list
-- Each card correctly identifies which gap nutrients it addresses
-- [+ Add] button adds the food and the panel re-ranks immediately
-- When all nutrients are fulfilled, shows a positive empty state
-- Panel is empty / shows placeholder when no foods are selected yet
-- `tsc --noEmit` passes
+- [x] Panel shows up to 10 food cards not currently in the user's list
+- [x] Each card correctly identifies which gap nutrients it addresses
+- [x] [+ Add] button adds the food and the panel re-ranks immediately
+- [x] When all nutrients are fulfilled, shows a positive empty state
+- [x] Panel is empty / shows placeholder when no foods are selected yet
+- [x] `tsc --noEmit` passes
 
 ---
 
-## Phase 10 — Supabase Sync, Empty States, and Polish
+## Phase 10 — Supabase Sync, Empty States, and Polish ✅ COMPLETE
 
 **What it does:** Wires up cross-device persistence for logged-in users, handles all edge-case UI states, and ensures the full tab is production-ready.
 
@@ -497,9 +497,9 @@ A `SuggestedFood` includes: `foodId`, `foodName`, `category`, `topGapNutrients: 
 - Spot-check that switching the global DV profile updates both the RDA bars in Panel 3 and the weight indicator in Panel 2
 
 ### Done criteria
-- Logged-in users' diet lists persist across devices
-- All empty and loading states render without errors
-- Filter and sort selections survive tab switches
-- Legacy profiles without `dailyWeightG` fall back to 1700 gracefully
-- `tsc --noEmit` passes clean
-- Full tab is visually consistent with the rest of the app (slate-900 dark mode, Tailwind spacing, font sizes)
+- [x] Logged-in users' diet lists persist across devices
+- [x] All empty and loading states render without errors
+- [x] Filter and sort selections survive tab switches
+- [x] Legacy profiles without `dailyWeightG` fall back to 1700 gracefully
+- [x] `tsc --noEmit` passes clean
+- [x] Full tab is visually consistent with the rest of the app (slate-900 dark mode, Tailwind spacing, font sizes)
