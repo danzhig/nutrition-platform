@@ -40,6 +40,15 @@ export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
   // which is exactly the signal a keto user needs.
   'Net Carbohydrates': 'normal',
 
+  // New nutrients — all 'normal' (more is better; no established safety UL from food sources)
+  'Biotin':              'normal',
+  'EPA':                 'normal',
+  'DHA':                 'normal',
+  'Lutein & Zeaxanthin': 'normal',
+  'Lycopene':            'normal',
+  'Betaine':             'normal',
+  'CoQ10':               'normal',
+
   // Lower is better — the target is an upper limit
   'Saturated Fat':  'limit',
   'Trans Fat':      'limit',
@@ -73,6 +82,7 @@ export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
 export const FOOD_METRIC_TARGETS: Record<string, number> = {
   'Glycemic Index':       55,   // stay below low-GI threshold (Foster-Powell / Atkinson)
   'Antioxidant Capacity': 10,   // ~10 mmol FRAP/day from a healthy diet (Carlsen 2010)
+  'CoQ10':                5,    // 5 mg/day; typical dietary intake target (no official DRI)
 }
 
 /** Absolute upper intake level (UL) in the same unit as the DB column. */
@@ -155,6 +165,15 @@ const MALE_AVG: RDAValues = {
   'Tryptophan':     320,
   'Valine':         2100,
 
+  // New nutrients — research-derived targets (no official DRI except Biotin)
+  'Biotin':              30,     // AI: 30 mcg/day (NAM 1998; no sex/activity difference in AI)
+  'EPA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
+  'DHA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
+  'Lutein & Zeaxanthin': 6000,   // 6 mg/day; AREDS2 used 10 mg — 6 mg is conservative evidence-based target
+  'Lycopene':            10000,  // 10 mg/day; research-derived (no official DRI)
+  'Betaine':             500,    // 500 mg/day; evidence-based dietary target (no official DRI)
+  'CoQ10':               5,      // 5 mg/day; typical healthy dietary intake target (no official DRI)
+
   // Food metrics — research-derived targets (no official DRI)
   'Glycemic Index':       55,   // stay below low-GI threshold; behavior='limit'
   'Antioxidant Capacity': 10,   // ~10 mmol FRAP/day achievable from healthy diet (Carlsen 2010)
@@ -212,6 +231,13 @@ const FEMALE_AVG: RDAValues = {
   'Threonine':      1000,
   'Tryptophan':     260,
   'Valine':         1700,
+  'Biotin':              30,
+  'EPA':                 250,
+  'DHA':                 250,
+  'Lutein & Zeaxanthin': 6000,
+  'Lycopene':            10000,
+  'Betaine':             500,
+  'CoQ10':               5,
   'Glycemic Index':       null,
   'Antioxidant Capacity': null,
 }
@@ -268,6 +294,13 @@ const MALE_LOWCARB: RDAValues = {
   'Threonine':      1200,
   'Tryptophan':     320,
   'Valine':         2100,
+  'Biotin':              30,
+  'EPA':                 250,
+  'DHA':                 250,
+  'Lutein & Zeaxanthin': 6000,
+  'Lycopene':            10000,
+  'Betaine':             500,
+  'CoQ10':               5,
   'Glycemic Index':       null,
   'Antioxidant Capacity': null,
 }
@@ -323,6 +356,13 @@ const FEMALE_LOWCARB: RDAValues = {
   'Threonine':      1000,
   'Tryptophan':     260,
   'Valine':         1700,
+  'Biotin':              30,
+  'EPA':                 250,
+  'DHA':                 250,
+  'Lutein & Zeaxanthin': 6000,
+  'Lycopene':            10000,
+  'Betaine':             500,
+  'CoQ10':               5,
   'Glycemic Index':       null,
   'Antioxidant Capacity': null,
 }
