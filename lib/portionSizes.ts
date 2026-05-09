@@ -311,6 +311,21 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   241: { grams: 204, label: '1 cup cooked' },    // Sorghum (cooked)
   242: { grams: 164, label: '1 cup cooked' },    // Wild Rice (cooked)
   243: { grams: 140, label: '1 cup cooked' },    // Pasta, White (cooked)
+
+  // ── Dried Fruits ──────────────────────────────────────────────────────────
+  // FDA RACC for dried fruit = 40g (roughly ¼ cup); USDA standard reference amounts
+  244: { grams: 40,  label: '¼ cup' },           // Raisins
+  245: { grams: 40,  label: '4-5 prunes' },      // Prunes
+  246: { grams: 40,  label: '6 halves' },         // Dried Apricots
+  247: { grams: 40,  label: '3 figs' },           // Dried Figs
+  248: { grams: 40,  label: '¼ cup' },            // Dried Cranberries
+  249: { grams: 40,  label: '¼ cup' },            // Dried Mango
+  250: { grams: 40,  label: '¼ cup' },            // Dried Blueberries
+  251: { grams: 40,  label: '¼ cup' },            // Dried Cherries
+
+  // ── Dried Vegetables ──────────────────────────────────────────────────────
+  252: { grams: 27,  label: '¼ cup' },            // Sun-Dried Tomatoes (USDA RACC 30g)
+  253: { grams: 15,  label: '4 mushrooms' },      // Dried Shiitake Mushrooms
 }
 
 /** Returns the portion size for a food, falling back to 100g if not defined. */
