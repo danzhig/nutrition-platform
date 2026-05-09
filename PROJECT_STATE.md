@@ -1,13 +1,13 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-08 (session 14)
+**Last updated:** 2026-05-08 (session 15)
 **Current phase: Calendar Tracker complete (all 5 phases live)**
 
 ---
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (243 foods × 52 nutrients). The app has three main features: an interactive heatmap table, a meal/day planner, and a calendar food log tracker.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 52 nutrients). The app has three main features: an interactive heatmap table, a meal/day planner, and a calendar food log tracker.
 
 **Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
 **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
@@ -72,7 +72,7 @@ nutrition-platform/
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all
 │   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
 │   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
-│   ├── portionSizes.ts         ← Per-food serving sizes (all 243 foods, keyed by food_id) + S/M/L size variants ← CRITICAL
+│   ├── portionSizes.ts         ← Per-food serving sizes (all 253 foods, keyed by food_id) + S/M/L size variants ← CRITICAL
 │   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
 │   ├── rdaColorScale.ts        ← %DV color scale: normal / limit / normal-with-ul
 │   ├── profileStorage.ts       ← CRUD for user_rda_profiles
@@ -115,10 +115,10 @@ nutrition-platform/
 | **Low Sug Juices preset category** | ✅ Live — 6 low-sugar cold-press juice presets: Cucumber Mint Refresher, Celery Lemon Detox, Green Alkaline Juice, Beet Ginger Shots, Tomato Herb Juice, Carrot Turmeric Zinger |
 | **Meal Comparison food drill-down** | ✅ Live — food pill buttons per meal panel (one per food + "All"); clicking shows that food's standalone %DV contribution; diff panel always compares full meals (`MealComparisonView.tsx`) |
 | **Cooked versions of dry foods** | ✅ Live — 25 cooked food entries (IDs 219–243) for all legumes and grains that existed only in dry form; dry food names updated with "(dry)" suffix; nutrients scaled per USDA dry-to-cooked caloric ratio; water/GI overridden to cooked values; portion sizes in `portionSizes.ts` (½ cup legumes, 1 cup grains) |
-| **Dried fruits & vegetables** | ✅ Live — 10 dried food entries (IDs 244–253): Raisins, Prunes, Dried Apricots, Dried Figs, Dried Cranberries, Dried Mango, Dried Blueberries, Dried Cherries (all Fruits cat.), Sun-Dried Tomatoes, Dried Shiitake Mushrooms (Vegetables cat.); data from USDA SR Legacy via FDC IDs; verified against nutritionvalue.org for key values (raisins Vitamin C corrected to 2.3 mg; sun-dried tomatoes sodium corrected to 107 mg, Vitamin K confirmed 43 mcg); 40g serving for dried fruits, 27g for sun-dried tomatoes, 15g for dried shiitake |
 | **Nutrient sort in preset & food picker panes** | ✅ Live — sort dropdown sorts meals/foods by total content of a chosen nutrient (descending); nutrient amount badge shown; sort-by-score disabled while nutrient sort is active |
 | **My Templates merged into Presets pane** | ✅ Live — saved templates appear as a violet pill in the category row (only when user has templates); same nutrient sort, score badges, delete buttons; loading a template closes the Presets pane |
 | **S/M/L size selector** | ✅ Live — inline S/M/L buttons on variable-size foods (fruits, vegetables, chicken, eggs); present in FoodPickerModal, CalendarAddModal, MealCard, CalendarDayPanel; implemented in `SizeButtons.tsx` + `portionSizes.ts` size variants |
+| **Dried fruits & vegetables** | ✅ Live — 10 dried food entries (IDs 244–253): Raisins, Prunes, Dried Apricots, Dried Figs, Dried Cranberries, Dried Mango, Dried Blueberries, Dried Cherries (all Fruits cat.), Sun-Dried Tomatoes, Dried Shiitake Mushrooms (Vegetables cat.); data from USDA SR Legacy via FDC IDs; spot-checked against nutritionvalue.org (raisins Vitamin C corrected to 2.3 mg; sun-dried tomatoes sodium corrected to 107 mg, Vitamin K confirmed 43 mcg); 40g serving for dried fruits, 27g for sun-dried tomatoes, 15g for dried shiitake |
 
 **Total foods: 253** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables)  
 **Total nutrients: 52** (original 50 + Net Carbohydrates + Creatine)  
@@ -176,8 +176,8 @@ nutrition-platform/
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
 nutrients            (52 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
-foods               (243 rows)    — 218 original + 25 cooked versions of dry legumes/grains
-food_nutrients   (~12,457 rows)   — food_id × nutrient_id × value_per_100g
+foods               (253 rows)    — 218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables
+food_nutrients   (~12,977 rows)   — food_id × nutrient_id × value_per_100g
 food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
 user_filter_sets    (per user)    — Saved named filter snapshots (JSONB state)
@@ -222,7 +222,7 @@ VALUES (
 INSERT INTO food_nutrients (food_id, nutrient_id, value_per_100g) VALUES
   (999, 1,  X.X),  -- Calories
   (999, 2,  X.X),  -- Protein
-  -- ... all 50 nutrients
+  -- ... all 52 nutrients
   ;
 ```
 
@@ -329,7 +329,7 @@ LEFT JOIN food_nutrients fn ON fn.food_id = f.id
 WHERE fn.id IS NULL;
 
 -- Foods missing from portionSizes (will use 100g fallback — check the app code manually)
--- portionSizes.ts covers IDs 1–218; anything above 218 needs a new entry
+-- portionSizes.ts covers IDs 1–253; anything above 253 needs a new entry
 
 -- Nutrient counts per food (should be ~50 for whole foods, fewer for supplements)
 SELECT f.name, COUNT(fn.nutrient_id) AS nutrient_count
@@ -346,6 +346,6 @@ SELECT name FROM nutrients ORDER BY name;
 ## Cold-Start Instructions
 
 **To pick up where we left off:**
-> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 243 foods × 52 nutrients. Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 253 foods × 52 nutrients. Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
 
 **IMPORTANT:** Before adding any food, nutrient, or food category, read the **Data Maintenance** section above — multiple files must be updated in sync or things silently break.
