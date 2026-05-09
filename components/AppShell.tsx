@@ -78,7 +78,10 @@ export default function AppShell({ data }: Props) {
       if (saved) {
         const label = saved.name
         const shortLabel = label.length > 13 ? label.slice(0, 12) + '…' : label
-        return { id: 'custom', label, shortLabel, description: 'Saved custom profile', values: saved.values }
+        const dw = typeof saved.values['dailyWeightG'] === 'number'
+          ? (saved.values['dailyWeightG'] as number)
+          : 1700
+        return { id: 'custom', label, shortLabel, description: 'Saved custom profile', values: saved.values, dailyWeightG: dw }
       }
       return null
     }

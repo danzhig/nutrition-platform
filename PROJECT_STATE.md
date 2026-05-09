@@ -1,7 +1,7 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-08 (session 16)
-**Current phase: Calendar Tracker complete (all 5 phases live)**
+**Last updated:** 2026-05-09 (session 17)
+**Current phase: Diet Evaluator — Phase 5 complete (calculation engine live)**
 
 ---
 
@@ -66,7 +66,11 @@ nutrition-platform/
 │   ├── CalendarWeekList.tsx    ← Week rolodex: infinite-scroll Mon–Sun strips, entry cards, scroll persistence
 │   ├── CalendarDayPanel.tsx    ← Day detail panel: entry cards (grouped by type), inline grams edit, remove, Day Total nutrition
 │   ├── CalendarAddModal.tsx    ← Add entry modal: type chooser → meal / plan / food; writes food_log rows
-│   └── SizeButtons.tsx         ← Inline S/M/L size buttons for variable-size foods; highlights active size
+│   ├── SizeButtons.tsx         ← Inline S/M/L size buttons for variable-size foods; highlights active size
+│   ├── DietView.tsx            ← Diet tab orchestrator: three-column layout, selectedFoods state, foodNutrients map, dietResults memo
+│   ├── DietFoodBrowser.tsx     ← Panel 1: category accordion + search; click-to-add/remove with checkmark indicator
+│   ├── DietSelectedFoods.tsx   ← Panel 2: weight indicator bar (4-band color), food list with rating + remove, footer
+│   └── DietRatingControl.tsx   ← 5-pip 1–5 rating selector; hover tooltip shows serving multiplier label
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
 │   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all
@@ -82,7 +86,9 @@ nutrition-platform/
 │   ├── presetMealStorage.ts    ← loadPresetMeals() — public read from preset_meals table
 │   ├── complementScore.ts      ← computeComplementScore(): 0-100 score vs current plan gaps
 │   ├── categoryColors.ts       ← CATEGORY_COLORS palette shared by ranking + scatter views
-│   └── foodLogStorage.ts       ← CRUD for food_log (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId)
+│   ├── foodLogStorage.ts       ← CRUD for food_log (getEntriesForDateRange, addEntry, updateEntryItemGrams, deleteEntry, nullSourceId)
+│   ├── dietStorage.ts          ← DietFood type; loadDietList(userId?) / saveDietList(foods, userId?) / clearLocalDietList(); localStorage + Supabase upsert
+│   └── dietProfile.ts          ← RATING_MULTIPLIERS/LABELS; FoodNutrientMap; DietNutrientResult; computeDietProfile() engine
 ├── types/
 │   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
 │   ├── meals.ts                ← MealItem, Meal, ActiveMealPlan
@@ -120,6 +126,11 @@ nutrition-platform/
 | **S/M/L size selector** | ✅ Live — inline S/M/L buttons on variable-size foods (fruits, vegetables, chicken, eggs); present in FoodPickerModal, CalendarAddModal, MealCard, CalendarDayPanel; implemented in `SizeButtons.tsx` + `portionSizes.ts` size variants |
 | **Dried fruits & vegetables** | ✅ Live — 10 dried food entries (IDs 244–253): Raisins, Prunes, Dried Apricots, Dried Figs, Dried Cranberries, Dried Mango, Dried Blueberries, Dried Cherries (all Fruits cat.), Sun-Dried Tomatoes, Dried Shiitake Mushrooms (Vegetables cat.); data from USDA SR Legacy via FDC IDs; spot-checked against nutritionvalue.org (raisins Vitamin C corrected to 2.3 mg; sun-dried tomatoes sodium corrected to 107 mg, Vitamin K confirmed 43 mcg); 40g serving for dried fruits, 27g for sun-dried tomatoes, 15g for dried shiitake |
 | **7 new nutrients (IDs 53–59)** | ✅ Live — Biotin (B7, mcg, Vitamin), EPA (mg, Fatty Acid), DHA (mg, Fatty Acid), Lutein & Zeaxanthin (mcg, Vitamin — nutrient definition only, food data deferred), Lycopene (mcg, Vitamin), Betaine (mg, Amino Acid), CoQ10 (mg, Food Metric); full `body_role` / `deficiency_symptoms` / `excess_symptoms` tooltip text in DB; USDA FDC values for all 253 foods (6 of 7 nutrients); RDA targets in all 4 DV profiles; `NUTRIENT_BEHAVIORS` updated in `rdaProfiles.ts` |
+| **Diet Evaluator — Phase 1** | ✅ Complete — `dailyWeightG: number` added to `RDAProfile` interface and all 4 built-in profiles (male-avg: 1700, female-avg: 1500, male-lowcarb: 2000, female-lowcarb: 1800); `getProfile()` extracts `dailyWeightG` from custom values (defaults to 1700); DVProfilePanel custom editor shows "Daily Food Weight (g)" input with 500–5000 validation in both inline and overlay modes; `seedFrom()` copies `dailyWeightG` from built-in profiles; AppShell saved-profile case includes `dailyWeightG` |
+| **Diet Evaluator — Phase 2** | ✅ Live — "Diet" tab added to MainView after Calendar (`type Tab` extended, localStorage key `np:mainTab` updated); `DietView.tsx` shell renders three-column top section + Category Overview + Suggestions placeholder rows; `lib/dietStorage.ts` created with `loadDietList(userId?)` / `saveDietList(foods, userId?)` / `clearLocalDietList()` using localStorage + async Supabase upsert; `user_diet_lists` Supabase table deployed with RLS (owner read/write, unique index on user_id) |
+| **Diet Evaluator — Phase 3** | ✅ Live — `DietFoodBrowser.tsx` built: 16-category accordion (FOOD_CATEGORY_LIST order), all collapsed by default; search bar filters food names across all categories and auto-expands matching ones (clearing restores collapsed state); food rows show violet checkmark/tint when selected; category headers show "(N selected)" count; click-to-add / click-to-remove wired to DietView state; `DietView` now accepts `data: HeatmapData` prop (MainView updated) to feed food list to browser and future phases |
+| **Diet Evaluator — Phase 4** | ✅ Live — `lib/dietProfile.ts` created with `RATING_MULTIPLIERS` and `RATING_LABELS`; `DietRatingControl.tsx`: 5-pip selector (1–5), active pip violet-filled, inactive outlined, hover tooltip shows multiplier label above control; `DietSelectedFoods.tsx`: weight indicator (monthly target vs implied weight as fill bar, 4-band amber/green/amber/red coloring with guidance text), scrollable food list (food name + rating control + × remove), empty-state prompt, footer with food count + "Clear all"; `DietView` updated with `foodMeta` Map and `dailyWeightG` fallback (1700 if no profile) |
+| **Diet Evaluator — Phase 5** | ✅ Live — `computeDietProfile()` added to `lib/dietProfile.ts`; `FoodNutrientMap` type (foodId → nutrientId → value_per_100g); `DietNutrientResult` interface (adds `nutrientCategory` for Phase 7 grouping); engine iterates all nutrients, resolves RDA from profile then `FOOD_METRIC_TARGETS` fallback, skips null-target nutrients, uses `getPortionSize()` + `RATING_MULTIPLIERS`, applies ≥5% DV rated-contribution threshold for `sourcesCount`; results sorted by `NUTRIENT_GROUP_LIST` category order; `DietView` wires `foodNutrients` FoodNutrientMap and `dietResults` useMemo (keyed on selectedFoods + rdaProfile); hand-verified: chicken breast 174g × rating 3 → 96.3% protein DV |
 
 **Total foods: 253** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables)  
 **Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  
@@ -185,6 +196,7 @@ meal_plans          (per user)    — Saved meal plans (JSONB meals array)
 saved_meals         (per user)    — Saved individual meal templates (JSONB items array)
 preset_meals        (system)      — 113 curated meals across 12 categories (JSONB items array)
 food_log            (per user)    — Calendar food log entries (JSONB items array; food_id-anchored; source_id soft ref)
+user_diet_lists     (per user)    — Diet tab food selections (JSONB foods array: [{foodId, rating}]; one row per user; upsert on save)
 
 nutrients table has 3 extra columns beyond the original schema:
   body_role             — broad thematic function in the body

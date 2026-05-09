@@ -66,7 +66,7 @@ export default function DVProfilePanel({
 
   function seedFrom(baseId: ProfileId) {
     const base = RDA_PROFILES.find((p) => p.id === baseId)
-    if (base) onCustomValuesChange({ ...base.values })
+    if (base) onCustomValuesChange({ ...base.values, dailyWeightG: base.dailyWeightG })
   }
 
   function handleSelectBuiltIn(id: ProfileId) {
@@ -261,6 +261,33 @@ export default function DVProfilePanel({
           <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
           <span className="text-slate-400">↓</span> lower is better
         </p>
+
+        {/* Daily food weight */}
+        <div className="mt-3 bg-slate-900/60 rounded-lg p-3">
+          <p className="text-[9px] text-slate-500 uppercase tracking-wider mb-1.5">Daily Food Weight</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="500"
+              max="5000"
+              step="50"
+              value={((effectiveValues['dailyWeightG'] as number | null | undefined) ?? 1700)}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10)
+                onCustomValuesChange({ ...effectiveValues, dailyWeightG: isNaN(val) ? 1700 : val })
+              }}
+              className="w-20 text-[10px] text-right px-1.5 py-0.5 bg-slate-700 border border-slate-600 text-slate-100 rounded focus:ring-1 focus:ring-violet-500 outline-none appearance-none"
+            />
+            <span className="text-[9px] text-slate-400">g / day</span>
+            {(() => {
+              const v = (effectiveValues['dailyWeightG'] as number | null | undefined) ?? 1700
+              return typeof v === 'number' && (v < 500 || v > 5000)
+                ? <span className="text-[9px] text-red-400">Must be 500–5000 g</span>
+                : null
+            })()}
+          </div>
+          <p className="mt-1 text-[9px] text-slate-600">Used by the Diet tab to calibrate your monthly food target</p>
+        </div>
 
         {/* Save / update */}
         {isLoggedIn && (
@@ -538,6 +565,33 @@ export default function DVProfilePanel({
               <span className="text-amber-400">⚠</span> has a safety upper limit ·{' '}
               <span className="text-slate-400">↓</span> lower is better
             </p>
+
+            {/* Daily food weight */}
+            <div className="mt-3 bg-slate-900/60 rounded-lg p-3">
+              <p className="text-[9px] text-slate-500 uppercase tracking-wider mb-1.5">Daily Food Weight</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="500"
+                  max="5000"
+                  step="50"
+                  value={((effectiveValues['dailyWeightG'] as number | null | undefined) ?? 1700)}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    onCustomValuesChange({ ...effectiveValues, dailyWeightG: isNaN(val) ? 1700 : val })
+                  }}
+                  className="w-20 text-[10px] text-right px-1.5 py-0.5 bg-slate-700 border border-slate-600 text-slate-100 rounded focus:ring-1 focus:ring-violet-500 outline-none appearance-none"
+                />
+                <span className="text-[9px] text-slate-400">g / day</span>
+                {(() => {
+                  const v = (effectiveValues['dailyWeightG'] as number | null | undefined) ?? 1700
+                  return typeof v === 'number' && (v < 500 || v > 5000)
+                    ? <span className="text-[9px] text-red-400">Must be 500–5000 g</span>
+                    : null
+                })()}
+              </div>
+              <p className="mt-1 text-[9px] text-slate-600">Used by the Diet tab to calibrate your monthly food target</p>
+            </div>
           </div>
 
           {/* Footer */}

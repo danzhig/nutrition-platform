@@ -19,6 +19,8 @@ export interface RDAProfile {
   shortLabel: string
   description: string
   values: RDAValues
+  /** Daily food weight target in grams — used by the Diet tab to calibrate monthly coverage. */
+  dailyWeightG: number
 }
 
 // ─── Behavior metadata ────────────────────────────────────────────────────────
@@ -374,6 +376,7 @@ export const RDA_PROFILES: RDAProfile[] = [
     shortLabel: 'Male Avg',
     description: 'Sedentary–moderate activity, 19–50 y, ~80 kg. US DRI/RDA reference values.',
     values: MALE_AVG,
+    dailyWeightG: 1700,
   },
   {
     id: 'female-avg',
@@ -381,6 +384,7 @@ export const RDA_PROFILES: RDAProfile[] = [
     shortLabel: 'Female Avg',
     description: 'Sedentary–moderate activity, 19–50 y, ~65 kg. Pre-menopausal iron target.',
     values: FEMALE_AVG,
+    dailyWeightG: 1500,
   },
   {
     id: 'male-lowcarb',
@@ -388,6 +392,7 @@ export const RDA_PROFILES: RDAProfile[] = [
     shortLabel: 'M Low-Carb',
     description: 'Active male, keto-adjacent (~50 g carbs), higher protein and fat targets.',
     values: MALE_LOWCARB,
+    dailyWeightG: 2000,
   },
   {
     id: 'female-lowcarb',
@@ -395,6 +400,7 @@ export const RDA_PROFILES: RDAProfile[] = [
     shortLabel: 'F Low-Carb',
     description: 'Active female, keto-adjacent (~50 g carbs), higher protein and fat targets.',
     values: FEMALE_LOWCARB,
+    dailyWeightG: 1800,
   },
 ]
 
@@ -402,12 +408,16 @@ export const RDA_PROFILES: RDAProfile[] = [
 export function getProfile(id: ProfileId | null, customValues?: RDAValues): RDAProfile | null {
   if (!id) return null
   if (id === 'custom') {
+    const dw = typeof customValues?.['dailyWeightG'] === 'number'
+      ? (customValues['dailyWeightG'] as number)
+      : 1700
     return {
       id: 'custom',
       label: 'Custom',
       shortLabel: 'Custom',
       description: 'Your personal daily targets.',
       values: customValues ?? { ...MALE_AVG },
+      dailyWeightG: dw,
     }
   }
   return RDA_PROFILES.find((p) => p.id === id) ?? null
