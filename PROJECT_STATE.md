@@ -141,8 +141,7 @@ nutrition-platform/
 - `.env.local` — Supabase URL + anon key (never committed; also set in Vercel dashboard)
 
 ### Human-readable reference
-- **`ideas.md`** — Full visualization roadmap for future features
-- **`meal_ideas.md`** — Planned new presets: Snacks, Wraps & Tacos, Smoothies, Breakfast variety
+- **`ANALYSIS_TAB_PLAN.md`** — Full design plan for the Analysis sub-tab (10 decisions, layout mockups, build order)
 
 ---
 
