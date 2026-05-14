@@ -32,6 +32,8 @@ export default function DietView({ data, rdaProfile }: Props) {
   const [selectedFoods, setSelectedFoods] = useState<DietFood[]>([])
   const [loaded, setLoaded] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
+  const [infoPos, setInfoPos] = useState<{ x: number; y: number } | null>(null)
+  const infoButtonRef = useRef<HTMLButtonElement>(null)
   const prevUserIdRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
@@ -160,16 +162,26 @@ export default function DietView({ data, rdaProfile }: Props) {
             <div className="flex items-center gap-1.5">
               <p className="text-sm font-semibold text-slate-200">Your Diet</p>
               {/* Info icon */}
-              <div className="relative flex-shrink-0">
+              <div className="flex-shrink-0">
                 <button
+                  ref={infoButtonRef}
                   className="w-4 h-4 rounded-full border border-slate-600 text-slate-500 hover:text-slate-300 hover:border-slate-400 transition-colors text-[9px] font-bold leading-none flex items-center justify-center"
-                  onMouseEnter={() => setShowInfo(true)}
+                  onMouseEnter={() => {
+                    if (infoButtonRef.current) {
+                      const r = infoButtonRef.current.getBoundingClientRect()
+                      setInfoPos({ x: r.right, y: r.top + r.height / 2 })
+                    }
+                    setShowInfo(true)
+                  }}
                   onMouseLeave={() => setShowInfo(false)}
                 >
                   i
                 </button>
-                {showInfo && (
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-56 px-2.5 py-2 bg-slate-900 border border-slate-600 rounded text-[10px] text-slate-300 leading-relaxed z-30 shadow-xl pointer-events-none">
+                {showInfo && infoPos && (
+                  <div
+                    className="fixed ml-2 w-56 px-2.5 py-2 bg-slate-900 border border-slate-600 rounded text-[10px] text-slate-300 leading-relaxed z-[9999] shadow-xl pointer-events-none -translate-y-1/2"
+                    style={{ left: infoPos.x, top: infoPos.y }}
+                  >
                     {INFO_TOOLTIP}
                   </div>
                 )}
