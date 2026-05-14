@@ -16,11 +16,11 @@ import { NUTRIENT_GROUP_LIST } from '@/lib/filterConstants'
 // ─── Rating scale ─────────────────────────────────────────────────────────────
 
 export const RATING_MULTIPLIERS: Record<number, number> = {
-  1: 0.25,
-  2: 0.5,
+  1: 0.5,
+  2: 0.75,
   3: 1.0,
-  4: 1.5,
-  5: 2.0,
+  4: 1.25,
+  5: 1.5,
 }
 
 export const RATING_LABELS: Record<number, string> = {
