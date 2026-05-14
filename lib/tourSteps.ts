@@ -24,9 +24,8 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
   {
     target: '[data-tour="meal-name-btn"]',
     title: 'Step 2 — Name Your Meal',
-    body: "Click the meal name to edit it. Type 'Salmon & Mashed Potatoes', then press Enter.",
+    body: "Click the meal name to edit it. Type whatever you like (e.g. 'Salmon & Mashed Potatoes'), then press Enter. Click Next when done.",
     position: 'bottom',
-    advanceOn: 'np:tour:meal-renamed',
   },
   {
     target: '[data-tour="meal-add-food-btn"]',
