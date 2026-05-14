@@ -5,7 +5,12 @@ import type { HeatmapData } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import type { DietFood } from '@/lib/dietStorage'
 import { loadDietList, saveDietList, clearLocalDietList } from '@/lib/dietStorage'
-import { computeDietProfile, type FoodNutrientMap, type DietNutrientResult } from '@/lib/dietProfile'
+import {
+  computeDietProfile,
+  type FoodNutrientMap,
+  type DietNutrientResult,
+  type DietFoodComposition,
+} from '@/lib/dietProfile'
 import { computeDietSuggestions, type SuggestedFood } from '@/lib/dietSuggestions'
 import { useAuth } from './AuthProvider'
 import DietFoodBrowser from './DietFoodBrowser'
@@ -19,19 +24,21 @@ interface Props {
   rdaProfile: RDAProfile | null
 }
 
+const INFO_TOOLTIP =
+  'Rate foods by how often you eat them per month. Ratings are scaled by typical serving sizes and normalized to your daily food weight, so the nutrition results always reflect a realistic full day of eating.'
+
 export default function DietView({ data, rdaProfile }: Props) {
   const { user } = useAuth()
   const [selectedFoods, setSelectedFoods] = useState<DietFood[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [showInfo, setShowInfo] = useState(false)
   const prevUserIdRef = useRef<string | undefined>(undefined)
 
-  // Load on mount / auth change; clear localStorage on logout
   useEffect(() => {
     const prevId = prevUserIdRef.current
     const currentId = user?.id
     prevUserIdRef.current = currentId
 
-    // Detect logout: had a user ID, now don't — clear local cache and reset
     if (prevId !== undefined && currentId === undefined) {
       clearLocalDietList()
       setSelectedFoods([])
@@ -55,7 +62,11 @@ export default function DietView({ data, rdaProfile }: Props) {
     [data.foods]
   )
 
-  // foodId → nutrientId → value_per_100g — built once from the static food list
+  const foodNames = useMemo(
+    () => new Map(data.foods.map((f) => [f.food_id, f.food_name])),
+    [data.foods]
+  )
+
   const foodNutrients = useMemo<FoodNutrientMap>(() => {
     const map: FoodNutrientMap = {}
     for (const food of data.foods) {
@@ -66,18 +77,30 @@ export default function DietView({ data, rdaProfile }: Props) {
 
   const dailyWeightG = rdaProfile?.dailyWeightG ?? 1700
 
-  // Full diet coverage calculation — recomputes when foods or profile changes.
-  // Returns 0% results for all nutrients when selectedFoods is empty (enables zero-state bars).
-  const dietResults = useMemo<DietNutrientResult[]>(() => {
-    if (!rdaProfile) return []
-    return computeDietProfile(selectedFoods, foodNutrients, rdaProfile, data.nutrients)
-  }, [selectedFoods, foodNutrients, rdaProfile, data.nutrients])
+  const { results: dietResults, compositions: dietCompositions } = useMemo<{
+    results: DietNutrientResult[]
+    compositions: DietFoodComposition[]
+  }>(() => {
+    if (!rdaProfile) return { results: [], compositions: [] }
+    return computeDietProfile(
+      selectedFoods,
+      foodNutrients,
+      rdaProfile,
+      data.nutrients,
+      foodNames,
+    )
+  }, [selectedFoods, foodNutrients, rdaProfile, data.nutrients, foodNames])
 
-  // Top-10 food suggestions — recomputes when foods or results change
   const dietSuggestions = useMemo<SuggestedFood[]>(() => {
     if (!rdaProfile || selectedFoods.length === 0 || dietResults.length === 0) return []
-    return computeDietSuggestions(selectedFoods, dietResults, foodNutrients, data.foods)
-  }, [selectedFoods, dietResults, foodNutrients, data.foods, rdaProfile])
+    return computeDietSuggestions(
+      selectedFoods,
+      dietResults,
+      foodNutrients,
+      data.foods,
+      dailyWeightG,
+    )
+  }, [selectedFoods, dietResults, foodNutrients, data.foods, rdaProfile, dailyWeightG])
 
   function handleAdd(foodId: number) {
     if (selectedFoodIds.has(foodId)) return
@@ -134,16 +157,33 @@ export default function DietView({ data, rdaProfile }: Props) {
         {/* Panel 2 — Your Diet */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg flex flex-col overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-700 flex-shrink-0">
-            <p className="text-sm font-semibold text-slate-200">Your Diet</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-slate-200">Your Diet</p>
+              {/* Info icon */}
+              <div className="relative flex-shrink-0">
+                <button
+                  className="w-4 h-4 rounded-full border border-slate-600 text-slate-500 hover:text-slate-300 hover:border-slate-400 transition-colors text-[9px] font-bold leading-none flex items-center justify-center"
+                  onMouseEnter={() => setShowInfo(true)}
+                  onMouseLeave={() => setShowInfo(false)}
+                >
+                  i
+                </button>
+                {showInfo && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 w-56 px-2.5 py-2 bg-slate-900 border border-slate-600 rounded text-[10px] text-slate-300 leading-relaxed z-30 shadow-xl pointer-events-none">
+                    {INFO_TOOLTIP}
+                  </div>
+                )}
+              </div>
+            </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
-              Rate how often you eat each food
+              How often do you eat each food per month?
             </p>
           </div>
           <div className="flex-1 overflow-hidden min-h-0">
             <DietSelectedFoods
               foods={selectedFoods}
               foodMeta={foodMeta}
-              dailyWeightG={dailyWeightG}
+              compositions={dietCompositions}
               onRatingChange={handleRatingChange}
               onRemove={handleRemove}
               onClearAll={handleClearAll}
@@ -196,5 +236,4 @@ export default function DietView({ data, rdaProfile }: Props) {
   )
 }
 
-// Expose handlers for future child components (Phase 4+)
 export type { Props as DietViewProps }

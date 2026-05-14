@@ -24,11 +24,11 @@ export const RATING_MULTIPLIERS: Record<number, number> = {
 }
 
 export const RATING_LABELS: Record<number, string> = {
-  1: '0.25× serving',
-  2: '0.5× serving',
-  3: '1× serving',
-  4: '1.5× serving',
-  5: '2× serving',
+  1: 'Rarely (a few times a month)',
+  2: 'Sometimes (weekly)',
+  3: 'Regularly (a few times a week)',
+  4: 'Often (most days)',
+  5: 'Staple (daily or more)',
 }
 
 // ─── Result types ─────────────────────────────────────────────────────────────
@@ -41,11 +41,18 @@ export interface DietNutrientResult {
   nutrientName: string
   nutrientCategory: string
   unit: string
-  pctDV: number        // raw weighted sum / RDA — may exceed 1.0 (i.e. 100%)
-  sourcesCount: number // foods contributing ≥5% DV at their rated portion × multiplier
+  pctDV: number        // total normalized contribution / RDA — may exceed 1.0
+  sourcesCount: number // foods contributing ≥5% DV at their normalized weight
   rdaTarget: number    // from active RDA profile (or FOOD_METRIC_TARGETS fallback)
   behavior: string     // 'normal' | 'limit' | 'normal-with-ul'
   upperLimit?: number
+}
+
+/** Per-food proportion of the daily food weight budget (for the composition bar). */
+export interface DietFoodComposition {
+  foodId: number
+  foodName: string
+  proportion: number  // 0.0–1.0 fraction of total daily weight
 }
 
 // ─── Category sort order ──────────────────────────────────────────────────────
@@ -55,32 +62,50 @@ const CATEGORY_ORDER = NUTRIENT_GROUP_LIST.map((g) => g.value)
 // ─── Main calculation ─────────────────────────────────────────────────────────
 
 /**
- * Compute per-nutrient diet coverage for the given food selection.
+ * Compute per-nutrient diet coverage using a two-pass normalized model.
  *
- * - NULL values in foodNutrients count as 0 (no contribution, no source credit).
- * - sourcesCount uses the rated contribution — if a food contributes ≥5% DV at
- *   its actual rated portion × multiplier, it qualifies as a source.
- * - Nutrients with no RDA target (null in profile and no FOOD_METRIC_TARGETS
- *   fallback) are omitted from results.
- * - Results are sorted by nutrient category in NUTRIENT_GROUP_LIST order.
+ * Pass 1: raw weights = portionSize × RATING_MULTIPLIER; sum to totalRawWeight.
+ * Pass 2: each food's normalizedWeight = (rawWeight / totalRawWeight) × dailyWeightG.
+ *         Nutrient contributions are derived from normalizedWeight, so the total
+ *         of all foods always equals dailyWeightG regardless of selection size.
+ *
+ * Returns both the nutrient results and per-food composition proportions.
  */
 export function computeDietProfile(
   selectedFoods: DietFood[],
   foodNutrients: FoodNutrientMap,
   rdaProfile: RDAProfile,
   nutrients: NutrientMeta[],
-): DietNutrientResult[] {
+  foodNames?: Map<number, string>,
+): { results: DietNutrientResult[]; compositions: DietFoodComposition[] } {
+  const dailyWeightG = rdaProfile.dailyWeightG ?? 1700
+
+  // ── Pass 1: raw weights ──────────────────────────────────────────────────
+  const rawWeights = new Map<number, number>()
+  let totalRawWeight = 0
+  for (const { foodId, rating } of selectedFoods) {
+    const portionG = getPortionSize(foodId).grams
+    const raw = portionG * RATING_MULTIPLIERS[rating]
+    rawWeights.set(foodId, raw)
+    totalRawWeight += raw
+  }
+
+  // ── Composition proportions (for the stacked bar) ────────────────────────
+  const compositions: DietFoodComposition[] = selectedFoods.map(({ foodId }) => ({
+    foodId,
+    foodName: foodNames?.get(foodId) ?? `Food #${foodId}`,
+    proportion: totalRawWeight > 0 ? (rawWeights.get(foodId) ?? 0) / totalRawWeight : 0,
+  }))
+
+  // ── Pass 2: nutrient contributions via normalized weights ────────────────
   const results: DietNutrientResult[] = []
 
   for (const nutrient of nutrients) {
-    // Resolve RDA target — profile value takes precedence; FOOD_METRIC_TARGETS
-    // is the fallback for food-metric nutrients (GI, Antioxidant, CoQ10).
     const rawTarget =
       rdaProfile.values[nutrient.nutrient_name] ??
       FOOD_METRIC_TARGETS[nutrient.nutrient_name] ??
       null
 
-    // Skip nutrients with no target — pctDV would be meaningless.
     if (rawTarget === null || rawTarget === 0) continue
 
     const rdaTarget = rawTarget as number
@@ -90,24 +115,21 @@ export function computeDietProfile(
     let totalContrib = 0
     let sourcesCount = 0
 
-    for (const { foodId, rating } of selectedFoods) {
+    for (const { foodId } of selectedFoods) {
       const foodRow = foodNutrients[foodId]
       if (!foodRow) continue
 
       const rawValue = foodRow[nutrient.nutrient_id]
       const value = rawValue ?? 0
-      if (value === 0) continue // null or genuine zero — no contribution
+      if (value === 0) continue
 
-      const portionG = getPortionSize(foodId).grams
-      const multiplier = RATING_MULTIPLIERS[rating]
-      const contrib = (value / 100) * portionG * multiplier
+      const rawW = rawWeights.get(foodId) ?? 0
+      const normalizedW =
+        totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
+      const contrib = (value / 100) * normalizedW
 
       totalContrib += contrib
-
-      // A food is a "source" if its rated contribution meets the 5% DV threshold.
-      if (contrib / rdaTarget >= 0.05) {
-        sourcesCount++
-      }
+      if (contrib / rdaTarget >= 0.05) sourcesCount++
     }
 
     results.push({
@@ -123,12 +145,11 @@ export function computeDietProfile(
     })
   }
 
-  // Sort by nutrient category in canonical display order.
   results.sort((a, b) => {
     const ai = CATEGORY_ORDER.indexOf(a.nutrientCategory as typeof CATEGORY_ORDER[number])
     const bi = CATEGORY_ORDER.indexOf(b.nutrientCategory as typeof CATEGORY_ORDER[number])
     return ai - bi
   })
 
-  return results
+  return { results, compositions }
 }

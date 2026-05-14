@@ -1,6 +1,7 @@
 import type { FoodRow } from '@/types/nutrition'
 import type { DietFood } from '@/lib/dietStorage'
 import type { DietNutrientResult, FoodNutrientMap } from '@/lib/dietProfile'
+import { RATING_MULTIPLIERS } from '@/lib/dietProfile'
 import { getPortionSize } from '@/lib/portionSizes'
 
 export interface SuggestedFood {
@@ -16,24 +17,21 @@ const GAP_THRESHOLD = 0.70  // pctDV ratio — must match DietNutrientPanel
  * Rank all foods not in the user's diet list by how much they would improve
  * the current nutrient gaps (pctDV < 70%), and return the top 10.
  *
- * Scoring per candidate food:
- *   For each gap nutrient, compute the fill contribution at rating 3 (1× serving):
- *     fill = min(food_pct_contrib, remaining_gap)   [both as ratios]
- *   Sum fills across all gap nutrients and divide by total gap capacity.
- *
- * topGapNutrients: top 3 gap nutrients this food fills the most (by raw fill amount).
+ * Uses the normalized weight model: adding a candidate at rating 3 redistributes
+ * the dailyWeightG budget proportionally, diluting existing foods and granting
+ * the new food its share. Score = net gap reduction / total gap capacity.
  */
 export function computeDietSuggestions(
   selectedFoods: DietFood[],
   currentResults: DietNutrientResult[],
   allFoodNutrients: FoodNutrientMap,
   foods: FoodRow[],
+  dailyWeightG: number,
 ): SuggestedFood[] {
   if (currentResults.length === 0) return []
 
   const selectedFoodIds = new Set(selectedFoods.map((f) => f.foodId))
 
-  // Identify gap nutrients and compute total gap capacity for normalization
   const gapNutrients = currentResults.filter((r) => r.pctDV < GAP_THRESHOLD)
   if (gapNutrients.length === 0) return []
 
@@ -42,7 +40,19 @@ export function computeDietSuggestions(
     0,
   )
 
-  const scored: { foodId: number; foodName: string; category: string; score: number; topNutrients: string[] }[] = []
+  // Pre-compute totalRaw for the current selection (needed for normalization)
+  let totalRaw = 0
+  for (const { foodId, rating } of selectedFoods) {
+    totalRaw += getPortionSize(foodId).grams * RATING_MULTIPLIERS[rating]
+  }
+
+  const scored: {
+    foodId: number
+    foodName: string
+    category: string
+    score: number
+    topNutrients: string[]
+  }[] = []
 
   for (const food of foods) {
     if (selectedFoodIds.has(food.food_id)) continue
@@ -50,8 +60,14 @@ export function computeDietSuggestions(
     const foodNutrients = allFoodNutrients[food.food_id]
     if (!foodNutrients) continue
 
-    const portionG = getPortionSize(food.food_id).grams
-    // Rating 3 = 1.0× multiplier — the "standard serving" baseline
+    // Candidate enters at rating 3 (1.0× multiplier = standard serving)
+    const rawW_cand = getPortionSize(food.food_id).grams * 1.0
+    const newTotalRaw = totalRaw + rawW_cand
+
+    // Scale factor applied to existing foods: their normalized weights shrink
+    const scaleFactor = totalRaw > 0 ? totalRaw / newTotalRaw : 0
+    // Candidate's share of the daily weight budget
+    const candNormW = (rawW_cand / newTotalRaw) * dailyWeightG
 
     let totalFill = 0
     const nutrientFills: { name: string; fill: number }[] = []
@@ -60,10 +76,12 @@ export function computeDietSuggestions(
       const value = foodNutrients[gap.nutrientId]
       if (value === null || value === undefined || value === 0) continue
 
-      // Contribution as a ratio (not percentage) at one standard serving
-      const foodContribRatio = ((value / 100) * portionG) / gap.rdaTarget
-      const remainingGap = GAP_THRESHOLD - gap.pctDV
-      const fill = Math.min(foodContribRatio, remainingGap)
+      // New pctDV after adding the candidate (existing foods diluted + candidate added)
+      const candContrib = ((value / 100) * candNormW) / gap.rdaTarget
+      const newPctDV = gap.pctDV * scaleFactor + candContrib
+
+      // Net improvement toward the gap threshold (capped at threshold)
+      const fill = Math.min(newPctDV, GAP_THRESHOLD) - gap.pctDV
 
       if (fill > 0.001) {
         totalFill += fill
@@ -75,7 +93,6 @@ export function computeDietSuggestions(
 
     const score = totalGapCapacity > 0 ? totalFill / totalGapCapacity : 0
 
-    // Top 3 gap nutrients this food contributes the most to
     nutrientFills.sort((a, b) => b.fill - a.fill)
     const topNutrients = nutrientFills.slice(0, 3).map((n) => n.name)
 
