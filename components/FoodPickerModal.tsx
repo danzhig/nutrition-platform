@@ -176,6 +176,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoFocus
+            data-tour="food-picker-search"
             className="w-full bg-slate-700 border border-slate-600 rounded-md px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500"
           />
         </div>

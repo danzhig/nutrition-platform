@@ -102,6 +102,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
           ) : (
             <button
               onClick={() => setNameEditing(true)}
+              data-tour="meal-name-btn"
               className="flex-1 text-sm font-semibold text-slate-100 hover:text-violet-300 text-left min-w-0"
               title="Click to rename"
             >
@@ -151,6 +152,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
             <button
               onClick={handleSaveAsTemplate}
               disabled={saving}
+              data-tour="save-template-btn"
               className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 hover:bg-violet-700 text-slate-400 hover:text-white transition-colors flex-shrink-0 disabled:opacity-50"
               title="Save as reusable meal template"
             >
@@ -173,7 +175,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
             {meal.items.length === 0 ? (
               <p className="text-slate-600 text-xs text-center py-4">No foods added yet.</p>
             ) : (
-              <div className="divide-y divide-slate-700/60">
+              <div data-tour="meal-items-list" className="divide-y divide-slate-700/60">
                 {meal.items.map((item) => {
                   const itemSizes = getPortionSize(item.food_id).sizes ?? null
                   const activeKey = itemSizes ? getSizeKey(item.food_id, Math.round(item.grams)) : null
@@ -282,6 +284,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
             <div className="px-3 py-2 border-t border-slate-700/60">
               <button
                 onClick={() => setShowPicker(true)}
+                data-tour="meal-add-food-btn"
                 className="w-full text-xs text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded py-1.5 transition-colors"
               >
                 + Add food

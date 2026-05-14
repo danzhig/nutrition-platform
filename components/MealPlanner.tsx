@@ -103,6 +103,13 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
     if (saved === 'sidebar' || saved === 'chart') setViewMode(saved)
   }, [])
 
+  // Demo tour: reset to Day Builder sidebar view when requested
+  useEffect(() => {
+    function handler() { setViewMode('sidebar') }
+    window.addEventListener('np:tour:reset-view', handler)
+    return () => window.removeEventListener('np:tour:reset-view', handler)
+  }, [])
+
   // Close plan dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -552,6 +559,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
         <div className="flex gap-2">
           <button
             onClick={addMeal}
+            data-tour="add-meal-btn"
             className="flex-1 text-sm text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded-lg py-2.5 transition-colors"
           >
             + Add Meal

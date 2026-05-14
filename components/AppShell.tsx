@@ -10,6 +10,11 @@ import { loadSavedProfiles } from '@/lib/profileStorage'
 import AuthButton from '@/components/AuthButton'
 import MainView from './MainView'
 import DVProfilePanel from './DVProfilePanel'
+import TourOverlay from './TourOverlay'
+import { SALMON_MEAL_TOUR } from '@/lib/tourSteps'
+
+type MainTab = 'data' | 'meals' | 'calendar' | 'diet'
+const TAB_KEY = 'np:mainTab'
 
 const LS_RDA_SEL = 'np:global-rda-selection'
 const LS_CUSTOM_RDA = 'np:global-custom-rda'
@@ -20,6 +25,27 @@ interface Props {
 
 export default function AppShell({ data }: Props) {
   const { user } = useAuth()
+
+  const [mainTab, setMainTab] = useState<MainTab>(() => {
+    if (typeof window === 'undefined') return 'meals'
+    const saved = localStorage.getItem(TAB_KEY)
+    return (saved === 'data' || saved === 'meals' || saved === 'calendar' || saved === 'diet') ? saved : 'meals'
+  })
+
+  function handleMainTabChange(tab: MainTab) {
+    setMainTab(tab)
+    localStorage.setItem(TAB_KEY, tab)
+  }
+
+  const [tourActive, setTourActive] = useState(false)
+
+  function startDemo() {
+    // Switch to Day Planner tab and reset MealPlanner to sidebar (Day Builder) view
+    handleMainTabChange('meals')
+    localStorage.setItem('nutrition-view-mode', 'sidebar')
+    window.dispatchEvent(new CustomEvent('np:tour:reset-view'))
+    setTourActive(true)
+  }
 
   const [rdaSelection, setRdaSelection] = useState<string>('male-avg')
   const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
@@ -110,6 +136,13 @@ export default function AppShell({ data }: Props) {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={startDemo}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs border border-emerald-700/60 bg-emerald-900/20 hover:bg-emerald-900/40 text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              <span>▶</span>
+              <span className="font-medium">Demo</span>
+            </button>
+            <button
               onClick={() => setShowDVOverlay(true)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs border transition-colors ${
                 rdaProfile
@@ -138,8 +171,17 @@ export default function AppShell({ data }: Props) {
           rdaSelection={rdaSelection}
           onRdaSelectionChange={setRdaSelection}
           onOpenDVProfile={() => setShowDVOverlay(true)}
+          tab={mainTab}
+          onTabChange={handleMainTabChange}
         />
       </section>
+
+      {tourActive && (
+        <TourOverlay
+          steps={SALMON_MEAL_TOUR}
+          onEnd={() => setTourActive(false)}
+        />
+      )}
 
       {showDVOverlay && (
         <DVProfilePanel

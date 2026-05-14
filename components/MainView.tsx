@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { HeatmapData } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import DataView from './DataView'
@@ -8,29 +7,19 @@ import MealPlanner from './MealPlanner'
 import CalendarView from './CalendarView'
 import DietView from './DietView'
 
+type Tab = 'data' | 'meals' | 'calendar' | 'diet'
+
 interface Props {
   data: HeatmapData
   rdaProfile: RDAProfile | null
   rdaSelection: string
   onRdaSelectionChange: (sel: string) => void
   onOpenDVProfile: () => void
+  tab: Tab
+  onTabChange: (tab: Tab) => void
 }
 
-type Tab = 'data' | 'meals' | 'calendar' | 'diet'
-
-const TAB_KEY = 'np:mainTab'
-
-export default function MainView({ data, rdaProfile, rdaSelection, onRdaSelectionChange, onOpenDVProfile }: Props) {
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === 'undefined') return 'meals'
-    const saved = localStorage.getItem(TAB_KEY)
-    return saved === 'data' || saved === 'meals' || saved === 'calendar' || saved === 'diet' ? saved : 'meals'
-  })
-
-  function handleTabChange(next: Tab) {
-    setTab(next)
-    localStorage.setItem(TAB_KEY, next)
-  }
+export default function MainView({ data, rdaProfile, rdaSelection, onRdaSelectionChange, onOpenDVProfile, tab, onTabChange }: Props) {
 
   return (
     <div>
@@ -39,22 +28,23 @@ export default function MainView({ data, rdaProfile, rdaSelection, onRdaSelectio
         <TabButton
           label="Day Planner"
           active={tab === 'meals'}
-          onClick={() => handleTabChange('meals')}
+          onClick={() => onTabChange('meals')}
+          tourId="day-planner-tab"
         />
         <TabButton
           label="Data View"
           active={tab === 'data'}
-          onClick={() => handleTabChange('data')}
+          onClick={() => onTabChange('data')}
         />
         <TabButton
           label="Calendar"
           active={tab === 'calendar'}
-          onClick={() => handleTabChange('calendar')}
+          onClick={() => onTabChange('calendar')}
         />
         <TabButton
           label="Diet"
           active={tab === 'diet'}
-          onClick={() => handleTabChange('diet')}
+          onClick={() => onTabChange('diet')}
         />
       </div>
 
@@ -78,14 +68,17 @@ function TabButton({
   label,
   active,
   onClick,
+  tourId,
 }: {
   label: string
   active: boolean
   onClick: () => void
+  tourId?: string
 }) {
   return (
     <button
       onClick={onClick}
+      data-tour={tourId}
       className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
         active
           ? 'border-violet-500 text-violet-300'

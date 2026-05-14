@@ -134,7 +134,7 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
 
   return (
     <>
-    <div className="w-72 flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg overflow-y-auto max-h-[calc(100vh-130px)] text-xs">
+    <div data-tour="nutrition-sidebar" className="w-72 flex-shrink-0 bg-slate-800 border border-slate-700 rounded-lg overflow-y-auto max-h-[calc(100vh-130px)] text-xs">
       <div className="sticky top-0 bg-slate-800 border-b border-slate-700 z-10">
         {/* Title row */}
         <div className="px-3 pt-2 pb-2">
