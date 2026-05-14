@@ -51,6 +51,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
         return next
       })
     }, 1200)
+    window.dispatchEvent(new CustomEvent('np:tour:food-added'))
   }, [onAdd])
 
   const handleAddSize = useCallback((food: FoodRow, key: 's' | 'm' | 'l', variant: SizeVariant) => {
@@ -63,7 +64,13 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
         return next
       })
     }, 1200)
+    window.dispatchEvent(new CustomEvent('np:tour:food-added'))
   }, [onAdd])
+
+  function handleClose() {
+    window.dispatchEvent(new CustomEvent('np:tour:food-picker-closed'))
+    onClose()
+  }
 
   const foodScores = useMemo<Map<number, number>>(() => {
     const map = new Map<number, number>()
@@ -122,10 +129,10 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4">
+      <div data-tour="food-picker-modal" className="relative bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col mx-4">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
           <h2 className="text-sm font-semibold text-slate-100 flex-shrink-0">Add Food</h2>
@@ -154,13 +161,14 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={onClose}
+              onClick={handleClose}
+              data-tour="food-picker-done-btn"
               className="px-3 py-1 rounded-md bg-violet-600 hover:bg-violet-500 text-white text-xs font-medium transition-colors"
             >
               Done
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="text-slate-400 hover:text-slate-200 text-lg leading-none w-6 h-6 flex items-center justify-center"
             >
               ✕

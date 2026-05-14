@@ -273,6 +273,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
     setPlan((p) => ({ ...p, meals: [meal, ...p.meals] }))
     // Collapse all existing meals; new meal stays expanded (its id is not added)
     setCollapsedMeals(new Set(plan.meals.map((m) => m.id)))
+    window.dispatchEvent(new CustomEvent('np:tour:meal-added'))
   }
 
   function updateMealInPlan(updated: Meal) {

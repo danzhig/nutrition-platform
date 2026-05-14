@@ -35,6 +35,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
       await onSaveAsTemplate(meal)
       setSavedConfirm(true)
       setTimeout(() => setSavedConfirm(false), 2000)
+      window.dispatchEvent(new CustomEvent('np:tour:template-saved'))
     } finally {
       setSaving(false)
     }
@@ -96,7 +97,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
               className="flex-1 bg-slate-700 text-slate-100 text-sm font-semibold px-2 py-0.5 rounded border border-slate-500 focus:outline-none focus:border-violet-500 min-w-0"
               value={meal.name}
               onChange={(e) => onChange({ ...meal, name: e.target.value })}
-              onBlur={() => setNameEditing(false)}
+              onBlur={() => { setNameEditing(false); window.dispatchEvent(new CustomEvent('np:tour:meal-renamed')) }}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === 'Escape') setNameEditing(false) }}
             />
           ) : (
@@ -283,7 +284,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
             {/* Add food */}
             <div className="px-3 py-2 border-t border-slate-700/60">
               <button
-                onClick={() => setShowPicker(true)}
+                onClick={() => { setShowPicker(true); window.dispatchEvent(new CustomEvent('np:tour:food-picker-opened')) }}
                 data-tour="meal-add-food-btn"
                 className="w-full text-xs text-violet-400 hover:text-violet-300 border border-dashed border-slate-600 hover:border-violet-500 rounded py-1.5 transition-colors"
               >

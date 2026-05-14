@@ -5,7 +5,7 @@ import type { TourStep } from '@/lib/tourSteps'
 
 const SPOT_PAD = 10
 const TOOLTIP_W = 300
-const TOOLTIP_H_EST = 210
+const TOOLTIP_H_EST = 200
 
 interface SpotBox {
   top: number
@@ -47,6 +47,7 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     })
   }, [step?.target])
 
+  // Reposition spotlight when step changes or on scroll/resize
   useEffect(() => {
     const timer = setTimeout(updateSpot, 150)
     window.addEventListener('resize', updateSpot)
@@ -57,6 +58,16 @@ export default function TourOverlay({ steps, onEnd }: Props) {
       window.removeEventListener('scroll', updateSpot, true)
     }
   }, [updateSpot])
+
+  // Auto-advance when the current step's action event fires
+  useEffect(() => {
+    if (!step?.advanceOn) return
+    function handler() {
+      setStepIdx((i) => (i < steps.length - 1 ? i + 1 : i))
+    }
+    window.addEventListener(step.advanceOn, handler)
+    return () => window.removeEventListener(step.advanceOn!, handler)
+  }, [step?.advanceOn, steps.length])
 
   function goNext() {
     if (stepIdx < steps.length - 1) setStepIdx((i) => i + 1)
@@ -71,6 +82,7 @@ export default function TourOverlay({ steps, onEnd }: Props) {
   const isLast = stepIdx === steps.length - 1
   const totalContentSteps = steps.length - 1
   const displayStep = Math.min(stepIdx + 1, totalContentSteps)
+  const isAutoAdvance = !!step?.advanceOn
 
   const vpW = typeof window !== 'undefined' ? window.innerWidth : 1200
   const vpH = typeof window !== 'undefined' ? window.innerHeight : 800
@@ -78,14 +90,14 @@ export default function TourOverlay({ steps, onEnd }: Props) {
 
   return (
     <>
-      {/* Dark backdrop when no spotlight target (center steps) */}
+      {/* Dark backdrop when no spotlight target */}
       {!spotBox && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 9996, pointerEvents: 'none' }}
         />
       )}
 
-      {/* Spotlight ring — box-shadow creates the backdrop, border creates the highlight */}
+      {/* Spotlight ring — box-shadow creates the backdrop outside the ring */}
       {spotBox && (
         <div
           style={{
@@ -112,6 +124,7 @@ export default function TourOverlay({ steps, onEnd }: Props) {
           left: tooltipPos.left,
           width: TOOLTIP_W,
           zIndex: 9999,
+          transition: 'top 280ms ease, left 280ms ease',
         }}
         className="bg-slate-800 border border-violet-500/70 rounded-xl shadow-2xl shadow-black/70 p-4"
       >
@@ -143,12 +156,16 @@ export default function TourOverlay({ steps, onEnd }: Props) {
           >
             ← Back
           </button>
-          <button
-            onClick={goNext}
-            className="text-xs px-4 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
-          >
-            {isLast ? 'Finish' : 'Next →'}
-          </button>
+          {isAutoAdvance ? (
+            <span className="text-[11px] text-slate-500 italic">Complete the action above ↑</span>
+          ) : (
+            <button
+              onClick={goNext}
+              className="text-xs px-4 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
+            >
+              {isLast ? 'Finish' : 'Next →'}
+            </button>
+          )}
         </div>
       </div>
     </>
