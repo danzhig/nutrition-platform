@@ -560,7 +560,10 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
             localStorage.removeItem('np:draft-plan')
             localStorage.removeItem('np:draft-custom-rda')
             localStorage.removeItem('np:draft-snapshot')
+            window.dispatchEvent(new CustomEvent('np:tour:new-plan-clicked'))
           }}
+          id="tour-new-plan-btn"
+          data-tour="new-plan-btn"
           className="px-3 py-1.5 text-[11px] font-medium rounded-md border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors"
         >
           New Plan

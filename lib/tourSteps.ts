@@ -18,7 +18,7 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
 
   // ── Clear existing data ────────────────────────────────────────────────────
   {
-    target: '[data-tour="new-plan-btn"]',
+    target: '#tour-new-plan-btn',
     title: 'Start Fresh',
     body: "First, let's clear any existing meals. Click 'New Plan' to start with a clean slate.",
     position: 'bottom',

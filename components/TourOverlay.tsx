@@ -34,33 +34,30 @@ export default function TourOverlay({ steps, onEnd }: Props) {
       setSpotBox(null)
       return
     }
-    const el = document.querySelector(step.target) as HTMLElement | null
-    if (!el) {
-      setSpotBox(null)
-      return
-    }
-    // 'instant' is synchronous so getBoundingClientRect reflects the post-scroll position
-    el.scrollIntoView({ behavior: 'instant', block: 'nearest' })
-    const r = el.getBoundingClientRect()
-    if (r.width > 0 || r.height > 0) {
-      setSpotBox({
-        top: r.top - SPOT_PAD,
-        left: r.left - SPOT_PAD,
-        width: r.width + SPOT_PAD * 2,
-        height: r.height + SPOT_PAD * 2,
-      })
-    } else {
-      // Element not yet laid out — retry after a frame
-      requestAnimationFrame(() => {
-        const r2 = el.getBoundingClientRect()
+    const measure = (attemptsLeft: number) => {
+      const el = document.querySelector(step.target!) as HTMLElement | null
+      if (!el) {
+        if (attemptsLeft > 0) setTimeout(() => measure(attemptsLeft - 1), 100)
+        else setSpotBox(null)
+        return
+      }
+      el.scrollIntoView({ behavior: 'instant', block: 'nearest' })
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 || r.height > 0) {
         setSpotBox({
-          top: r2.top - SPOT_PAD,
-          left: r2.left - SPOT_PAD,
-          width: r2.width + SPOT_PAD * 2,
-          height: r2.height + SPOT_PAD * 2,
+          top: r.top - SPOT_PAD,
+          left: r.left - SPOT_PAD,
+          width: r.width + SPOT_PAD * 2,
+          height: r.height + SPOT_PAD * 2,
         })
-      })
+      } else if (attemptsLeft > 0) {
+        // Element in DOM but not yet laid out — retry
+        setTimeout(() => measure(attemptsLeft - 1), 100)
+      } else {
+        setSpotBox(null)
+      }
     }
+    measure(8)
   }, [step?.target])
 
   // Reposition spotlight when step changes or on scroll/resize
