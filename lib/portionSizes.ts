@@ -29,7 +29,7 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   5:  { grams: 148, label: '1 cup' },           // Blueberry
   6:  { grams: 165, label: '1 cup sliced' },    // Mango
   7:  { grams: 150, label: '1 medium', sizes: { s: { grams: 136, label: '1 small' }, m: { grams: 150, label: '1 medium' }, l: { grams: 201, label: '1 large' } } },   // Avocado
-  8:  { grams: 280, label: '2 cups diced' },    // Watermelon
+  8:  { grams: 140, label: '1 cup diced' },      // Watermelon
   9:  { grams: 165, label: '1 cup chunks' },    // Pineapple
   10: { grams: 92,  label: '1 cup' },           // Grape
   11: { grams: 150, label: '1 medium', sizes: { s: { grams: 130, label: '1 small' }, m: { grams: 150, label: '1 medium' }, l: { grams: 175, label: '1 large' } } },   // Peach
