@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   BarChart,
   Bar,
@@ -63,6 +63,15 @@ function CustomTooltip({
   )
 }
 
+function parseSavedCats(saved: string | null): Set<string> | null {
+  if (!saved) return null
+  try {
+    const arr = JSON.parse(saved)
+    if (Array.isArray(arr) && arr.every(x => typeof x === 'string')) return new Set(arr)
+  } catch {}
+  return null
+}
+
 export default function NutrientRankingView({ data }: Props) {
   const [selectedNutrientId, setSelectedNutrientId] = useState<number>(() => {
     if (typeof window === 'undefined') return data.nutrients[0]?.nutrient_id ?? 0
@@ -81,20 +90,32 @@ export default function NutrientRankingView({ data }: Props) {
     if (typeof window === 'undefined') return 'top'
     return localStorage.getItem('np:ranking:rankDir') === 'bottom' ? 'bottom' : 'top'
   })
-  const [categoryFilter, setCategoryFilter] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'All'
-    return localStorage.getItem('np:ranking:catFilter') ?? 'All'
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set(FOOD_CATEGORY_LIST)
+    return parseSavedCats(localStorage.getItem('np:ranking:catFilter')) ?? new Set(FOOD_CATEGORY_LIST)
   })
   const [perServing, setPerServing] = useState(() => {
     if (typeof window === 'undefined') return false
     return localStorage.getItem('np:ranking:perServing') === 'true'
   })
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!catOpen) return
+    function handleClick(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [catOpen])
 
   // Persist selections across tab switches
   useEffect(() => { localStorage.setItem('np:ranking:nutrientId', String(selectedNutrientId)) }, [selectedNutrientId])
   useEffect(() => { localStorage.setItem('np:ranking:topN', String(topN)) }, [topN])
   useEffect(() => { localStorage.setItem('np:ranking:rankDir', rankDir) }, [rankDir])
-  useEffect(() => { localStorage.setItem('np:ranking:catFilter', categoryFilter) }, [categoryFilter])
+  useEffect(() => { localStorage.setItem('np:ranking:catFilter', JSON.stringify([...selectedCats])) }, [selectedCats])
   useEffect(() => { localStorage.setItem('np:ranking:perServing', String(perServing)) }, [perServing])
 
   const selectedNutrient = useMemo(
@@ -102,11 +123,11 @@ export default function NutrientRankingView({ data }: Props) {
     [data.nutrients, selectedNutrientId]
   )
 
+  const allCatsSelected = selectedCats.size === FOOD_CATEGORY_LIST.length
+
   const chartData = useMemo(() => {
     const rows = data.foods
-      .filter(
-        (f) => categoryFilter === 'All' || f.category === categoryFilter
-      )
+      .filter((f) => selectedCats.has(f.category))
       .map((f) => {
         const raw = f.nutrients[selectedNutrientId] ?? null
         const portion = PORTION_SIZES[f.food_id] ?? { grams: 100, label: '1 serving' }
@@ -128,16 +149,14 @@ export default function NutrientRankingView({ data }: Props) {
         }
       })
       .filter((d) => d.hasData)
-      .sort((a, b) => b.value - a.value) // always sort descending first
+      .sort((a, b) => b.value - a.value)
 
     const limit = topN
     if (rankDir === 'bottom') {
-      // Take the last `limit` entries (lowest values) and reverse so lowest is at top
       return rows.slice(-limit).reverse()
     }
     return rows.slice(0, limit)
-  }, [data.foods, selectedNutrientId, topN, rankDir, categoryFilter, perServing, selectedNutrient])
-
+  }, [data.foods, selectedNutrientId, topN, rankDir, selectedCats, perServing, selectedNutrient])
 
   // Group nutrients by category for the dropdown
   const nutrientGroups = useMemo(() => {
@@ -148,6 +167,15 @@ export default function NutrientRankingView({ data }: Props) {
     }
     return groups
   }, [data.nutrients])
+
+  function toggleCat(cat: string) {
+    setSelectedCats(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
 
   return (
     <div className="w-full">
@@ -214,21 +242,60 @@ export default function NutrientRankingView({ data }: Props) {
           ))}
         </div>
 
-        {/* Category filter */}
+        {/* Category checklist dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-400 whitespace-nowrap">Category</label>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-          >
-            <option value="All">All categories</option>
-            {FOOD_CATEGORY_LIST.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <label className="text-xs text-slate-400 whitespace-nowrap">Categories</label>
+          <div className="relative" ref={catRef}>
+            <button
+              onClick={() => setCatOpen(v => !v)}
+              className={`flex items-center gap-1.5 bg-slate-800 border rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none transition-colors ${
+                catOpen ? 'border-violet-500' : 'border-slate-600 hover:border-slate-400'
+              }`}
+            >
+              <span>
+                {allCatsSelected
+                  ? 'All categories'
+                  : selectedCats.size === 0
+                  ? 'No categories'
+                  : `${selectedCats.size} of ${FOOD_CATEGORY_LIST.length}`}
+              </span>
+              <span className="text-slate-500 text-[10px]">{catOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {catOpen && (
+              <div className="absolute z-20 top-full mt-1 left-0 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1.5 min-w-[200px] max-h-72 overflow-y-auto">
+                <div className="flex gap-2 px-3 pb-1.5 mb-1 border-b border-slate-700">
+                  <button
+                    onClick={() => setSelectedCats(new Set(FOOD_CATEGORY_LIST))}
+                    className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    Select all
+                  </button>
+                  <span className="text-slate-700">·</span>
+                  <button
+                    onClick={() => setSelectedCats(new Set())}
+                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    Deselect all
+                  </button>
+                </div>
+                {FOOD_CATEGORY_LIST.map(cat => (
+                  <label
+                    key={cat}
+                    className="flex items-center gap-2.5 px-3 py-1 hover:bg-slate-700/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCats.has(cat)}
+                      onChange={() => toggleCat(cat)}
+                      className="accent-violet-500 w-3 h-3 flex-shrink-0"
+                    />
+                    <span className="text-xs text-slate-300">{cat}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Per-serving toggle */}
@@ -253,7 +320,7 @@ export default function NutrientRankingView({ data }: Props) {
         </span>
         {' '}
         {chartData.length} food{chartData.length !== 1 ? 's' : ''}
-        {categoryFilter !== 'All' ? ` in ${categoryFilter}` : ''}
+        {!allCatsSelected && selectedCats.size > 0 ? ` across ${selectedCats.size} categories` : ''}
         {' · '}
         {perServing ? 'per serving' : 'per 100g'}
       </p>
@@ -293,7 +360,7 @@ export default function NutrientRankingView({ data }: Props) {
                   content={<CustomTooltip perServing={perServing} />}
                   cursor={{ fill: 'rgba(148,163,184,0.07)' }}
                 />
-                {/* radius=[0,0,3,3] rounds the top corners of each vertical bar */}
+                {/* radius=[3,3,0,0] rounds the top corners of each vertical bar */}
                 <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={32}>
                   {chartData.map((entry, i) => (
                     <Cell

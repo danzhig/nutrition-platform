@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   ScatterChart,
   Scatter,
@@ -59,6 +59,15 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payl
   )
 }
 
+function parseSavedCats(saved: string | null): Set<string> | null {
+  if (!saved) return null
+  try {
+    const arr = JSON.parse(saved)
+    if (Array.isArray(arr) && arr.every(x => typeof x === 'string')) return new Set(arr)
+  } catch {}
+  return null
+}
+
 export default function NutrientScatterPlot({ data }: Props) {
   const defaultX = useMemo(
     () => data.nutrients.find((n) => n.nutrient_name === 'Protein')?.nutrient_id ?? data.nutrients[0]?.nutrient_id ?? 0,
@@ -96,9 +105,9 @@ export default function NutrientScatterPlot({ data }: Props) {
     }
     return null
   })
-  const [highlightCat, setHighlightCat] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'All'
-    return localStorage.getItem('np:scatter:highlightCat') ?? 'All'
+  const [selectedCats, setSelectedCats] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set(FOOD_CATEGORY_LIST)
+    return parseSavedCats(localStorage.getItem('np:scatter:highlightCat')) ?? new Set(FOOD_CATEGORY_LIST)
   })
   const [perServing, setPerServing] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -112,6 +121,18 @@ export default function NutrientScatterPlot({ data }: Props) {
     if (typeof window === 'undefined') return ''
     return localStorage.getItem('np:scatter:maxY') ?? ''
   })
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!catOpen) return
+    function handleClick(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [catOpen])
 
   // Persist selections across tab switches
   useEffect(() => { localStorage.setItem('np:scatter:xId', String(xId)) }, [xId])
@@ -120,7 +141,7 @@ export default function NutrientScatterPlot({ data }: Props) {
     if (zId === null) localStorage.removeItem('np:scatter:zId')
     else localStorage.setItem('np:scatter:zId', String(zId))
   }, [zId])
-  useEffect(() => { localStorage.setItem('np:scatter:highlightCat', highlightCat) }, [highlightCat])
+  useEffect(() => { localStorage.setItem('np:scatter:highlightCat', JSON.stringify([...selectedCats])) }, [selectedCats])
   useEffect(() => { localStorage.setItem('np:scatter:perServing', String(perServing)) }, [perServing])
   useEffect(() => { localStorage.setItem('np:scatter:maxX', maxX) }, [maxX])
   useEffect(() => { localStorage.setItem('np:scatter:maxY', maxY) }, [maxY])
@@ -173,12 +194,22 @@ export default function NutrientScatterPlot({ data }: Props) {
     return byCat
   }, [allDots])
 
-  const hasHighlight = highlightCat !== 'All'
+  const allCatsSelected = selectedCats.size === FOOD_CATEGORY_LIST.length
+  const hasCatFilter = !allCatsSelected
 
   const tickFmt = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v))
 
   function handleXChange(id: number) { setXId(id); setMaxX('') }
   function handleYChange(id: number) { setYId(id); setMaxY('') }
+
+  function toggleCat(cat: string) {
+    setSelectedCats(prev => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }
 
   const NutrientSelect = ({ label, value, onChange }: { label: string; value: number; onChange: (id: number) => void }) => (
     <div className="flex items-center gap-2">
@@ -234,19 +265,60 @@ export default function NutrientScatterPlot({ data }: Props) {
           </select>
         </div>
 
-        {/* Category highlight */}
+        {/* Category checklist dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-400 whitespace-nowrap">Highlight</label>
-          <select
-            value={highlightCat}
-            onChange={(e) => setHighlightCat(e.target.value)}
-            className="bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-          >
-            <option value="All">All categories</option>
-            {FOOD_CATEGORY_LIST.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <label className="text-xs text-slate-400 whitespace-nowrap">Categories</label>
+          <div className="relative" ref={catRef}>
+            <button
+              onClick={() => setCatOpen(v => !v)}
+              className={`flex items-center gap-1.5 bg-slate-800 border rounded px-2 py-1.5 text-sm text-slate-200 focus:outline-none transition-colors ${
+                catOpen ? 'border-violet-500' : 'border-slate-600 hover:border-slate-400'
+              }`}
+            >
+              <span>
+                {allCatsSelected
+                  ? 'All categories'
+                  : selectedCats.size === 0
+                  ? 'No categories'
+                  : `${selectedCats.size} of ${FOOD_CATEGORY_LIST.length}`}
+              </span>
+              <span className="text-slate-500 text-[10px]">{catOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {catOpen && (
+              <div className="absolute z-20 top-full mt-1 left-0 bg-slate-800 border border-slate-600 rounded-lg shadow-xl py-1.5 min-w-[200px] max-h-72 overflow-y-auto">
+                <div className="flex gap-2 px-3 pb-1.5 mb-1 border-b border-slate-700">
+                  <button
+                    onClick={() => setSelectedCats(new Set(FOOD_CATEGORY_LIST))}
+                    className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    Select all
+                  </button>
+                  <span className="text-slate-700">·</span>
+                  <button
+                    onClick={() => setSelectedCats(new Set())}
+                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    Deselect all
+                  </button>
+                </div>
+                {FOOD_CATEGORY_LIST.map(cat => (
+                  <label
+                    key={cat}
+                    className="flex items-center gap-2.5 px-3 py-1 hover:bg-slate-700/50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCats.has(cat)}
+                      onChange={() => toggleCat(cat)}
+                      className="accent-violet-500 w-3 h-3 flex-shrink-0"
+                    />
+                    <span className="text-xs text-slate-300">{cat}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Per-serving toggle */}
@@ -297,6 +369,9 @@ export default function NutrientScatterPlot({ data }: Props) {
         )}
         {' · '}
         {allDots.length} foods
+        {!allCatsSelected && selectedCats.size > 0 && (
+          <> · <span className="text-slate-500">{selectedCats.size} categories highlighted</span></>
+        )}
         {' · '}
         {perServing ? 'per serving' : 'per 100g'}
       </p>
@@ -352,17 +427,17 @@ export default function NutrientScatterPlot({ data }: Props) {
               const catDots = dotsByCategory[cat]
               if (!catDots?.length) return null
               const color = CATEGORY_COLORS[cat] ?? CATEGORY_COLOR_DEFAULT
-              const dimmed = hasHighlight && highlightCat !== cat
+              const dimmed = hasCatFilter && !selectedCats.has(cat)
               return (
                 <Scatter
                   key={cat}
                   name={cat}
                   data={catDots}
-                  fill={color}
-                  fillOpacity={dimmed ? 0.12 : 0.82}
-                  stroke={dimmed ? 'none' : color}
-                  strokeWidth={dimmed ? 0 : 0.5}
-                  strokeOpacity={0.4}
+                  fill={dimmed ? '#1e293b' : color}
+                  fillOpacity={dimmed ? 0.6 : 0.82}
+                  stroke={dimmed ? '#334155' : color}
+                  strokeWidth={dimmed ? 0.5 : 0.5}
+                  strokeOpacity={dimmed ? 0.4 : 0.4}
                   isAnimationActive={false}
                 />
               )
@@ -371,19 +446,19 @@ export default function NutrientScatterPlot({ data }: Props) {
         </ResponsiveContainer>
       </div>
 
-      {/* Category legend — clickable to highlight */}
+      {/* Category legend — clickable to toggle */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-3 border-t border-slate-700/50">
         {Object.entries(CATEGORY_COLORS).map(([cat, color]) => {
-          const dimmed = hasHighlight && highlightCat !== cat
+          const dimmed = hasCatFilter && !selectedCats.has(cat)
           return (
             <button
               key={cat}
-              onClick={() => setHighlightCat((h) => (h === cat ? 'All' : cat))}
+              onClick={() => toggleCat(cat)}
               className="flex items-center gap-1.5 transition-opacity hover:opacity-90"
             >
               <span
-                className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 transition-opacity"
-                style={{ backgroundColor: color, opacity: dimmed ? 0.25 : 1 }}
+                className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 transition-all"
+                style={{ backgroundColor: dimmed ? '#334155' : color, opacity: dimmed ? 0.5 : 1 }}
               />
               <span className={`text-xs transition-colors ${dimmed ? 'text-slate-600' : 'text-slate-400'}`}>
                 {cat}
