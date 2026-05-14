@@ -172,7 +172,7 @@ const MALE_AVG: RDAValues = {
   'EPA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
   'DHA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
   'Lutein & Zeaxanthin': 6000,   // 6 mg/day; AREDS2 used 10 mg — 6 mg is conservative evidence-based target
-  'Lycopene':            10000,  // 10 mg/day; research-derived (no official DRI)
+  'Lycopene':            10,     // 10 mg/day; research-derived (no official DRI)
   'Betaine':             500,    // 500 mg/day; evidence-based dietary target (no official DRI)
   'CoQ10':               5,      // 5 mg/day; typical healthy dietary intake target (no official DRI)
 
@@ -237,7 +237,7 @@ const FEMALE_AVG: RDAValues = {
   'EPA':                 250,
   'DHA':                 250,
   'Lutein & Zeaxanthin': 6000,
-  'Lycopene':            10000,
+  'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
   'Glycemic Index':       null,
@@ -300,7 +300,7 @@ const MALE_LOWCARB: RDAValues = {
   'EPA':                 250,
   'DHA':                 250,
   'Lutein & Zeaxanthin': 6000,
-  'Lycopene':            10000,
+  'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
   'Glycemic Index':       null,
@@ -362,7 +362,7 @@ const FEMALE_LOWCARB: RDAValues = {
   'EPA':                 250,
   'DHA':                 250,
   'Lutein & Zeaxanthin': 6000,
-  'Lycopene':            10000,
+  'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
   'Glycemic Index':       null,
