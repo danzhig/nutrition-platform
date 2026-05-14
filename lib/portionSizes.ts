@@ -326,6 +326,13 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   // ── Dried Vegetables ──────────────────────────────────────────────────────
   252: { grams: 27,  label: '¼ cup' },            // Sun-Dried Tomatoes (USDA RACC 30g)
   253: { grams: 15,  label: '4 mushrooms' },      // Dried Shiitake Mushrooms
+
+  // ── Salts ─────────────────────────────────────────────────────────────────
+  // FDA RACC for salt = 1/4 tsp (~1.5g); culinary convention is 1 tsp = 6g
+  254: { grams: 6,   label: '1 tsp' },            // Table Salt
+  255: { grams: 6,   label: '1 tsp' },            // Iodized Table Salt
+  256: { grams: 6,   label: '1 tsp' },            // Sea Salt
+  257: { grams: 6,   label: '1 tsp' },            // Iodized Sea Salt
 }
 
 /** Returns the portion size for a food, falling back to 100g if not defined. */

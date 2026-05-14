@@ -141,9 +141,9 @@ nutrition-platform/
 | **Diet Evaluator — Phase 9** | ✅ Live — `lib/dietSuggestions.ts` created with `computeDietSuggestions()`; scores each non-selected food by `Σ min(food_contrib_ratio, remaining_gap_ratio) / totalGapCapacity` across all gap nutrients (pctDV < 70%); `topGapNutrients` = top 3 gap nutrients the food fills the most; returns top 10 ranked by score; `DietSuggestionsPanel.tsx` created: horizontal scroll row of up to 10 food cards (food name + category + "↑ Nutrient" tags + [+ Add] button); four states: no-profile, no-selection, all-fulfilled congratulations, and card list; `DietView` wires `dietSuggestions` useMemo (keyed on selectedFoods + dietResults) and replaces Suggestions placeholder |
 | **Diet Evaluator — Phase 10** | ✅ Live — **Logout handling:** `DietView` tracks `prevUserIdRef`; on user ID transition to undefined, calls `clearLocalDietList()` and resets selectedFoods (Supabase data is safe; localStorage cleared for clean guest slate); **Zero-state bars:** `dietResults` useMemo now computes with empty `selectedFoods` when `rdaProfile` is set (returns full list at 0%); `DietNutrientPanel` removes early-return message, instead renders all 0% bars with "Add foods to see your actual coverage" italic banner; hover tooltip gated on `hasSelection` (no point showing top-sources when diet is empty); **Consistency verified:** `dailyWeightG ?? 1700` fallback confirmed in DietView + `getProfile()` in rdaProfiles; all localStorage keys consistent (`np:diet:foods`, `np:diet:filter`, `np:diet:sort`); `rdaProfile` prop chain DietView ← MainView ← AppShell matches all other tabs; `tsc --noEmit` clean; production build clean |
 
-**Total foods: 253** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables)  
+**Total foods: 257** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types)  
 **Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  
-**Total food_nutrients rows: ~14,495** (~12,977 pre-existing + 1,518 new nutrient rows)  
+**Total food_nutrients rows: ~14,731** (~12,977 pre-existing + 1,518 new nutrient rows + 236 salt rows)  
 **Total preset meals: 113** (107 original + 6 Low Sug Juices)
 
 ---
@@ -196,7 +196,7 @@ nutrition-platform/
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
 nutrients            (59 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
-foods               (253 rows)    — 218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables
+foods               (257 rows)    — 218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types
 food_nutrients   (~14,495 rows)   — food_id × nutrient_id × value_per_100g
 food_data_status    (212 rows)    — Compilation log (internal use)
 user_rda_profiles   (per user)    — Saved custom daily value profiles (JSONB values)
@@ -350,7 +350,7 @@ LEFT JOIN food_nutrients fn ON fn.food_id = f.id
 WHERE fn.id IS NULL;
 
 -- Foods missing from portionSizes (will use 100g fallback — check the app code manually)
--- portionSizes.ts covers IDs 1–253; anything above 253 needs a new entry
+-- portionSizes.ts covers IDs 1–257; anything above 257 needs a new entry
 
 -- Nutrient counts per food (should be ~50 for whole foods, fewer for supplements)
 SELECT f.name, COUNT(fn.nutrient_id) AS nutrient_count
