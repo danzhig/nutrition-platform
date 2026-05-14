@@ -35,7 +35,7 @@ export default function TourOverlay({ steps, onEnd }: Props) {
       setSpotBox(null)
       return
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    el.scrollIntoView({ behavior: 'instant', block: 'nearest' })
     requestAnimationFrame(() => {
       const r = el.getBoundingClientRect()
       setSpotBox({
