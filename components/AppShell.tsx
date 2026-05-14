@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from './AuthProvider'
 import type { HeatmapData } from '@/types/nutrition'
 import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
@@ -21,40 +21,49 @@ interface Props {
 export default function AppShell({ data }: Props) {
   const { user } = useAuth()
 
-  const [rdaSelection, setRdaSelection] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'male-avg'
-    const global = localStorage.getItem(LS_RDA_SEL)
-    if (global) return global
-    // Migrate from legacy draft-plan key on first load
-    try {
-      const draft = localStorage.getItem('np:draft-plan')
-      if (draft) {
-        const parsed = JSON.parse(draft)
-        if (parsed.rda_selection) return parsed.rda_selection
-      }
-    } catch { /* ignore */ }
-    return 'male-avg'
-  })
-
-  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>(() => {
-    if (typeof window === 'undefined') return {}
-    try {
-      const global = localStorage.getItem(LS_CUSTOM_RDA)
-      if (global) return JSON.parse(global)
-      const legacy = localStorage.getItem('np:draft-custom-rda')
-      if (legacy) return JSON.parse(legacy)
-    } catch { /* ignore */ }
-    return {}
-  })
+  const [rdaSelection, setRdaSelection] = useState<string>('male-avg')
+  const [customRdaValues, setCustomRdaValues] = useState<RDAValues>({})
+  // Becomes true after the initial localStorage read is done — guards save effects
+  // from overwriting persisted values before they've been read.
+  const lsReady = useRef(false)
 
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [showDVOverlay, setShowDVOverlay] = useState(false)
 
+  // Read persisted values after mount (avoids SSR hydration mismatch).
   useEffect(() => {
+    const sel = localStorage.getItem(LS_RDA_SEL)
+    if (sel !== null) {
+      setRdaSelection(sel)
+    } else {
+      // Migrate from legacy draft-plan key on first load
+      try {
+        const draft = localStorage.getItem('np:draft-plan')
+        if (draft) {
+          const parsed = JSON.parse(draft)
+          if (parsed.rda_selection) setRdaSelection(parsed.rda_selection)
+        }
+      } catch { /* ignore */ }
+    }
+    try {
+      const custom = localStorage.getItem(LS_CUSTOM_RDA)
+      if (custom) {
+        setCustomRdaValues(JSON.parse(custom))
+      } else {
+        const legacy = localStorage.getItem('np:draft-custom-rda')
+        if (legacy) setCustomRdaValues(JSON.parse(legacy))
+      }
+    } catch { /* ignore */ }
+    lsReady.current = true
+  }, [])
+
+  useEffect(() => {
+    if (!lsReady.current) return
     localStorage.setItem(LS_RDA_SEL, rdaSelection)
   }, [rdaSelection])
 
   useEffect(() => {
+    if (!lsReady.current) return
     if (Object.keys(customRdaValues).length > 0) {
       localStorage.setItem(LS_CUSTOM_RDA, JSON.stringify(customRdaValues))
     }
