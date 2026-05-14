@@ -55,6 +55,14 @@ export interface DietFoodComposition {
   proportion: number  // 0.0–1.0 fraction of total daily weight
 }
 
+// ─── Weighted-average nutrients ──────────────────────────────────────────────
+//
+// These nutrients are stored as dimensionless indices (not per-100g amounts),
+// so they must be computed as a weight-proportion-weighted average across the
+// diet rather than summed. Adding more food doesn't change the diet's GI —
+// only the composition of the diet changes it.
+const WEIGHTED_AVERAGE_NUTRIENTS = new Set(['Glycemic Index'])
+
 // ─── Category sort order ──────────────────────────────────────────────────────
 
 const CATEGORY_ORDER = NUTRIENT_GROUP_LIST.map((g) => g.value)
@@ -112,24 +120,56 @@ export function computeDietProfile(
     const behavior = NUTRIENT_BEHAVIORS[nutrient.nutrient_name] ?? 'normal'
     const upperLimit = NUTRIENT_UPPER_LIMITS[nutrient.nutrient_name]
 
-    let totalContrib = 0
-    let sourcesCount = 0
+    let pctDV: number
+    let sourcesCount: number
 
-    for (const { foodId } of selectedFoods) {
-      const foodRow = foodNutrients[foodId]
-      if (!foodRow) continue
+    if (WEIGHTED_AVERAGE_NUTRIENTS.has(nutrient.nutrient_name)) {
+      // Weighted-average path: diet-level index = Σ(value × weight) / Σ(weight)
+      // Only foods with actual data (non-null, including genuine 0) participate.
+      // sourcesCount = how many foods have GI data (quality signal for the average).
+      let numerator = 0
+      let denominator = 0
+      sourcesCount = 0
 
-      const rawValue = foodRow[nutrient.nutrient_id]
-      const value = rawValue ?? 0
-      if (value === 0) continue
+      for (const { foodId } of selectedFoods) {
+        const foodRow = foodNutrients[foodId]
+        if (!foodRow) continue
+        const rawValue = foodRow[nutrient.nutrient_id]
+        if (rawValue === null || rawValue === undefined) continue
 
-      const rawW = rawWeights.get(foodId) ?? 0
-      const normalizedW =
-        totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
-      const contrib = (value / 100) * normalizedW
+        const rawW = rawWeights.get(foodId) ?? 0
+        const normalizedW =
+          totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
+        numerator += rawValue * normalizedW
+        denominator += normalizedW
+        sourcesCount++
+      }
 
-      totalContrib += contrib
-      if (contrib / rdaTarget >= 0.05) sourcesCount++
+      const weightedAvg = denominator > 0 ? numerator / denominator : 0
+      pctDV = weightedAvg / rdaTarget
+    } else {
+      // Standard summing path for genuine per-100g nutrients.
+      let totalContrib = 0
+      sourcesCount = 0
+
+      for (const { foodId } of selectedFoods) {
+        const foodRow = foodNutrients[foodId]
+        if (!foodRow) continue
+
+        const rawValue = foodRow[nutrient.nutrient_id]
+        const value = rawValue ?? 0
+        if (value === 0) continue
+
+        const rawW = rawWeights.get(foodId) ?? 0
+        const normalizedW =
+          totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
+        const contrib = (value / 100) * normalizedW
+
+        totalContrib += contrib
+        if (contrib / rdaTarget >= 0.05) sourcesCount++
+      }
+
+      pctDV = totalContrib / rdaTarget
     }
 
     results.push({
@@ -137,7 +177,7 @@ export function computeDietProfile(
       nutrientName: nutrient.nutrient_name,
       nutrientCategory: nutrient.nutrient_category,
       unit: nutrient.unit,
-      pctDV: totalContrib / rdaTarget,
+      pctDV,
       sourcesCount,
       rdaTarget,
       behavior,
