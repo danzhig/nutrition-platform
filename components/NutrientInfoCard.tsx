@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { Meal } from '@/types/meals'
+import type { DietFoodContrib } from './DietNutrientPanel'
 
 interface Props {
   nutrient: NutrientMeta
@@ -10,11 +11,13 @@ interface Props {
   onClose: () => void
   meals: Meal[]
   foodsById: Map<number, FoodRow>
+  /** Per-food %DV breakdown from the Diet tab (replaces the meals-based bar) */
+  dietContribs?: DietFoodContrib[]
 }
 
 const CONTRIB_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#f472b6', '#64748b']
 
-export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals, foodsById }: Props) {
+export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals, foodsById, dietContribs }: Props) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
@@ -112,6 +115,59 @@ export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals,
           ✕
         </button>
       </div>
+
+      {/* Diet tab — per-food %DV distribution bar */}
+      {dietContribs && dietContribs.length > 0 && (() => {
+        const total = dietContribs.reduce((s, c) => s + c.contribPctDV, 0)
+        return (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-slate-400 text-[10px] font-semibold uppercase tracking-wider">
+                Sources in your diet
+              </p>
+              <span className="text-slate-500 text-[10px] tabular-nums">
+                {Math.round(total * 100)}% DV total
+              </span>
+            </div>
+            {/* Stacked bar — each segment proportional to food's share */}
+            <div className="h-2.5 rounded-sm overflow-hidden flex mb-2">
+              {dietContribs.map((c, i) => (
+                <div
+                  key={i}
+                  className="h-full"
+                  style={{
+                    width: `${(c.contribPctDV / total) * 100}%`,
+                    backgroundColor: c.color,
+                  }}
+                  title={`${c.foodName}: ${Math.round(c.contribPctDV * 100)}% DV`}
+                />
+              ))}
+            </div>
+            {/* Legend */}
+            <div className="space-y-0.5">
+              {dietContribs.map((c, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-sm flex-shrink-0"
+                    style={{ backgroundColor: c.color }}
+                  />
+                  <span className="text-slate-300 truncate flex-1 min-w-0 text-[10px]" title={c.foodName}>
+                    {c.foodName}
+                  </span>
+                  <span className="text-slate-400 flex-shrink-0 text-[10px] tabular-nums">
+                    {Math.round(c.contribPctDV * 100)}% DV
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Separator between diet bar and info text */}
+      {dietContribs && dietContribs.length > 0 && (nutrient.body_role || hasDeficiency || hasExcess) && (
+        <div className="border-t border-slate-700 mb-3" />
+      )}
 
       {/* Food contribution bar */}
       {contribs.length > 0 && (

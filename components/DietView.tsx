@@ -208,6 +208,8 @@ export default function DietView({ data, rdaProfile }: Props) {
               hasProfile={rdaProfile !== null}
               allFoodNutrients={foodNutrients}
               selectedFoodIds={selectedFoodIds}
+              selectedFoods={selectedFoods}
+              dailyWeightG={dailyWeightG}
               onAddFood={handleAdd}
             />
           </div>

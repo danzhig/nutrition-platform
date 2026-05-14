@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { DietNutrientResult, FoodNutrientMap } from '@/lib/dietProfile'
+import { RATING_MULTIPLIERS } from '@/lib/dietProfile'
+import type { DietFood } from '@/lib/dietStorage'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import { getPortionSize } from '@/lib/portionSizes'
 import NutrientInfoCard from './NutrientInfoCard'
@@ -12,10 +14,21 @@ type SortMode = 'gap-first' | 'category'
 
 const GAP_THRESHOLD = 0.70
 
+const CONTRIB_COLORS = [
+  '#8b5cf6', '#06b6d4', '#f59e0b', '#10b981',
+  '#f472b6', '#fb923c', '#a3e635', '#64748b',
+]
+
 interface TopSource {
   foodId: number
   foodName: string
-  pctDV: number  // percentage, e.g. 183 = 183%
+  pctDV: number
+}
+
+export interface DietFoodContrib {
+  foodName: string
+  contribPctDV: number  // fraction (0–1); multiply by 100 for %
+  color: string
 }
 
 interface Props {
@@ -24,9 +37,10 @@ interface Props {
   foodsById: Map<number, FoodRow>
   hasSelection: boolean
   hasProfile: boolean
-  // Phase 8 additions
   allFoodNutrients: FoodNutrientMap
   selectedFoodIds: Set<number>
+  selectedFoods: DietFood[]
+  dailyWeightG: number
   onAddFood: (foodId: number) => void
 }
 
@@ -59,6 +73,54 @@ function abbr(name: string): string {
     .replace('Omega-6 Fatty Acids', 'Omega-6')
     .replace('Lutein & Zeaxanthin', 'Lutein & Zea.')
     .replace('Net Carbohydrates', 'Net Carbs')
+}
+
+// ─── Per-food contribution computation ───────────────────────────────────────
+
+function computeFoodContribs(
+  result: DietNutrientResult,
+  selectedFoods: DietFood[],
+  allFoodNutrients: FoodNutrientMap,
+  foodsById: Map<number, FoodRow>,
+  dailyWeightG: number,
+): DietFoodContrib[] {
+  // Recompute raw weights (mirrors computeDietProfile Pass 1)
+  let totalRaw = 0
+  const rawWeights = new Map<number, number>()
+  for (const { foodId, rating } of selectedFoods) {
+    const raw = getPortionSize(foodId).grams * RATING_MULTIPLIERS[rating]
+    rawWeights.set(foodId, raw)
+    totalRaw += raw
+  }
+
+  const contribs: { foodName: string; contribPctDV: number }[] = []
+
+  for (const { foodId } of selectedFoods) {
+    const nutrients = allFoodNutrients[foodId]
+    if (!nutrients) continue
+
+    const rawValue = nutrients[result.nutrientId]
+    if (rawValue === null || rawValue === undefined || rawValue === 0) continue
+
+    const rawW = rawWeights.get(foodId) ?? 0
+    const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
+    const contrib = (rawValue / 100) * normalizedW
+    const pctDV = contrib / result.rdaTarget
+
+    if (pctDV < 0.001) continue
+
+    contribs.push({
+      foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`,
+      contribPctDV: pctDV,
+    })
+  }
+
+  contribs.sort((a, b) => b.contribPctDV - a.contribPctDV)
+
+  return contribs.slice(0, 8).map((c, i) => ({
+    ...c,
+    color: CONTRIB_COLORS[i % CONTRIB_COLORS.length],
+  }))
 }
 
 // ─── Top-sources computation ──────────────────────────────────────────────────
@@ -122,7 +184,6 @@ function SourceTooltip({
     if (!ref.current) return
     const h = ref.current.offsetHeight
 
-    // Prefer left of the anchor; fall back to right if not enough room
     let left = anchorRect.left - TOOLTIP_W - GAP
     if (left < 8) left = Math.min(anchorRect.right + GAP, window.innerWidth - TOOLTIP_W - 8)
 
@@ -189,6 +250,8 @@ export default function DietNutrientPanel({
   hasProfile,
   allFoodNutrients,
   selectedFoodIds,
+  selectedFoods,
+  dailyWeightG,
   onAddFood,
 }: Props) {
   const [filter, setFilter] = useState<FilterMode>(() => {
@@ -201,8 +264,8 @@ export default function DietNutrientPanel({
   })
   const [infoNutrient, setInfoNutrient] = useState<NutrientMeta | null>(null)
   const [infoAnchor, setInfoAnchor] = useState<DOMRect | null>(null)
+  const [infoDietContribs, setInfoDietContribs] = useState<DietFoodContrib[]>([])
 
-  // Hover tooltip state
   const [hoverResult, setHoverResult] = useState<DietNutrientResult | null>(null)
   const [hoverAnchorRect, setHoverAnchorRect] = useState<DOMRect | null>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -253,17 +316,29 @@ export default function DietNutrientPanel({
     (result: DietNutrientResult, e: React.MouseEvent) => {
       dismissTooltip()
       const nutrient = nutrientMetaById.get(result.nutrientId)
-      if (!nutrient?.body_role) return
+      if (!nutrient) return
+
+      // Toggle off
       if (infoNutrient?.nutrient_id === result.nutrientId) {
         setInfoNutrient(null)
         setInfoAnchor(null)
-      } else {
-        setInfoNutrient(nutrient)
-        setInfoAnchor((e.currentTarget as HTMLElement).getBoundingClientRect())
+        setInfoDietContribs([])
+        return
       }
+
+      const contribs = hasSelection
+        ? computeFoodContribs(result, selectedFoods, allFoodNutrients, foodsById, dailyWeightG)
+        : []
+
+      // Only open if there's something to show
+      if (!nutrient.body_role && contribs.length === 0) return
+
+      setInfoNutrient(nutrient)
+      setInfoAnchor((e.currentTarget as HTMLElement).getBoundingClientRect())
+      setInfoDietContribs(contribs)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [infoNutrient, nutrientMetaById],
+    [infoNutrient, nutrientMetaById, hasSelection, selectedFoods, allFoodNutrients, foodsById, dailyWeightG],
   )
 
   // ── Top sources for the hovered nutrient ─────────────────────────────────
@@ -301,8 +376,6 @@ export default function DietNutrientPanel({
     )
   }
 
-  // ── Main render (including zero-state with 0% bars when no foods selected) ──
-
   return (
     <>
       <div className="h-full flex flex-col">
@@ -335,7 +408,6 @@ export default function DietNutrientPanel({
 
         {/* Nutrient rows */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 min-h-0">
-          {/* Zero-state banner — shown when no foods selected */}
           {!hasSelection && (
             <p className="text-slate-500 text-[10px] text-center pt-2 pb-3 italic">
               Add foods to see your actual coverage
@@ -360,7 +432,8 @@ export default function DietNutrientPanel({
               result.rdaTarget,
             )
             const nutrient = nutrientMetaById.get(result.nutrientId)
-            const isClickable = !!nutrient?.body_role
+            // Clickable if it has info card content OR foods are selected (shows distribution)
+            const isClickable = !!nutrient?.body_role || hasSelection
             const isSelected = infoNutrient?.nutrient_id === result.nutrientId
             const isHovered = hoverResult?.nutrientId === result.nutrientId
             const hasCap =
@@ -388,9 +461,11 @@ export default function DietNutrientPanel({
                   isClickable ? (e) => handleRowClick(result, e) : undefined
                 }
                 title={
-                  isClickable
-                    ? `Click to learn about ${result.nutrientName}`
-                    : undefined
+                  hasSelection
+                    ? `Click to see distribution for ${result.nutrientName}`
+                    : nutrient?.body_role
+                      ? `Click to learn about ${result.nutrientName}`
+                      : undefined
                 }
               >
                 {/* Name */}
@@ -478,9 +553,11 @@ export default function DietNutrientPanel({
           onClose={() => {
             setInfoNutrient(null)
             setInfoAnchor(null)
+            setInfoDietContribs([])
           }}
           meals={[]}
           foodsById={foodsById}
+          dietContribs={infoDietContribs}
         />
       )}
     </>
