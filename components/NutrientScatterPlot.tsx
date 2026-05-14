@@ -423,7 +423,13 @@ export default function NutrientScatterPlot({ data }: Props) {
               range={zId ? [30, 500] : [55, 55]}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', stroke: '#475569' }} isAnimationActive={false} />
-            {FOOD_CATEGORY_LIST.map((cat) => {
+            {[...FOOD_CATEGORY_LIST].sort((a, b) => {
+              // Render dimmed categories first so selected ones paint on top
+              const aDimmed = hasCatFilter && !selectedCats.has(a)
+              const bDimmed = hasCatFilter && !selectedCats.has(b)
+              if (aDimmed === bDimmed) return 0
+              return aDimmed ? -1 : 1
+            }).map((cat) => {
               const catDots = dotsByCategory[cat]
               if (!catDots?.length) return null
               const color = CATEGORY_COLORS[cat] ?? CATEGORY_COLOR_DEFAULT
