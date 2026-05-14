@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { TourStep } from '@/lib/tourSteps'
 
 const SPOT_PAD = 10
@@ -25,6 +25,10 @@ export default function TourOverlay({ steps, onEnd }: Props) {
 
   const step = steps[stepIdx]
 
+  // Keep a ref to stepIdx so the master event listener always sees the current value
+  const stepIdxRef = useRef(stepIdx)
+  useEffect(() => { stepIdxRef.current = stepIdx }, [stepIdx])
+
   const updateSpot = useCallback(() => {
     if (!step?.target) {
       setSpotBox(null)
@@ -35,16 +39,28 @@ export default function TourOverlay({ steps, onEnd }: Props) {
       setSpotBox(null)
       return
     }
+    // 'instant' is synchronous so getBoundingClientRect reflects the post-scroll position
     el.scrollIntoView({ behavior: 'instant', block: 'nearest' })
-    requestAnimationFrame(() => {
-      const r = el.getBoundingClientRect()
+    const r = el.getBoundingClientRect()
+    if (r.width > 0 || r.height > 0) {
       setSpotBox({
         top: r.top - SPOT_PAD,
         left: r.left - SPOT_PAD,
         width: r.width + SPOT_PAD * 2,
         height: r.height + SPOT_PAD * 2,
       })
-    })
+    } else {
+      // Element not yet laid out — retry after a frame
+      requestAnimationFrame(() => {
+        const r2 = el.getBoundingClientRect()
+        setSpotBox({
+          top: r2.top - SPOT_PAD,
+          left: r2.left - SPOT_PAD,
+          width: r2.width + SPOT_PAD * 2,
+          height: r2.height + SPOT_PAD * 2,
+        })
+      })
+    }
   }, [step?.target])
 
   // Reposition spotlight when step changes or on scroll/resize
@@ -59,15 +75,19 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     }
   }, [updateSpot])
 
-  // Auto-advance when the current step's action event fires
+  // Register ALL advance-event listeners once on mount so there is never a gap
+  // between a step becoming active and its listener being ready.
   useEffect(() => {
-    if (!step?.advanceOn) return
-    function handler() {
-      setStepIdx((i) => (i < steps.length - 1 ? i + 1 : i))
+    function masterHandler(e: Event) {
+      const current = steps[stepIdxRef.current]
+      if (current?.advanceOn === e.type) {
+        setStepIdx((i) => (i < steps.length - 1 ? i + 1 : i))
+      }
     }
-    window.addEventListener(step.advanceOn, handler)
-    return () => window.removeEventListener(step.advanceOn!, handler)
-  }, [step?.advanceOn, steps.length])
+    const unique = [...new Set(steps.map((s) => s.advanceOn).filter(Boolean))] as string[]
+    unique.forEach((ev) => window.addEventListener(ev, masterHandler))
+    return () => unique.forEach((ev) => window.removeEventListener(ev, masterHandler))
+  }, [steps])
 
   function goNext() {
     if (stepIdx < steps.length - 1) setStepIdx((i) => i + 1)
