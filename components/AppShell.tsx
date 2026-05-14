@@ -179,7 +179,10 @@ export default function AppShell({ data }: Props) {
       {tourActive && (
         <TourOverlay
           steps={SALMON_MEAL_TOUR}
-          onEnd={() => setTourActive(false)}
+          onEnd={() => {
+            window.dispatchEvent(new CustomEvent('np:tour:demo-cleanup'))
+            setTourActive(false)
+          }}
         />
       )}
 

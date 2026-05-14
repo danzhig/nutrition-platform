@@ -339,7 +339,7 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
       {mealSelector}
 
       {/* Bar chart — full width */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+      <div data-tour="nutrition-bar-chart" className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
         {toolbar}
         <ResponsiveContainer width="100%" height={440}>
           <BarChart
@@ -404,14 +404,14 @@ export default function MealNutritionChart({ nutrients, meals, foodsById, rdaPro
 
       {/* Bottom row: radar + donut — each half width, square */}
       <div className="flex gap-3">
-        <div className="w-1/2 aspect-square">
+        <div data-tour="nutrition-radar-chart" className="w-1/2 aspect-square">
           <MealCategoryRadar
             nutrients={nutrients}
             rdaProfile={rdaProfile}
             totals={totals}
           />
         </div>
-        <div className="w-1/2 aspect-square">
+        <div data-tour="nutrition-donut-chart" className="w-1/2 aspect-square">
           <MacroDonutChart
             nutrients={nutrients}
             meals={activeMeals}
