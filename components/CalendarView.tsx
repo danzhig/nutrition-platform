@@ -7,11 +7,13 @@ import CalendarWeekList from './CalendarWeekList'
 import CalendarDayPanel from './CalendarDayPanel'
 import CalendarAddModal from './CalendarAddModal'
 import type { HeatmapData } from '@/types/nutrition'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import type { FoodLogEntry } from '@/types/calendar'
 import { getEntriesForDateRange } from '@/lib/foodLogStorage'
 
 interface Props {
   data: HeatmapData
+  rdaProfile: RDAProfile | null
 }
 
 type ViewMode = 'month' | 'week'
@@ -23,7 +25,7 @@ const KEYS = {
   selectedDate: 'np:calendar:selected-date',
 }
 
-export default function CalendarView({ data }: Props) {
+export default function CalendarView({ data, rdaProfile }: Props) {
   const { user } = useAuth()
   const today = new Date()
 
@@ -200,6 +202,7 @@ export default function CalendarView({ data }: Props) {
               entries={selectedDateEntries}
               nutrients={data.nutrients}
               foodsById={foodsById}
+              rdaProfile={rdaProfile}
               onClose={() => setSelectedDate(null)}
               onDayChange={handleDaySelect}
               onAddEntry={() => setAddTargetDate(selectedDate)}

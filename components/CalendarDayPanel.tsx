@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { Meal, MealItem } from '@/types/meals'
 import type { FoodLogEntry, FoodLogItem, FoodLogEntryType } from '@/types/calendar'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 import { updateEntryItemGrams, deleteEntry } from '@/lib/foodLogStorage'
 import { getPortionSize, getSizeKey } from '@/lib/portionSizes'
 import MealNutritionSidebar from './MealNutritionSidebar'
@@ -15,6 +16,7 @@ interface Props {
   entries: FoodLogEntry[]
   nutrients: NutrientMeta[]
   foodsById: Map<number, FoodRow>
+  rdaProfile: RDAProfile | null
   onClose: () => void
   onDayChange: (date: string) => void
   onAddEntry: () => void
@@ -56,7 +58,7 @@ function itemKey(entryId: string, item: FoodLogItem): string {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function CalendarDayPanel({
-  date, entries, nutrients, foodsById,
+  date, entries, nutrients, foodsById, rdaProfile,
   onClose, onDayChange, onAddEntry, onEntriesChanged,
 }: Props) {
   const [chartMode, setChartMode] = useState(false)
@@ -358,14 +360,14 @@ export default function CalendarDayPanel({
                 nutrients={nutrients}
                 meals={dayMeals}
                 foodsById={foodsById}
-                rdaProfile={null}
+                rdaProfile={rdaProfile}
               />
             ) : (
               <MealNutritionSidebar
                 nutrients={nutrients}
                 meals={dayMeals}
                 foodsById={foodsById}
-                rdaProfile={null}
+                rdaProfile={rdaProfile}
               />
             )}
           </div>

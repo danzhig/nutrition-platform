@@ -68,7 +68,7 @@ export default function MainView({ data, rdaProfile, rdaSelection, onRdaSelectio
         />
       )}
       {tab === 'data' && <DataView data={data} rdaProfile={rdaProfile} />}
-      {tab === 'calendar' && <CalendarView data={data} />}
+      {tab === 'calendar' && <CalendarView data={data} rdaProfile={rdaProfile} />}
       {tab === 'diet' && <DietView data={data} rdaProfile={rdaProfile} />}
     </div>
   )
