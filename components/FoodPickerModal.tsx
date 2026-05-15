@@ -37,33 +37,18 @@ function ScoreBadge({ score }: { score: number }) {
 export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, nutrients, rdaProfile, foodsById }: Props) {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string>('All')
-  const [recentlyAdded, setRecentlyAdded] = useState<Set<number>>(new Set())
-  const [addedSizes, setAddedSizes] = useState<Map<number, 's' | 'm' | 'l'>>(new Map())
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set())
   const [nutrientSortId, setNutrientSortId] = useState<number | null>(null)
 
   const handleAdd = useCallback((food: FoodRow) => {
     onAdd(food)
-    setRecentlyAdded((prev) => new Set(prev).add(food.food_id))
-    setTimeout(() => {
-      setRecentlyAdded((prev) => {
-        const next = new Set(prev)
-        next.delete(food.food_id)
-        return next
-      })
-    }, 1200)
+    setAddedIds((prev) => new Set(prev).add(food.food_id))
     window.dispatchEvent(new CustomEvent('np:tour:food-added'))
   }, [onAdd])
 
-  const handleAddSize = useCallback((food: FoodRow, key: 's' | 'm' | 'l', variant: SizeVariant) => {
+  const handleAddSize = useCallback((food: FoodRow, _key: 's' | 'm' | 'l', variant: SizeVariant) => {
     onAdd(food, { grams: variant.grams, label: variant.label })
-    setAddedSizes((prev) => new Map(prev).set(food.food_id, key))
-    setTimeout(() => {
-      setAddedSizes((prev) => {
-        const next = new Map(prev)
-        next.delete(food.food_id)
-        return next
-      })
-    }, 1200)
+    setAddedIds((prev) => new Set(prev).add(food.food_id))
     window.dispatchEvent(new CustomEvent('np:tour:food-added'))
   }, [onAdd])
 
@@ -104,7 +89,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
   }, [nutrients])
 
   const filtered = useMemo(() => {
-    let list = foods
+    let list = foods.filter((f) => !addedIds.has(f.food_id))
     if (category !== 'All') list = list.filter((f) => f.category === category)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -124,7 +109,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
       list = [...list].sort((a, b) => (foodScores.get(b.food_id) ?? 0) - (foodScores.get(a.food_id) ?? 0))
     }
     return list
-  }, [foods, category, search, rdaProfile, foodScores, nutrientSortId])
+  }, [foods, addedIds, category, search, rdaProfile, foodScores, nutrientSortId])
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[8vh]">
@@ -253,7 +238,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                         {nutrientBadge}
                         <SizeButtons
                           sizes={portion.sizes}
-                          addedKey={addedSizes.get(food.food_id) ?? null}
+                          addedKey={null}
                           onSelect={(key, variant) => handleAddSize(food, key, variant)}
                         />
                       </div>
@@ -264,15 +249,12 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                   )
                 }
 
-                const added = recentlyAdded.has(food.food_id)
                 return (
                   <button
                     key={food.food_id}
                     data-food-name={food.food_name.toLowerCase()}
                     onClick={() => handleAdd(food)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group ${
-                      added ? 'bg-violet-900/40' : 'hover:bg-slate-700'
-                    }`}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group hover:bg-slate-700"
                   >
                     <div className="flex-1 min-w-0">
                       <span className="text-sm text-slate-100">{food.food_name}</span>
@@ -283,12 +265,8 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                         {portion.label} · {portion.grams}g
                       </span>
                       {nutrientBadge}
-                      <span className={`text-[11px] font-medium transition-opacity ${
-                        added
-                          ? 'text-green-400 opacity-100'
-                          : 'text-violet-400 opacity-0 group-hover:opacity-100'
-                      }`}>
-                        {added ? '✓ Added' : '+ Add'}
+                      <span className="text-[11px] font-medium text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                        + Add
                       </span>
                     </div>
                     <div className="w-8 flex justify-center flex-shrink-0">
