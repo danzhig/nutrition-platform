@@ -25,7 +25,7 @@ interface Props {
 }
 
 const INFO_TOOLTIP =
-  'Rate foods by how often you eat them per month. Ratings are scaled by typical serving sizes and normalized to your daily food weight, so the nutrition results always reflect a realistic full day of eating.'
+  'Rate foods by how often you eat them per month. Each rating maps to a monthly frequency (e.g. "Staple" = 30×/month). Serving sizes are scaled by frequency, then the whole diet is proportionally normalized to the daily food weight set in your DV profile. This lets the Nutrient Coverage panel show what a real average day of this diet looks like.'
 
 export default function DietView({ data, rdaProfile }: Props) {
   const { user } = useAuth()
@@ -196,6 +196,7 @@ export default function DietView({ data, rdaProfile }: Props) {
               foods={selectedFoods}
               foodMeta={foodMeta}
               compositions={dietCompositions}
+              dailyWeightG={dailyWeightG}
               onRatingChange={handleRatingChange}
               onRemove={handleRemove}
               onClearAll={handleClearAll}

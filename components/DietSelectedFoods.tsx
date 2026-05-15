@@ -10,6 +10,7 @@ interface Props {
   foods: DietFood[]
   foodMeta: Map<number, FoodRow>
   compositions: DietFoodComposition[]
+  dailyWeightG: number
   onRatingChange: (foodId: number, rating: number) => void
   onRemove: (foodId: number) => void
   onClearAll: () => void
@@ -19,6 +20,7 @@ export default function DietSelectedFoods({
   foods,
   foodMeta,
   compositions,
+  dailyWeightG,
   onRatingChange,
   onRemove,
   onClearAll,
@@ -38,7 +40,7 @@ export default function DietSelectedFoods({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Diet composition bar */}
-      <DietCompositionBar compositions={compositions} />
+      <DietCompositionBar compositions={compositions} dailyWeightG={dailyWeightG} />
 
       {/* Food list */}
       <div className="flex-1 overflow-y-auto min-h-0 py-1">

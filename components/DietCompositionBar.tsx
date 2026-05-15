@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { DietFoodComposition } from '@/lib/dietProfile'
 
 const PALETTE = [
@@ -18,43 +18,56 @@ const PALETTE = [
 
 interface Props {
   compositions: DietFoodComposition[]
+  dailyWeightG: number
 }
 
-export default function DietCompositionBar({ compositions }: Props) {
-  const [hovered, setHovered] = useState<{
-    idx: number
-    x: number
-    y: number
-  } | null>(null)
+export default function DietCompositionBar({ compositions, dailyWeightG }: Props) {
+  const barRef = useRef<HTMLDivElement>(null)
+  const [hovered, setHovered] = useState<{ idx: number; x: number; y: number } | null>(null)
 
   if (compositions.length === 0) return null
 
   const hoveredComp = hovered !== null ? compositions[hovered.idx] : null
 
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!barRef.current) return
+    const rect = barRef.current.getBoundingClientRect()
+    const xRatio = (e.clientX - rect.left) / rect.width
+    let cumulative = 0
+    for (let i = 0; i < compositions.length; i++) {
+      cumulative += compositions[i].proportion
+      if (xRatio <= cumulative) {
+        setHovered({ idx: i, x: e.clientX, y: e.clientY })
+        return
+      }
+    }
+    setHovered(null)
+  }
+
   return (
     <div className="px-4 py-3 border-b border-slate-700 flex-shrink-0 space-y-1.5">
-      {/* Stacked bar */}
-      <div className="flex h-3 rounded-full overflow-hidden">
+      {/* Stacked bar — hover detection is on the container to avoid segment-boundary jitter */}
+      <div
+        ref={barRef}
+        className="flex h-3 rounded-full overflow-hidden cursor-default"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHovered(null)}
+      >
         {compositions.map(({ foodId, proportion }, i) => (
           <div
             key={foodId}
-            className="h-full transition-opacity duration-100 cursor-default"
+            className="h-full transition-opacity duration-100"
             style={{
               width: `${proportion * 100}%`,
               background: PALETTE[i % PALETTE.length],
               opacity: hovered === null || hovered.idx === i ? 1 : 0.35,
             }}
-            onMouseEnter={(e) => setHovered({ idx: i, x: e.clientX, y: e.clientY })}
-            onMouseMove={(e) =>
-              setHovered((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : prev))
-            }
-            onMouseLeave={() => setHovered(null)}
           />
         ))}
       </div>
 
       <p className="text-[9px] text-slate-500 leading-none">
-        Diet composition — daily food weight by proportion
+        Diet composition — normalized to {dailyWeightG} g/day from DV profile
       </p>
 
       {/* Fixed tooltip follows cursor */}
