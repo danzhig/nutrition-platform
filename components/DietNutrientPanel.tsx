@@ -140,10 +140,18 @@ function computeFoodContribs(
 
   contribs.sort((a, b) => b.contribPctDV - a.contribPctDV)
 
-  return contribs.slice(0, 8).map((c, i) => ({
+  const TOP_N = 8
+  const named = contribs.slice(0, TOP_N).map((c, i) => ({
     ...c,
     color: CONTRIB_COLORS[i % CONTRIB_COLORS.length],
   }))
+
+  const otherSum = contribs.slice(TOP_N).reduce((s, c) => s + c.contribPctDV, 0)
+  if (otherSum >= 0.001) {
+    named.push({ foodName: 'Other', contribPctDV: otherSum, color: '#475569' })
+  }
+
+  return named
 }
 
 // ─── Top-sources computation ──────────────────────────────────────────────────
