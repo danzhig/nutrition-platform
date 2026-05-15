@@ -265,11 +265,10 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                     return (
                       <div
                         key={n.nutrient_id}
-                        data-tour={n.nutrient_name === 'Protein' ? 'nutrient-sidebar-protein' : undefined}
                         className={`flex items-center gap-1.5 px-1 rounded transition-colors ${
                           isClickable ? 'cursor-pointer hover:bg-slate-700/60' : ''
                         } ${isSelected ? 'bg-slate-700/60 ring-1 ring-violet-500/40' : ''}`}
-                        onMouseDown={isClickable ? (e) => handleNutrientClick(n, e) : undefined}
+                        onClick={isClickable ? (e) => handleNutrientClick(n, e) : undefined}
                         title={isClickable ? `Click to learn about ${n.nutrient_name}` : undefined}
                       >
                         <div
@@ -289,6 +288,7 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                             </span>
                           )}
                           <span
+                            data-tour={n.nutrient_name === 'Protein' ? 'nutrient-sidebar-protein' : undefined}
                             className={`truncate ${isClickable ? 'text-slate-200' : 'text-slate-300'}`}
                             title={n.nutrient_name}
                           >

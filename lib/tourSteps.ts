@@ -143,7 +143,7 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     position: 'left',
     action: [
       { type: 'click', selector: '[data-tour="nutrient-sidebar-protein"]' },
-      { type: 'wait', duration: 500 },
+      { type: 'wait', duration: 800 },
     ],
   },
   {
