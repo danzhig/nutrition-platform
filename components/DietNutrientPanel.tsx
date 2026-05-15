@@ -364,6 +364,25 @@ export default function DietNutrientPanel({
     return list
   }, [results, filter, sort])
 
+  type RenderItem =
+    | { kind: 'header'; label: string }
+    | { kind: 'row'; result: DietNutrientResult }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const renderList = useMemo<RenderItem[]>(() => {
+    if (sort !== 'category') return filtered.map((r) => ({ kind: 'row', result: r }))
+    const items: RenderItem[] = []
+    let lastCat = ''
+    for (const result of filtered) {
+      if (result.nutrientCategory !== lastCat) {
+        items.push({ kind: 'header', label: result.nutrientCategory })
+        lastCat = result.nutrientCategory
+      }
+      items.push({ kind: 'row', result })
+    }
+    return items
+  }, [filtered, sort])
+
   // ── Empty / no-profile states ─────────────────────────────────────────────
 
   if (!hasProfile) {
@@ -422,7 +441,18 @@ export default function DietNutrientPanel({
             </p>
           )}
 
-          {filtered.map((result) => {
+          {renderList.map((item) => {
+            if (item.kind === 'header') {
+              return (
+                <div key={`cat-${item.label}`} className="px-1 pt-3 pb-0.5 first:pt-1">
+                  <p className="text-[9px] text-slate-500 uppercase tracking-wider font-medium">
+                    {item.label}
+                  </p>
+                </div>
+              )
+            }
+
+            const { result } = item
             const pct = result.pctDV * 100
             const barWidth = Math.min(pct, 100)
             const barColor = dietBarColor(
