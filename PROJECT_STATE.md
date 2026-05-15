@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-14 (session 20)
+**Last updated:** 2026-05-15 (session 21)
 **Current phase: Diet Evaluator — ALL 10 PHASES COMPLETE**
 
 ---
@@ -55,6 +55,7 @@ nutrition-platform/
 │   ├── MealNutritionSidebar.tsx ← 50-nutrient %DV bar chart; click → NutrientInfoCard
 │   ├── NutrientInfoCard.tsx    ← Floating info card: viewport-clamped; body role, deficiency/excess; food-source bar; optional dietContribs stacked bar showing per-food %DV contributions (Diet tab)
 │   ├── MealNutritionChart.tsx  ← Full-width chart dashboard: bar chart + radar + donut
+│   ├── DemoCursor.tsx          ← Animated OS-style arrow cursor: flies to targets (450ms CSS), scale-dips on click; used by TourOverlay
 │   ├── MealCategoryRadar.tsx   ← Custom SVG pentagonal radar: avg %DV per category, gradient edges
 │   ├── MacroDonutChart.tsx     ← Dual-ring PieChart: inner = 4 macro slices (Net Carbs/Fibre/Protein/Fat); outer = top-5 foods per macro
 │   ├── NutrientRankingView.tsx ← Pick nutrient → ranked bar chart of all foods; N selector, top/bottom, multi-select category checklist, per-serving toggle
@@ -144,7 +145,7 @@ nutrition-platform/
 | **Diet Evaluator — normalized weight redesign** | ✅ Live — replaced broken monthly-weight bar model with two-pass normalization: ratings × serving sizes determine each food's proportional claim on `dailyWeightG`, so %DV bars always reflect a coherent full day; `computeDietProfile()` returns `{results, compositions}` (compositions reused by stacked bar); `computeDietSuggestions()` updated to use normalized math; `DietCompositionBar.tsx` new component replacing old 4-band weight indicator — 10-color stacked bar with cursor-following tooltip per segment; `RATING_LABELS` updated to frequency language (Rarely / Occasionally / Sometimes / Often / Staple); `DietView` info icon on Panel 2 header explains the frequency-rating model |
 | **Diet Evaluator — per-food %DV distribution bar** | ✅ Live — clicking any nutrient row in Nutrient Coverage panel opens `NutrientInfoCard` with a stacked proportional bar at the top showing which selected foods contribute to that nutrient's %DV; "X% DV total" badge; any nutrient is clickable when foods are selected (not just those with `body_role`); `DietNutrientPanel` computes `computeFoodContribs()` at click time using normalized weights; `NutrientInfoCard` accepts optional `dietContribs` prop; `DietView` passes `selectedFoods` + `dailyWeightG` to `DietNutrientPanel` |
 | **Multi-select category checklist — Charts tab** | ✅ Live — replaces single-select category dropdowns in both Charts tab views with a checklist dropdown (Select all / Deselect all + per-category checkboxes); dimmed scatter dots now render as uniform dark slate instead of transparent category colors, so highlighted series stand out cleanly; legend items remain clickable to toggle individual categories; `NutrientRankingView.tsx` + `NutrientScatterPlot.tsx` updated |
-| **Guided demo tour system** | ✅ Live — `▶ Demo` button in global header; `lib/tourSteps.ts` defines `TourStep[]` with `target` (CSS selector), `title`, `body`, `position`, and optional `advanceOn` (custom event name); `components/TourOverlay.tsx` renders a spotlight ring (box-shadow backdrop + violet border) over each target element, with a floating tooltip card; steps auto-advance when `advanceOn` event fires, otherwise show a Next button; `pointer-events: none` on backdrop so live UI remains interactive; spotlight transitions between targets with 280ms CSS ease; tooltip is viewport-clamped and positions top/bottom/left/right/center relative to target; tab state lifted from `MainView` to `AppShell` so Demo button can switch tabs externally; `np:tour:reset-view` custom event resets MealPlanner to sidebar view on tour start; demo cleanup (`np:tour:demo-cleanup`) auto-deletes the template and plan created during the demo; currently has one tour: `SALMON_MEAL_TOUR` (23 steps covering new-plan reset, plan naming, meal creation, food picker, presets, plan save, charts) |
+| **Guided demo tour system** | ✅ Live — `▶ Demo` button in global header; `lib/tourSteps.ts` defines `TourStep[]` with `target` (CSS selector), `title`, `body`, `position`, and optional `action` (array of `TourActionStep`); `components/TourOverlay.tsx` renders a spotlight ring (box-shadow backdrop + violet border) over each target element with a floating tooltip card; when a step has an `action` array, clicking Next runs the action sequence (click/type/wait/key) and disables the button showing "Running…" during execution; `components/DemoCursor.tsx` renders an OS-style arrow cursor that flies smoothly between targets (450ms cubic-bezier transition) and scale-dips on click (70ms/160ms spring); `pointer-events: none` on backdrop so live UI remains interactive; spotlight polls every 150ms while actions run so it tracks DOM changes (e.g. dropdown expanding); 280ms CSS ease between targets; tooltip viewport-clamped; tab state lifted from `MainView` to `AppShell`; `np:tour:reset-view` resets MealPlanner to sidebar view on tour start; demo cleanup (`np:tour:demo-cleanup`) auto-deletes the template and plan created during the demo; currently has one tour: `SALMON_MEAL_TOUR` (23 steps covering new-plan reset, plan naming, meal creation, food picker, presets, plan save, charts) — fully automated, no user interaction required |
 
 **Total foods: 257** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types)  
 **Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  
@@ -162,7 +163,8 @@ The tour system is intentionally lightweight — no external dependencies, no co
 | File | Role |
 |---|---|
 | `lib/tourSteps.ts` | Step definitions — edit this to change tour content or add new tours |
-| `components/TourOverlay.tsx` | Renders spotlight + tooltip; listens for `advanceOn` events; manages step index |
+| `components/TourOverlay.tsx` | Renders spotlight + tooltip; executes `action` sequences; manages step index + cursor state |
+| `components/DemoCursor.tsx` | Animated OS-style arrow cursor; positioned by TourOverlay; 450ms fly transition; click scale-dip animation |
 | `components/AppShell.tsx` | Owns `tourActive` state; Demo button; `onEnd` dispatches `np:tour:demo-cleanup` |
 
 ### TourStep interface
@@ -171,11 +173,23 @@ The tour system is intentionally lightweight — no external dependencies, no co
 interface TourStep {
   target: string | null        // CSS selector using data-tour attr, or null for center modal
   title: string                // bold heading in tooltip card
-  body: string                 // instruction text
+  body: string                 // descriptive text (not imperative — the cursor shows what's happening)
   position: 'top' | 'bottom' | 'left' | 'right' | 'center'  // tooltip side relative to spotlight
-  advanceOn?: string           // custom event name — if set, auto-advances; no Next button shown
+  action?: TourActionStep[]    // if set, Next executes these before advancing; button shows "Running…"
 }
+
+type TourActionStep =
+  | { type: 'click'; selector: string }
+  | { type: 'type'; selector: string; text: string; charDelay?: number }
+  | { type: 'wait'; duration: number }
+  | { type: 'key'; selector: string; key: string }
 ```
+
+**Action runner details:**
+- `click` — flies cursor to element center (with retry up to 10×), pauses 500ms, scale-dips, fires `.click()`
+- `type` — flies cursor to input, focuses it, clears value via `setNativeValue`, then types char-by-char (default 75ms/char) using React-compatible native value setter + `input` event
+- `wait` — plain `sleep(ms)`
+- `key` — dispatches a `keydown` `KeyboardEvent` on the element (used for Enter to confirm inputs)
 
 **`position` tips:**
 - Use `'bottom'` for most elements (tooltip appears below)
@@ -188,25 +202,50 @@ interface TourStep {
 
 `TourOverlay` calls `document.querySelector(step.target)`, invokes `scrollIntoView`, then reads `getBoundingClientRect()` in a `requestAnimationFrame`. It positions a fixed div with `box-shadow: 0 0 0 9999px rgba(0,0,0,0.65)` — this single div creates the dark backdrop everywhere **except** inside itself (the spotlight hole). The whole overlay has `pointer-events: none` so the user can click elements freely. Only the tooltip card has `pointer-events: auto`.
 
-### Auto-advance event bus
+### data-tour attributes in use
 
-Components dispatch DOM `CustomEvent`s when key actions occur. `TourOverlay` listens only when the current step has a matching `advanceOn` string.
+The action runner targets elements by CSS selectors — primarily `[data-tour="..."]`, `#id`, or `[data-food-name*="..."]`/`[data-size-key="..."]`.
 
-| Event | Where dispatched | Used by step |
+| Attribute | Element | Component |
 |---|---|---|
-| `np:tour:new-plan-clicked` | `MealPlanner` New Plan button onClick | Start Fresh |
-| `np:tour:meal-added` | `MealPlanner.addMeal()` | Add Meal |
-| `np:tour:food-picker-opened` | `MealCard` "+ Add food" onClick | Open Food Browser |
-| `np:tour:food-added` | `FoodPickerModal.handleAdd()` / `handleAddSize()` | Each food addition |
-| `np:tour:food-picker-closed` | `FoodPickerModal.handleClose()` (Done / ✕ / backdrop) | Close Food Browser |
-| `np:tour:template-saved` | `MealCard.handleSaveAsTemplate()` | Save Template |
-| `np:tour:presets-opened` | `MealPlanner` Presets button (only when opening) | Open Presets |
-| `np:tour:preset-loaded` | `MealPlanner.handleLoadPreset()` | Select Preset |
-| `np:tour:plan-saved` | `MealPlanner.handleSave()` on success | Save Plan |
-| `np:tour:charts-opened` | `MealPlanner.switchView('chart')` | Switch to Charts |
-| `np:tour:meal-renamed` | `MealCard` meal name input `onBlur` | *(dispatched but no step uses it — orphaned; candidate for removal)* |
-| `np:tour:reset-view` | `AppShell.startDemo()` | (resets MealPlanner to sidebar) |
-| `np:tour:demo-cleanup` | `AppShell` TourOverlay `onEnd` | (MealPlanner cleanup listener) |
+| `data-tour="day-planner-tab"` | Day Builder tab button | `MainView` |
+| `id="tour-new-plan-btn"` | New Plan button | `MealPlanner` |
+| `data-tour="plan-dropdown-container"` | Wrapper div around plan name button + open dropdown | `MealPlanner` |
+| `data-tour="plan-name-btn"` | Plan name toggle button | `MealPlanner` |
+| `data-tour="plan-name-input"` | Plan name text input | `MealPlanner` |
+| `data-tour="add-meal-btn"` | + Add Meal button | `MealPlanner` |
+| `data-tour="meal-name-btn"` | Meal name toggle button | `MealCard` |
+| `data-tour="meal-name-input"` | Meal name text input | `MealCard` |
+| `data-tour="meal-add-food-btn"` | + Add food button | `MealCard` |
+| `data-tour="meal-items-list"` | Food items list in meal card | `MealCard` |
+| `data-tour="mode-g"` | Grams mode toggle button per food row | `MealCard` |
+| `data-tour="grams-input"` | Grams input per food row | `MealCard` |
+| `data-tour="save-template-btn"` | Save as Template button | `MealCard` |
+| `data-tour="food-picker-modal"` | FoodPickerModal root | `FoodPickerModal` |
+| `data-tour="food-picker-search"` | Search input | `FoodPickerModal` |
+| `data-tour="food-picker-done-btn"` | Done button | `FoodPickerModal` |
+| `data-food-name="<lowercase food name>"` | Individual food row | `FoodPickerModal`, `MealCard` |
+| `data-size-key="s/m/l"` | S/M/L size buttons | `SizeButtons` |
+| `data-tour="presets-btn"` | Presets panel toggle button | `MealPlanner` |
+| `data-tour="preset-categories"` | Category pill row | `MealPlanner` |
+| `data-preset-cat="<category name>"` | Individual category pill | `MealPlanner` |
+| `data-tour="presets-list"` | Preset meals list | `MealPlanner` |
+| `data-tour="preset-meal-item"` | First preset meal card | `MealPlanner` |
+| `data-tour="save-plan-btn"` | Save Plan button | `MealPlanner` |
+| `data-tour="charts-view-tab"` | Charts view tab | `MealPlanner` |
+| `data-tour="nutrition-sidebar"` | Nutrition %DV sidebar | `MealNutritionSidebar` |
+| `data-tour="nutrition-bar-chart"` | Bar chart | `MealNutritionChart` |
+| `data-tour="nutrition-radar-chart"` | Radar chart | `MealNutritionChart` |
+| `data-tour="nutrition-donut-chart"` | Donut chart | `MealNutritionChart` |
+
+### Custom events (non-action infrastructure)
+
+The `advanceOn` system has been removed. Only two infrastructure events remain:
+
+| Event | Where dispatched | Purpose |
+|---|---|---|
+| `np:tour:reset-view` | `AppShell.startDemo()` | Resets MealPlanner to sidebar view before tour starts |
+| `np:tour:demo-cleanup` | `AppShell` TourOverlay `onEnd` | Triggers MealPlanner to delete demo template + plan and reset to blank state |
 
 ### Cleanup mechanism
 
@@ -220,17 +259,19 @@ When the tour ends (user clicks Finish on the last step), `AppShell` dispatches 
 ### Adding a new tour
 
 1. Add a new exported `const MY_TOUR: TourStep[]` to `lib/tourSteps.ts`
-2. Add `data-tour="my-step-id"` attributes to target elements in the relevant components
-3. Dispatch the appropriate `np:tour:*` events from those components (or add new events for new actions)
+2. Add `data-tour="my-step-id"` (or `data-food-name`, `data-size-key`, etc.) attributes to target elements in the relevant components
+3. Write `action` arrays for each step using `click`, `type`, `wait`, and `key` action steps — no custom events needed
 4. In `AppShell.tsx`: add a second demo button / selector, import the new tour array, and pass it to `<TourOverlay steps={MY_TOUR} />`
-5. If the new tour needs cleanup, extend the `np:tour:demo-cleanup` handler in `MealPlanner.tsx`
+5. If the new tour creates data (templates, plans, entries), extend the `np:tour:demo-cleanup` handler in `MealPlanner.tsx` to clean it up
 
 ### Known nuances & gotchas
 
 - **Modal steps**: Steps targeting elements inside `FoodPickerModal` (z-50) work because the spotlight ring at z-9997 is transparent — you see the modal content through it. The dark box-shadow backdrop appears behind the modal's own backdrop layer (z-50 < z-9997), so the whole-modal spotlight correctly covers only the modal.
 - **Stale closure in cleanup**: The cleanup `useEffect` uses `savedMeals` and `plan` from state. Since these are in the dep array, the handler always captures current values. Do not add `updateSnapshot` to deps — it's a `useCallback` declared later in the file (TDZ issue).
-- **Spotlight repositioning**: `updateSpot` re-fires on every `scroll` and `resize` event (captured via `addEventListener(..., true)` for the scroll). This keeps the ring aligned when the page scrolls during `scrollIntoView`.
-- **`advanceOn` for repeated events**: Steps 4–7 all use `np:tour:food-added`. This is intentional — each food addition fires the event and advances one step. React's effect cleanup ensures the old listener is removed before the new one is added.
+- **Spotlight repositioning**: `updateSpot` re-fires on every `scroll` and `resize` event (captured via `addEventListener(..., true)` for the scroll). This keeps the ring aligned when the page scrolls during `scrollIntoView`. While an action is running, `updateSpot` additionally runs on a 150ms `setInterval` so that DOM changes (e.g. a dropdown expanding the target's bounding rect) are tracked live.
+- **React-controlled inputs**: `setNativeValue()` in `TourOverlay` uses the native `HTMLInputElement.prototype.value` setter descriptor to bypass React's synthetic event system, then fires an `input` event. This is the correct way to programmatically set a value in a React-controlled `<input>` without the component ignoring the change.
+- **Cursor z-index**: `DemoCursor` renders at z-10001 (above the tooltip at z-9999) so it's always visible over every layer. Its hot-spot is the tip at SVG `(1,1)`, offset to `(0,0)` via `left: x-1, top: y-1`.
+- **`data-food-name` selector format**: Food rows use `data-food-name="<lowercase name>"`. Action selectors like `[data-food-name*="salmon"]` (contains) work for ambiguous matches; `[data-food-name^="potato"]` (starts-with) avoids matching "Sweet Potato". Combine with a child selector for size buttons: `[data-food-name^="potato"] [data-size-key="m"]`.
 - **Tooltip height estimate**: `TOOLTIP_H_EST = 200` in `TourOverlay.tsx` is used for positioning math. If tooltip content grows taller (long body text), increase this constant or the tooltip will clip at the viewport bottom.
 
 ---
