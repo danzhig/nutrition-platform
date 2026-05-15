@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { TourStep, TourActionStep } from '@/lib/tourSteps'
 import DemoCursor from './DemoCursor'
 
@@ -111,9 +111,16 @@ export default function TourOverlay({ steps, onEnd }: Props) {
 
   const step = steps[stepIdx]
 
+  // Incremented on every updateSpot call so stale measure() chains from a
+  // previous step abort instead of calling setSpotBox(null) and killing the
+  // spotlight that the new step already set.
+  const spotVersionRef = useRef(0)
+
   const updateSpot = useCallback(() => {
     if (!step?.target) { setSpotBox(null); return }
+    const version = ++spotVersionRef.current
     const measure = (attemptsLeft: number) => {
+      if (spotVersionRef.current !== version) return
       const el = document.querySelector(step.target!) as HTMLElement | null
       if (!el) {
         if (attemptsLeft > 0) setTimeout(() => measure(attemptsLeft - 1), 100)
@@ -171,6 +178,19 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     if (stepIdx < steps.length - 1) setStepIdx((i) => i + 1)
     else onEnd()
   }
+
+  const goNextRef = useRef(goNext)
+  useEffect(() => { goNextRef.current = goNext })
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault()
+        goNextRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const isLast = stepIdx === steps.length - 1
   const totalContentSteps = steps.length - 1
