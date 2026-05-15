@@ -61,7 +61,7 @@ export interface DietFoodComposition {
 // so they must be computed as a weight-proportion-weighted average across the
 // diet rather than summed. Adding more food doesn't change the diet's GI —
 // only the composition of the diet changes it.
-const WEIGHTED_AVERAGE_NUTRIENTS = new Set(['Glycemic Index'])
+export const WEIGHTED_AVERAGE_NUTRIENTS = new Set(['Glycemic Index'])
 
 // ─── Category sort order ──────────────────────────────────────────────────────
 

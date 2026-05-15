@@ -13,11 +13,13 @@ interface Props {
   foodsById: Map<number, FoodRow>
   /** Per-food %DV breakdown from the Diet tab (replaces the meals-based bar) */
   dietContribs?: DietFoodContrib[]
+  /** Authoritative total from computeDietProfile — overrides the sum of visible contribs */
+  dietTotalPctDV?: number
 }
 
 const CONTRIB_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#f472b6', '#64748b']
 
-export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals, foodsById, dietContribs }: Props) {
+export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals, foodsById, dietContribs, dietTotalPctDV }: Props) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
 
@@ -119,7 +121,12 @@ export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals,
 
       {/* Diet tab — per-food %DV distribution bar */}
       {dietContribs && dietContribs.length > 0 && (() => {
-        const total = dietContribs.reduce((s, c) => s + c.contribPctDV, 0)
+        // contribSum is used for bar-segment widths (fills 100% of the bar).
+        // displayTotal is the authoritative label — uses result.pctDV from
+        // computeDietProfile so it always matches the Nutrient Coverage bar,
+        // even when more than 8 foods were sliced off.
+        const contribSum = dietContribs.reduce((s, c) => s + c.contribPctDV, 0)
+        const displayTotal = dietTotalPctDV !== undefined ? dietTotalPctDV : contribSum
         return (
           <div className="mb-3">
             <div className="flex items-center justify-between mb-1.5">
@@ -127,17 +134,17 @@ export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals,
                 Sources in your diet
               </p>
               <span className="text-slate-500 text-[10px] tabular-nums">
-                {Math.round(total * 100)}% DV total
+                {Math.round(displayTotal * 100)}% DV total
               </span>
             </div>
-            {/* Stacked bar — each segment proportional to food's share */}
+            {/* Stacked bar — each segment proportional to food's share of shown contribs */}
             <div className="h-2.5 rounded-sm overflow-hidden flex mb-2">
               {dietContribs.map((c, i) => (
                 <div
                   key={i}
                   className="h-full"
                   style={{
-                    width: `${(c.contribPctDV / total) * 100}%`,
+                    width: `${(c.contribPctDV / contribSum) * 100}%`,
                     backgroundColor: c.color,
                   }}
                   title={`${c.foodName}: ${Math.round(c.contribPctDV * 100)}% DV`}

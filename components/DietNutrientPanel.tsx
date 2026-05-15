@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { DietNutrientResult, FoodNutrientMap } from '@/lib/dietProfile'
-import { RATING_MULTIPLIERS } from '@/lib/dietProfile'
+import { RATING_MULTIPLIERS, WEIGHTED_AVERAGE_NUTRIENTS } from '@/lib/dietProfile'
 import type { DietFood } from '@/lib/dietStorage'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import { getPortionSize } from '@/lib/portionSizes'
@@ -95,24 +95,47 @@ function computeFoodContribs(
 
   const contribs: { foodName: string; contribPctDV: number }[] = []
 
-  for (const { foodId } of selectedFoods) {
-    const nutrients = allFoodNutrients[foodId]
-    if (!nutrients) continue
+  if (WEIGHTED_AVERAGE_NUTRIENTS.has(result.nutrientName)) {
+    // Weighted-average path (mirrors computeDietProfile exactly).
+    // GI is a dimensionless index, not a per-100g amount, so each food's
+    // contribution = GI × (its weight share) / rdaTarget.
+    // Denominator includes ALL foods with non-null data (even GI=0).
+    let denominator = 0
+    const entries: { foodName: string; rawValue: number; normalizedW: number }[] = []
 
-    const rawValue = nutrients[result.nutrientId]
-    if (rawValue === null || rawValue === undefined || rawValue === 0) continue
+    for (const { foodId } of selectedFoods) {
+      const nutrients = allFoodNutrients[foodId]
+      if (!nutrients) continue
+      const rawValue = nutrients[result.nutrientId]
+      if (rawValue === null || rawValue === undefined) continue
 
-    const rawW = rawWeights.get(foodId) ?? 0
-    const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
-    const contrib = (rawValue / 100) * normalizedW
-    const pctDV = contrib / result.rdaTarget
+      const rawW = rawWeights.get(foodId) ?? 0
+      const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
+      denominator += normalizedW
+      entries.push({ foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`, rawValue, normalizedW })
+    }
 
-    if (pctDV < 0.001) continue
+    for (const { foodName, rawValue, normalizedW } of entries) {
+      const contribPctDV = denominator > 0 ? (rawValue * (normalizedW / denominator)) / result.rdaTarget : 0
+      if (contribPctDV < 0.001) continue
+      contribs.push({ foodName, contribPctDV })
+    }
+  } else {
+    // Standard summing path for genuine per-100g nutrients.
+    for (const { foodId } of selectedFoods) {
+      const nutrients = allFoodNutrients[foodId]
+      if (!nutrients) continue
 
-    contribs.push({
-      foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`,
-      contribPctDV: pctDV,
-    })
+      const rawValue = nutrients[result.nutrientId]
+      if (rawValue === null || rawValue === undefined || rawValue === 0) continue
+
+      const rawW = rawWeights.get(foodId) ?? 0
+      const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
+      const contribPctDV = ((rawValue / 100) * normalizedW) / result.rdaTarget
+
+      if (contribPctDV < 0.001) continue
+      contribs.push({ foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`, contribPctDV })
+    }
   }
 
   contribs.sort((a, b) => b.contribPctDV - a.contribPctDV)
@@ -265,6 +288,7 @@ export default function DietNutrientPanel({
   const [infoNutrient, setInfoNutrient] = useState<NutrientMeta | null>(null)
   const [infoAnchor, setInfoAnchor] = useState<DOMRect | null>(null)
   const [infoDietContribs, setInfoDietContribs] = useState<DietFoodContrib[]>([])
+  const [infoDietTotalPctDV, setInfoDietTotalPctDV] = useState<number | null>(null)
 
   const [hoverResult, setHoverResult] = useState<DietNutrientResult | null>(null)
   const [hoverAnchorRect, setHoverAnchorRect] = useState<DOMRect | null>(null)
@@ -323,6 +347,7 @@ export default function DietNutrientPanel({
         setInfoNutrient(null)
         setInfoAnchor(null)
         setInfoDietContribs([])
+        setInfoDietTotalPctDV(null)
         return
       }
 
@@ -336,6 +361,7 @@ export default function DietNutrientPanel({
       setInfoNutrient(nutrient)
       setInfoAnchor((e.currentTarget as HTMLElement).getBoundingClientRect())
       setInfoDietContribs(contribs)
+      setInfoDietTotalPctDV(result.pctDV)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [infoNutrient, nutrientMetaById, hasSelection, selectedFoods, allFoodNutrients, foodsById, dailyWeightG],
@@ -584,10 +610,12 @@ export default function DietNutrientPanel({
             setInfoNutrient(null)
             setInfoAnchor(null)
             setInfoDietContribs([])
+            setInfoDietTotalPctDV(null)
           }}
           meals={[]}
           foodsById={foodsById}
           dietContribs={infoDietContribs}
+          dietTotalPctDV={infoDietTotalPctDV ?? undefined}
         />
       )}
     </>
