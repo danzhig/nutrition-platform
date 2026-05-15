@@ -12,58 +12,62 @@ export default function DemoCursor({ x, y, clicking }: Props) {
     <div
       style={{
         position: 'fixed',
-        left: x - 13,
-        top: y - 3,
+        left: x - 9,
+        top: y,
         zIndex: 10001,
         pointerEvents: 'none',
         transition: 'left 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94), top 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        filter: 'drop-shadow(2px 3px 5px rgba(0,0,0,0.55))',
+        filter: 'drop-shadow(2px 3px 5px rgba(0,0,0,0.5))',
       }}
     >
-      <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Index finger — dips down on click */}
+      {/*
+        3/4-angle view: four fingers at staggered heights create the depth illusion.
+        Render order = back to front so later elements sit in front.
+        Index finger hot-spot is at SVG (9.25, 0) → CSS offset left-9, top+0.
+      */}
+      <svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+        {/* Pinky — shortest, furthest back, slightly desaturated */}
+        <rect x="22" y="13" width="6" height="9" rx="3" fill="#e8e6e3" stroke="#1e1e1e" strokeWidth="1.2"/>
+
+        {/* Ring finger */}
+        <rect x="17.5" y="10" width="6.5" height="12" rx="3.25" fill="#edecea" stroke="#1e1e1e" strokeWidth="1.3"/>
+
+        {/* Middle finger — nearly as tall as index */}
+        <rect x="12.5" y="6" width="7" height="15" rx="3.5" fill="#f3f1ef" stroke="#1e1e1e" strokeWidth="1.4"/>
+        <rect x="14" y="7.5" width="4" height="6" rx="2" fill="#e8e6e3"/>
+
+        {/* Palm — drawn after back fingers so it buries their bases */}
+        <path
+          d="M4 17 Q3.5 24 5 30.5 Q8 37 15.5 37 Q23 37 26.5 32 Q28.5 27 27.5 22 Q26 17 22 16.5 L13 16.5 Q7.5 16.5 4 17 Z"
+          fill="white"
+          stroke="#1e1e1e"
+          strokeWidth="1.5"
+        />
+
+        {/* Index finger — drawn last so it sits in front of palm */}
         <g
           style={{
             transform: clicking ? 'translateY(4px)' : 'translateY(0px)',
             transition: 'transform 80ms ease-in',
           }}
         >
-          <rect x="8.5" y="0" width="8" height="18" rx="4" fill="white" stroke="#1e1e1e" strokeWidth="1.5" />
-          <rect x="10" y="1.5" width="5" height="8.5" rx="2.5" fill="#f0eeec" />
+          <rect x="5" y="0" width="8.5" height="19.5" rx="4.25" fill="white" stroke="#1e1e1e" strokeWidth="1.5"/>
+          {/* Fingernail / highlight */}
+          <rect x="6.5" y="1.5" width="5" height="9" rx="2.5" fill="#f0eeec"/>
         </g>
-        {/* Palm body */}
-        <path
-          d="M4 15.5 Q4 13 9 13 L20 13 Q24 13 24 17 L24 29 Q24 33 20 33 L8.5 33 Q4.5 33 4.5 29 Z"
-          fill="white"
-          stroke="#1e1e1e"
-          strokeWidth="1.5"
-        />
-        {/* Middle finger knuckle */}
-        <path
-          d="M20 13 L20 10 Q20 7.5 22 7.5 L22 13"
-          fill="white"
-          stroke="#1e1e1e"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        {/* Ring finger knuckle */}
-        <path
-          d="M22 13 L22 11.5 Q22 10 24 10 L24 13"
-          fill="white"
-          stroke="#1e1e1e"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
+
         {/* Thumb */}
         <path
-          d="M4.5 20 C4.5 20 2 19 2 22 C2 25 4.5 25 4.5 25"
+          d="M4.5 21 C4.5 21 2 20 2 23.5 C2 27 4.5 27 4.5 27"
           fill="white"
           stroke="#1e1e1e"
           strokeWidth="1.5"
           strokeLinecap="round"
         />
+
         {/* Palm crease */}
-        <line x1="8" y1="22" x2="21" y2="22" stroke="#e0dedd" strokeWidth="0.75" />
+        <line x1="7" y1="24" x2="22" y2="24" stroke="#dddbd9" strokeWidth="0.8"/>
       </svg>
     </div>
   )
