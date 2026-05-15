@@ -94,6 +94,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
           {nameEditing ? (
             <input
               autoFocus
+              data-tour="meal-name-input"
               className="flex-1 bg-slate-700 text-slate-100 text-sm font-semibold px-2 py-0.5 rounded border border-slate-500 focus:outline-none focus:border-violet-500 min-w-0"
               value={meal.name}
               onChange={(e) => onChange({ ...meal, name: e.target.value })}
@@ -181,7 +182,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                   const itemSizes = getPortionSize(item.food_id).sizes ?? null
                   const activeKey = itemSizes ? getSizeKey(item.food_id, Math.round(item.grams)) : null
                   return (
-                  <div key={item.id} className="flex items-center gap-2 px-3 py-1.5">
+                  <div key={item.id} data-food-name={item.food_name.toLowerCase()} className="flex items-center gap-2 px-3 py-1.5">
                     {/* Food name */}
                     <span
                       className="text-xs text-slate-200 flex-1 min-w-0 truncate"
@@ -218,6 +219,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                         srv
                       </button>
                       <button
+                        data-tour="mode-g"
                         onClick={() => updateItem(item.id, { mode: 'grams' })}
                         className={`px-1.5 py-0.5 transition-colors ${
                           item.mode === 'grams'
@@ -254,6 +256,7 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <input
                           type="number"
+                          data-tour="grams-input"
                           min="1"
                           step="1"
                           value={item.grams}

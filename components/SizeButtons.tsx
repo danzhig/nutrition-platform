@@ -22,6 +22,7 @@ export default function SizeButtons({ sizes, onSelect, activeKey, addedKey }: Pr
         return (
           <button
             key={key}
+            data-size-key={key}
             onClick={(e) => { e.stopPropagation(); onSelect(key, variant) }}
             title={`${variant.label} · ${variant.grams}g`}
             className={`w-6 h-5 flex items-center justify-center text-[10px] font-bold rounded transition-colors ${

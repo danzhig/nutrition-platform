@@ -499,6 +499,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
               <div className="px-3 pt-3 pb-2 border-b border-slate-700">
                 <input
                   type="text"
+                  data-tour="plan-name-input"
                   value={plan.name}
                   onChange={(e) => setPlan((p) => ({ ...p, name: e.target.value }))}
                   className="w-full bg-slate-700 border border-slate-600 rounded-md px-2.5 py-1.5 text-xs font-semibold text-slate-100 focus:outline-none focus:border-violet-500"
@@ -693,6 +694,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
               {presetCategories.map((cat) => (
                 <button
                   key={cat}
+                  data-preset-cat={cat}
                   onClick={() => setPresetCategory(cat)}
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium transition-colors ${
                     presetCategory === cat
@@ -765,6 +767,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
                 {filteredPresets.map((pm) => (
                   <button
                     key={pm.id}
+                    data-tour="preset-meal-item"
                     onClick={() => handleLoadPreset(pm)}
                     className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-slate-700/40 text-left transition-colors group"
                   >

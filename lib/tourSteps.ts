@@ -3,16 +3,22 @@ export interface TourStep {
   title: string
   body: string
   position: 'top' | 'bottom' | 'left' | 'right' | 'center'
-  // When set, the step auto-advances when this custom event fires (no Next button shown).
-  advanceOn?: string
+  // When set, Next executes these actions before advancing to the next step.
+  action?: TourActionStep[]
 }
+
+export type TourActionStep =
+  | { type: 'click'; selector: string }
+  | { type: 'type'; selector: string; text: string; charDelay?: number }
+  | { type: 'wait'; duration: number }
+  | { type: 'key'; selector: string; key: string }
 
 export const SALMON_MEAL_TOUR: TourStep[] = [
   // ── Welcome ────────────────────────────────────────────────────────────────
   {
     target: '[data-tour="day-planner-tab"]',
     title: 'Welcome to the Day Builder — Demo Tour',
-    body: "Let's build a Salmon with Mashed Potatoes meal together. Each step advances automatically once you complete the highlighted action. Click Next to begin.",
+    body: "Watch as a Salmon with Mashed Potatoes meal is built step by step. Click Next at any time to advance.",
     position: 'bottom',
   },
 
@@ -20,148 +26,220 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
   {
     target: '#tour-new-plan-btn',
     title: 'Start Fresh',
-    body: "First, let's clear any existing meals. Click 'New Plan' to start with a clean slate.",
+    body: "Clearing any existing meals so we start with a clean slate.",
     position: 'bottom',
-    advanceOn: 'np:tour:new-plan-clicked',
+    action: [
+      { type: 'click', selector: '#tour-new-plan-btn' },
+    ],
   },
 
   // ── Name the plan ──────────────────────────────────────────────────────────
   {
     target: '[data-tour="plan-name-btn"]',
     title: 'Name Your Plan',
-    body: "Click the Plan button to open the name editor. Type 'Example Plan', then click anywhere to close. Click Next when done.",
+    body: "Opening the plan editor and naming this plan 'Example Plan'.",
     position: 'bottom',
+    action: [
+      { type: 'click', selector: '[data-tour="plan-name-btn"]' },
+      { type: 'wait', duration: 350 },
+      { type: 'type', selector: '[data-tour="plan-name-input"]', text: 'Example Plan' },
+      { type: 'wait', duration: 300 },
+      { type: 'click', selector: '[data-tour="plan-name-btn"]' },
+      { type: 'wait', duration: 200 },
+    ],
   },
 
   // ── Build the meal ─────────────────────────────────────────────────────────
   {
     target: '[data-tour="add-meal-btn"]',
     title: 'Add a Meal',
-    body: "Click '+ Add Meal' to create a new meal slot.",
+    body: "Adding a new meal slot to the plan.",
     position: 'bottom',
-    advanceOn: 'np:tour:meal-added',
+    action: [
+      { type: 'click', selector: '[data-tour="add-meal-btn"]' },
+      { type: 'wait', duration: 200 },
+    ],
   },
   {
     target: '[data-tour="meal-name-btn"]',
     title: 'Name Your Meal',
-    body: "Click the meal name to edit it. Type whatever you like — for example 'Salmon & Mashed Potatoes' — then press Enter. Click Next when done.",
+    body: "Clicking the meal name and typing 'Salmon & Mashed Potatoes'.",
     position: 'bottom',
+    action: [
+      { type: 'click', selector: '[data-tour="meal-name-btn"]' },
+      { type: 'wait', duration: 250 },
+      { type: 'type', selector: '[data-tour="meal-name-input"]', text: 'Salmon & Mashed Potatoes' },
+      { type: 'wait', duration: 200 },
+      { type: 'key', selector: '[data-tour="meal-name-input"]', key: 'Enter' },
+      { type: 'wait', duration: 200 },
+    ],
   },
   {
     target: '[data-tour="meal-add-food-btn"]',
     title: 'Open the Food Browser',
-    body: "Click '+ Add food' to open the ingredient browser.",
+    body: "Opening the ingredient browser to start adding foods.",
     position: 'top',
-    advanceOn: 'np:tour:food-picker-opened',
+    action: [
+      { type: 'click', selector: '[data-tour="meal-add-food-btn"]' },
+      { type: 'wait', duration: 400 },
+    ],
   },
   {
     target: '[data-tour="food-picker-modal"]',
     title: 'Add Salmon',
-    body: "Type 'Salmon' in the search bar and click a salmon result to add it.",
+    body: "Searching for Atlantic Salmon and adding it to the meal.",
     position: 'right',
-    advanceOn: 'np:tour:food-added',
+    action: [
+      { type: 'type', selector: '[data-tour="food-picker-search"]', text: 'Salmon' },
+      { type: 'wait', duration: 600 },
+      { type: 'click', selector: '[data-food-name*="salmon"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="food-picker-modal"]',
     title: 'Add Potato',
-    body: "Clear the search, type 'Potato', and click 'Potato (raw)' to add it.",
+    body: "Searching for Potato and adding a medium portion.",
     position: 'right',
-    advanceOn: 'np:tour:food-added',
+    action: [
+      { type: 'type', selector: '[data-tour="food-picker-search"]', text: 'Potato' },
+      { type: 'wait', duration: 600 },
+      { type: 'click', selector: '[data-food-name*="potato"] [data-size-key="m"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="food-picker-modal"]',
     title: 'Add Olive Oil',
-    body: "Search for 'Olive Oil' and click it to add to the meal.",
+    body: "Searching for Olive Oil and adding it.",
     position: 'right',
-    advanceOn: 'np:tour:food-added',
+    action: [
+      { type: 'type', selector: '[data-tour="food-picker-search"]', text: 'Olive Oil' },
+      { type: 'wait', duration: 600 },
+      { type: 'click', selector: '[data-food-name*="olive oil"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="food-picker-modal"]',
     title: 'Add a Spice',
-    body: "Search for 'Black Pepper' (or any spice) and click it to add.",
+    body: "Searching for Black Pepper and adding it for seasoning.",
     position: 'right',
-    advanceOn: 'np:tour:food-added',
+    action: [
+      { type: 'type', selector: '[data-tour="food-picker-search"]', text: 'Black Pepper' },
+      { type: 'wait', duration: 600 },
+      { type: 'click', selector: '[data-food-name*="black pepper"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="food-picker-done-btn"]',
     title: 'Close the Food Browser',
-    body: "All four ingredients added! Click 'Done' to close the food browser.",
+    body: "All four ingredients added. Closing the food browser.",
     position: 'bottom',
-    advanceOn: 'np:tour:food-picker-closed',
+    action: [
+      { type: 'click', selector: '[data-tour="food-picker-done-btn"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="meal-items-list"]',
-    title: 'Reduce the Potato Portion',
-    body: "Find 'Potato' in the list. Click the 'g' button next to it to switch to grams mode, then change the value to 120 for a smaller portion. Click Next when done.",
+    title: 'Adjust the Potato Portion',
+    body: "Switching the Potato to grams mode and setting it to 120g.",
     position: 'right',
+    action: [
+      { type: 'click', selector: '[data-food-name*="potato"] [data-tour="mode-g"]' },
+      { type: 'wait', duration: 300 },
+      { type: 'type', selector: '[data-food-name*="potato"] [data-tour="grams-input"]', text: '120', charDelay: 120 },
+      { type: 'wait', duration: 200 },
+    ],
   },
   {
     target: '[data-tour="nutrition-sidebar"]',
     title: 'Your Nutrition Coverage',
-    body: "These %DV bars update in real time as you adjust ingredients — showing how your meal covers vitamins, minerals, and macros. Click Next to continue.",
+    body: "These %DV bars update in real time as you adjust ingredients — showing how your meal covers vitamins, minerals, and macros.",
     position: 'left',
   },
   {
     target: '[data-tour="save-template-btn"]',
     title: 'Save as a Template',
-    body: "Click 'Save template' to save this meal. You'll find it under Presets → My Templates for quick reuse.",
+    body: "Saving this meal as a reusable template. It will appear under Presets → My Templates.",
     position: 'bottom',
-    advanceOn: 'np:tour:template-saved',
+    action: [
+      { type: 'click', selector: '[data-tour="save-template-btn"]' },
+      { type: 'wait', duration: 600 },
+    ],
   },
 
   // ── Presets ────────────────────────────────────────────────────────────────
   {
     target: '[data-tour="presets-btn"]',
     title: 'Explore Preset Meals',
-    body: "The Presets panel has 113 curated meals across 12 categories. Click '⊞ Presets' to open it.",
+    body: "Opening the Presets panel — 113 curated meals across 12 categories.",
     position: 'bottom',
-    advanceOn: 'np:tour:presets-opened',
+    action: [
+      { type: 'click', selector: '[data-tour="presets-btn"]' },
+      { type: 'wait', duration: 400 },
+    ],
   },
   {
     target: '[data-tour="preset-categories"]',
     title: 'Filter by Category',
-    body: "These pills filter presets by meal type — Salads, High Protein, Breakfast, Keto, Soups, and more. Click any category to explore it. Click Next when ready.",
+    body: "These pills filter presets by type. Selecting High Protein to narrow the list.",
     position: 'bottom',
+    action: [
+      { type: 'click', selector: '[data-preset-cat="High Protein"]' },
+      { type: 'wait', duration: 400 },
+    ],
   },
   {
     target: '[data-tour="presets-list"]',
     title: 'Add a Preset Meal',
-    body: "Each preset shows a complement score — how well it fills your remaining nutritional gaps. Click any meal to add it to your day plan.",
+    body: "Each preset shows a complement score — how well it fills your remaining nutritional gaps. Adding the first one.",
     position: 'right',
-    advanceOn: 'np:tour:preset-loaded',
+    action: [
+      { type: 'click', selector: '[data-tour="preset-meal-item"]' },
+      { type: 'wait', duration: 400 },
+    ],
   },
   {
     target: '[data-tour="save-plan-btn"]',
     title: 'Save Your Plan',
-    body: "Click 'Save Plan' to save your full day plan. It will appear in the Plan dropdown so you can reload it any time.",
+    body: "Saving the full day plan so it can be reloaded any time.",
     position: 'bottom',
-    advanceOn: 'np:tour:plan-saved',
+    action: [
+      { type: 'click', selector: '[data-tour="save-plan-btn"]' },
+      { type: 'wait', duration: 600 },
+    ],
   },
 
   // ── Charts ─────────────────────────────────────────────────────────────────
   {
     target: '[data-tour="charts-view-tab"]',
     title: 'Open the Charts View',
-    body: "Now let's see a visual breakdown of your day's nutrition. Click '▦ Charts'.",
+    body: "Switching to the visual breakdown of your day's nutrition.",
     position: 'bottom',
-    advanceOn: 'np:tour:charts-opened',
+    action: [
+      { type: 'click', selector: '[data-tour="charts-view-tab"]' },
+      { type: 'wait', duration: 400 },
+    ],
   },
   {
     target: '[data-tour="nutrition-bar-chart"]',
     title: 'Nutrient Bar Chart',
-    body: "This chart shows every nutrient as a % of your Daily Value, colour-coded by category. Bars crossing the 100% line are highlighted. Hover any bar for the exact amount. Click Next to continue.",
+    body: "Every nutrient shown as % of Daily Value, colour-coded by category. Bars crossing 100% are highlighted. Hover any bar for the exact amount.",
     position: 'bottom',
   },
   {
     target: '[data-tour="nutrition-radar-chart"]',
     title: 'Category Radar',
-    body: "The radar shows average %DV across five food categories — Macronutrients, Vitamins, Minerals, Fatty Acids, and Amino Acids. Gradient edges indicate where coverage is strong or weak. Click Next.",
+    body: "Average %DV across five food categories. Gradient edges show where coverage is strong or weak.",
     position: 'right',
   },
   {
     target: '[data-tour="nutrition-donut-chart"]',
     title: 'Macro Donut',
-    body: "The inner ring shows your caloric split across Net Carbs, Fibre, Protein, and Fat. The outer ring shows which foods contribute most to each macro. Click Next to finish.",
+    body: "Inner ring: caloric split across Net Carbs, Fibre, Protein, and Fat. Outer ring: which foods contribute most to each macro.",
     position: 'left',
   },
 
@@ -169,7 +247,7 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
   {
     target: null,
     title: "That's the full tour!",
-    body: "You've seen the Day Builder, Preset Meals, Plan saving, and Charts. The demo data will be cleared now so you start with a clean slate. Click Finish to exit.",
+    body: "You've seen the Day Builder, Preset Meals, Plan saving, and Charts. The demo data will be cleared now so you start fresh. Click Finish to exit.",
     position: 'center',
   },
 ]

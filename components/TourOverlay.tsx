@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import type { TourStep } from '@/lib/tourSteps'
+import { useState, useEffect, useCallback } from 'react'
+import type { TourStep, TourActionStep } from '@/lib/tourSteps'
+import DemoCursor from './DemoCursor'
 
 const SPOT_PAD = 10
 const TOOLTIP_W = 300
@@ -19,21 +20,97 @@ interface Props {
   onEnd: () => void
 }
 
+// ── Action runner utilities ────────────────────────────────────────────────
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms))
+}
+
+function setNativeValue(el: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
+  setter?.call(el, value)
+  el.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+async function getCenterOf(selector: string): Promise<{ x: number; y: number } | null> {
+  for (let i = 0; i < 10; i++) {
+    const el = document.querySelector(selector) as HTMLElement | null
+    if (el) {
+      el.scrollIntoView({ behavior: 'instant', block: 'nearest' })
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 || r.height > 0) {
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+      }
+    }
+    await sleep(120)
+  }
+  return null
+}
+
+type CursorControls = {
+  move: (x: number, y: number) => void
+  setClicking: (v: boolean) => void
+}
+
+async function executeAction(actionSteps: TourActionStep[], cursor: CursorControls) {
+  for (const s of actionSteps) {
+    if (s.type === 'click') {
+      const pos = await getCenterOf(s.selector)
+      if (!pos) continue
+      cursor.move(pos.x, pos.y)
+      await sleep(500)
+      cursor.setClicking(true)
+      await sleep(100)
+      ;(document.querySelector(s.selector) as HTMLElement | null)?.click()
+      await sleep(100)
+      cursor.setClicking(false)
+      await sleep(200)
+
+    } else if (s.type === 'type') {
+      const pos = await getCenterOf(s.selector)
+      if (!pos) continue
+      cursor.move(pos.x, pos.y)
+      await sleep(500)
+      cursor.setClicking(true)
+      await sleep(80)
+      const el = document.querySelector(s.selector) as HTMLInputElement | null
+      if (!el) { cursor.setClicking(false); continue }
+      el.click()
+      el.focus()
+      setNativeValue(el, '')
+      cursor.setClicking(false)
+      await sleep(150)
+      for (const char of s.text) {
+        setNativeValue(el, el.value + char)
+        await sleep(s.charDelay ?? 75)
+      }
+      await sleep(200)
+
+    } else if (s.type === 'wait') {
+      await sleep(s.duration)
+
+    } else if (s.type === 'key') {
+      const el = document.querySelector(s.selector) as HTMLElement | null
+      el?.dispatchEvent(new KeyboardEvent('keydown', { key: s.key, bubbles: true, cancelable: true }))
+      await sleep(150)
+    }
+  }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────
+
 export default function TourOverlay({ steps, onEnd }: Props) {
   const [stepIdx, setStepIdx] = useState(0)
   const [spotBox, setSpotBox] = useState<SpotBox | null>(null)
+  const [running, setRunning] = useState(false)
+  const [cursorX, setCursorX] = useState(-200)
+  const [cursorY, setCursorY] = useState(-200)
+  const [cursorClicking, setCursorClicking] = useState(false)
 
   const step = steps[stepIdx]
 
-  // Keep a ref to stepIdx so the master event listener always sees the current value
-  const stepIdxRef = useRef(stepIdx)
-  useEffect(() => { stepIdxRef.current = stepIdx }, [stepIdx])
-
   const updateSpot = useCallback(() => {
-    if (!step?.target) {
-      setSpotBox(null)
-      return
-    }
+    if (!step?.target) { setSpotBox(null); return }
     const measure = (attemptsLeft: number) => {
       const el = document.querySelector(step.target!) as HTMLElement | null
       if (!el) {
@@ -51,7 +128,6 @@ export default function TourOverlay({ steps, onEnd }: Props) {
           height: r.height + SPOT_PAD * 2,
         })
       } else if (attemptsLeft > 0) {
-        // Element in DOM but not yet laid out — retry
         setTimeout(() => measure(attemptsLeft - 1), 100)
       } else {
         setSpotBox(null)
@@ -60,7 +136,6 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     measure(8)
   }, [step?.target])
 
-  // Reposition spotlight when step changes or on scroll/resize
   useEffect(() => {
     const timer = setTimeout(updateSpot, 150)
     window.addEventListener('resize', updateSpot)
@@ -72,26 +147,23 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     }
   }, [updateSpot])
 
-  // Register ALL advance-event listeners once on mount so there is never a gap
-  // between a step becoming active and its listener being ready.
-  useEffect(() => {
-    function masterHandler(e: Event) {
-      const current = steps[stepIdxRef.current]
-      if (current?.advanceOn === e.type) {
-        setStepIdx((i) => (i < steps.length - 1 ? i + 1 : i))
-      }
+  async function goNext() {
+    if (running) return
+    const current = steps[stepIdx]
+    if (current?.action && current.action.length > 0) {
+      setRunning(true)
+      await executeAction(current.action, {
+        move: (x, y) => { setCursorX(x); setCursorY(y) },
+        setClicking: setCursorClicking,
+      })
+      setRunning(false)
     }
-    const unique = [...new Set(steps.map((s) => s.advanceOn).filter(Boolean))] as string[]
-    unique.forEach((ev) => window.addEventListener(ev, masterHandler))
-    return () => unique.forEach((ev) => window.removeEventListener(ev, masterHandler))
-  }, [steps])
-
-  function goNext() {
     if (stepIdx < steps.length - 1) setStepIdx((i) => i + 1)
     else onEnd()
   }
 
   function goPrev() {
+    if (running) return
     if (stepIdx > 0) setStepIdx((i) => i - 1)
   }
 
@@ -99,7 +171,6 @@ export default function TourOverlay({ steps, onEnd }: Props) {
   const isLast = stepIdx === steps.length - 1
   const totalContentSteps = steps.length - 1
   const displayStep = Math.min(stepIdx + 1, totalContentSteps)
-  const isAutoAdvance = !!step?.advanceOn
 
   const vpW = typeof window !== 'undefined' ? window.innerWidth : 1200
   const vpH = typeof window !== 'undefined' ? window.innerHeight : 800
@@ -109,12 +180,10 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     <>
       {/* Dark backdrop when no spotlight target */}
       {!spotBox && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 9996, pointerEvents: 'none' }}
-        />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 9996, pointerEvents: 'none' }} />
       )}
 
-      {/* Spotlight ring — box-shadow creates the backdrop outside the ring */}
+      {/* Spotlight ring */}
       {spotBox && (
         <div
           style={{
@@ -145,36 +214,28 @@ export default function TourOverlay({ steps, onEnd }: Props) {
         }}
         className="bg-slate-800 border border-violet-500/70 rounded-xl shadow-2xl shadow-black/70 p-4"
       >
-        {/* Header row */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">
             {isLast ? 'Complete' : `Step ${displayStep} of ${totalContentSteps}`}
           </span>
-          <button
-            onClick={onEnd}
-            className="text-slate-500 hover:text-slate-300 text-[11px] transition-colors"
-          >
+          <button onClick={onEnd} className="text-slate-500 hover:text-slate-300 text-[11px] transition-colors">
             ✕ End tour
           </button>
         </div>
 
-        {/* Title */}
         <h3 className="text-sm font-bold text-white mb-1.5">{step?.title}</h3>
-
-        {/* Body */}
         <p className="text-xs text-slate-300 leading-relaxed mb-4">{step?.body}</p>
 
-        {/* Navigation */}
         <div className="flex items-center justify-between">
           <button
             onClick={goPrev}
-            disabled={isFirst}
+            disabled={isFirst || running}
             className="text-xs px-3 py-1.5 rounded-md border border-slate-600 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             ← Back
           </button>
-          {isAutoAdvance ? (
-            <span className="text-[11px] text-slate-500 italic">Complete the action above ↑</span>
+          {running ? (
+            <span className="text-[11px] text-slate-500 italic animate-pulse">Running…</span>
           ) : (
             <button
               onClick={goNext}
@@ -185,6 +246,9 @@ export default function TourOverlay({ steps, onEnd }: Props) {
           )}
         </div>
       </div>
+
+      {/* Animated hand cursor */}
+      <DemoCursor x={cursorX} y={cursorY} clicking={cursorClicking} />
     </>
   )
 }

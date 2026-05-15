@@ -242,6 +242,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                   return (
                     <div
                       key={food.food_id}
+                      data-food-name={food.food_name.toLowerCase()}
                       className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-slate-700"
                     >
                       <div className="flex-1 min-w-0">
@@ -267,6 +268,7 @@ export default function FoodPickerModal({ foods, onAdd, onClose, currentMeals, n
                 return (
                   <button
                     key={food.food_id}
+                    data-food-name={food.food_name.toLowerCase()}
                     onClick={() => handleAdd(food)}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group ${
                       added ? 'bg-violet-900/40' : 'hover:bg-slate-700'
