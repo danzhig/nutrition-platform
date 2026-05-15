@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { HeatmapData, FoodRow, NutrientMeta } from '@/types/nutrition'
+import type { AppData, FoodRow, NutrientMeta } from '@/types/nutrition'
 
 const PAGE_SIZE = 1000
 
@@ -22,7 +22,7 @@ const NUTRIENT_SELECT = `
   )
 ` as const
 
-export async function fetchHeatmapData(): Promise<HeatmapData> {
+export async function fetchAppData(): Promise<AppData> {
   // Get total row count first, then fetch all pages in parallel
   const { count, error: countError } = await supabase
     .from('food_nutrients')
@@ -51,7 +51,7 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
   const data = allRows
   if (data.length === 0) throw new Error('No data returned from Supabase')
 
-  // Reshape flat rows into structured HeatmapData
+  // Reshape flat rows into structured AppData
   const foodMap = new Map<number, FoodRow>()
   const nutrientMap = new Map<number, NutrientMeta>()
   const columnValues = new Map<number, number[]>() // all non-null values per nutrient column
@@ -102,8 +102,7 @@ export async function fetchHeatmapData(): Promise<HeatmapData> {
     }
   }
 
-  // Compute p10/p90 per column — prevents outliers from monopolising the colour scale.
-  // Values below p10 clamp to deepest red; values above p90 clamp to deepest green.
+  // Compute p10/p90 per column (retained in AppData shape; coloring removed from UI).
   const columnRanges: Record<number, { min: number; max: number }> = {}
   for (const [id, values] of columnValues) {
     values.sort((a, b) => a - b)

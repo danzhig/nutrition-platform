@@ -1,6 +1,6 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-15 (session 22)
+**Last updated:** 2026-05-15 (session 23)
 **Current phase: Diet Evaluator — ALL 10 PHASES COMPLETE**
 
 ---
@@ -35,16 +35,16 @@ A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, s
 nutrition-platform/
 ├── app/
 │   ├── layout.tsx              ← Root layout; wraps children in <AuthProvider>
-│   ├── page.tsx                ← Home: fetches heatmap data server-side, renders <AppShell>; revalidate = 300
+│   ├── page.tsx                ← Home: fetches app data server-side via fetchAppData(), renders <AppShell>; revalidate = 300
 │   └── globals.css
 ├── components/
 │   ├── AppShell.tsx            ← Client shell: global DV profile state, header (title + DV button + auth), section with MainView
 │   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar; passes rdaProfile down
-│   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison | Meal Comparison); passes rdaProfile down
-│   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving; receives rdaProfile from global
-│   ├── HeatmapCell.tsx         ← Single cell: value display + tooltip; DV mode shows % DV; no cell coloring
+│   ├── DataView.tsx            ← Data View: second-level tabs (Data Table | Charts | Food Comparison | Meal Comparison); passes rdaProfile down
+│   ├── DataTable.tsx           ← Orchestrator: filter state, sort, per-serving; receives rdaProfile from global
+│   ├── DataCell.tsx            ← Single cell: value display + tooltip; DV mode shows % DV; no cell coloring
 │   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views (DV profile removed — now global)
-│   ├── NutrientSidebar.tsx     ← Vertical avg-profile column (file exists but no longer rendered — removed in session 22)
+│   ├── NutrientSidebar.tsx     ← Vertical avg-profile column (file exists but not rendered — removed in session 22)
 │   ├── AuthProvider.tsx        ← React context: user, loading, signIn, signUp, signOut
 │   ├── AuthModal.tsx           ← Login/signup modal
 │   ├── AuthButton.tsx          ← Header button
@@ -78,8 +78,8 @@ nutrition-platform/
 │   └── DietSuggestionsPanel.tsx ← Suggestions: horizontal scroll row of up to 10 food cards; "↑ Nutrient" gap tags; [+ Add] button; four states (no-profile / no-selection / all-fulfilled / card list)
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
-│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all (P10/P90 ranges still returned but unused since session 22)
-│   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl) — unused since session 22; only referenced by NutrientSidebar.tsx
+│   ├── fetchAppData.ts         ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all; returns AppData (P10/P90 ranges retained in shape but unused since session 22)
+│   ├── colorScale.ts           ← Relative color scale (P10/P90 → hsl) — unused since session 22; only referenced by NutrientSidebar.tsx
 │   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
 │   ├── portionSizes.ts         ← Per-food serving sizes (all 253 foods, keyed by food_id) + S/M/L size variants ← CRITICAL
 │   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
@@ -96,7 +96,7 @@ nutrition-platform/
 │   ├── dietProfile.ts          ← RATING_MULTIPLIERS/LABELS; FoodNutrientMap; DietNutrientResult; computeDietProfile() engine
 │   └── dietSuggestions.ts      ← computeDietSuggestions(): scores non-selected foods by gap-fill ratio; SuggestedFood type; returns top 10
 ├── types/
-│   ├── nutrition.ts            ← HeatmapRow, FoodRow, NutrientMeta, HeatmapData, etc.
+│   ├── nutrition.ts            ← DataRow, FoodRow, NutrientMeta, AppData, etc.
 │   ├── meals.ts                ← MealItem, Meal, ActiveMealPlan
 │   └── calendar.ts             ← FoodLogEntryType, FoodLogItem, FoodLogEntry, NewFoodLogEntry
 ├── sql/                        ← schema.sql — schema reference (reflects live DB structure)
@@ -134,7 +134,7 @@ nutrition-platform/
 | **7 new nutrients (IDs 53–59)** | ✅ Live — Biotin (B7, mcg, Vitamin), EPA (mg, Fatty Acid), DHA (mg, Fatty Acid), Lutein & Zeaxanthin (mcg, Vitamin — nutrient definition only, food data deferred), Lycopene (mg, Vitamin), Betaine (mg, Amino Acid), CoQ10 (mg, Food Metric); full `body_role` / `deficiency_symptoms` / `excess_symptoms` tooltip text in DB; USDA FDC values for all 253 foods (6 of 7 nutrients); RDA targets in all 4 DV profiles; `NUTRIENT_BEHAVIORS` updated in `rdaProfiles.ts` |
 | **Diet Evaluator — Phase 1** | ✅ Complete — `dailyWeightG: number` added to `RDAProfile` interface and all 4 built-in profiles (male-avg: 1700, female-avg: 1500, male-lowcarb: 2000, female-lowcarb: 1800); `getProfile()` extracts `dailyWeightG` from custom values (defaults to 1700); DVProfilePanel custom editor shows "Daily Food Weight (g)" input with 500–5000 validation in both inline and overlay modes; `seedFrom()` copies `dailyWeightG` from built-in profiles; AppShell saved-profile case includes `dailyWeightG` |
 | **Diet Evaluator — Phase 2** | ✅ Live — "Diet" tab added to MainView after Calendar (`type Tab` extended, localStorage key `np:mainTab` updated); `DietView.tsx` shell renders three-column top section + Category Overview + Suggestions placeholder rows; `lib/dietStorage.ts` created with `loadDietList(userId?)` / `saveDietList(foods, userId?)` / `clearLocalDietList()` using localStorage + async Supabase upsert; `user_diet_lists` Supabase table deployed with RLS (owner read/write, unique index on user_id) |
-| **Diet Evaluator — Phase 3** | ✅ Live — `DietFoodBrowser.tsx` built: 16-category accordion (FOOD_CATEGORY_LIST order), all collapsed by default; search bar filters food names across all categories and auto-expands matching ones (clearing restores collapsed state); food rows show violet checkmark/tint when selected; category headers show "(N selected)" count; click-to-add / click-to-remove wired to DietView state; `DietView` now accepts `data: HeatmapData` prop (MainView updated) to feed food list to browser and future phases |
+| **Diet Evaluator — Phase 3** | ✅ Live — `DietFoodBrowser.tsx` built: 16-category accordion (FOOD_CATEGORY_LIST order), all collapsed by default; search bar filters food names across all categories and auto-expands matching ones (clearing restores collapsed state); food rows show violet checkmark/tint when selected; category headers show "(N selected)" count; click-to-add / click-to-remove wired to DietView state; `DietView` now accepts `data: AppData` prop (MainView updated) to feed food list to browser and future phases |
 | **Diet Evaluator — Phase 4** | ✅ Live — `lib/dietProfile.ts` created with `RATING_MULTIPLIERS` and `RATING_LABELS` (frequency language: Rarely/Occasionally/Sometimes/Often/Staple); `DietRatingControl.tsx`: 5-pip selector (1–5), active pip violet-filled, inactive outlined, hover tooltip shows frequency label above control; `DietSelectedFoods.tsx`: scrollable food list (food name + rating control + × remove), empty-state prompt, footer with food count + "Clear all"; `DietView` updated with `foodMeta` Map and `dailyWeightG` fallback (1700 if no profile) |
 | **Diet Evaluator — Phase 5** | ✅ Live — `computeDietProfile()` added to `lib/dietProfile.ts`; `FoodNutrientMap` type (foodId → nutrientId → value_per_100g); `DietNutrientResult` interface (adds `nutrientCategory` for Phase 7 grouping); engine iterates all nutrients, resolves RDA from profile then `FOOD_METRIC_TARGETS` fallback, skips null-target nutrients, uses `getPortionSize()` + `RATING_MULTIPLIERS`, applies ≥5% DV rated-contribution threshold for `sourcesCount`; results sorted by `NUTRIENT_GROUP_LIST` category order; `DietView` wires `foodNutrients` FoodNutrientMap and `dietResults` useMemo (keyed on selectedFoods + rdaProfile); hand-verified: chicken breast 174g × rating 3 → 96.3% protein DV |
 | **Diet Evaluator — Phase 6** | ✅ Live — `DietNutrientPanel.tsx` created; scrollable nutrient bar list with diet-optimized color scale (`< 30%` red · `30–70%` amber · `≥ 70%` green; `normal-with-ul` nutrients use `rdaCellColor` UL logic; `limit` nutrients use `rdaCellColor` limit color); filter toggles `[All][Gaps][Fulfilled]` (gap threshold = 70% DV); sort dropdown `Gap-first` (ascending pctDV) or `Category` (canonical order); source count badge per row (0 → red, 1 → amber, 2+ → green); clicking a row with `body_role` opens existing `NutrientInfoCard` flyout (meals=[]); filter + sort state persisted to `np:diet:filter` + `np:diet:sort` in localStorage; empty states for no-profile and no-selection; `DietView` wired: Panel 3 placeholder replaced, `allNutrients`/`foodsById`/`hasSelection`/`hasProfile` props passed down |
@@ -476,7 +476,7 @@ When the tour ends, `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` 
 | Framework | Next.js 16 App Router | Native Vercel target; server + client components |
 | Styling | Tailwind CSS | Rapid color-scale and layout work |
 | Data client | `@supabase/supabase-js` | Auto-typed from schema; anon key safe for public read |
-| Heatmap normalization | Per-column P10/P90 percentile (computed but no longer used — cell coloring removed in session 22) | N/A — Data View is now a plain sortable/filterable table |
+| Data Table normalization | Per-column P10/P90 percentile (computed in fetchAppData but no longer used — cell coloring removed in session 22) | N/A — Data Table is a plain sortable/filterable viewer |
 | NULL vs 0 | NULL = unavailable; 0 = genuinely none | Critical for correct color encoding |
 | Auth | Supabase Auth (email/password) | Native to existing Supabase project; no extra service |
 | User data storage | JSONB columns | Flexible schema for RDA values, filter state, meal plans |
@@ -662,6 +662,6 @@ SELECT name FROM nutrients ORDER BY name;
 ## Cold-Start Instructions
 
 **To pick up where we left off:**
-> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 257 foods × 59 nutrients (58 with food data). Three live features: interactive heatmap, meal/day planner, and calendar food log tracker. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 257 foods × 59 nutrients (58 with food data). Four live features: Data View (sortable/filterable table + charts), meal/day planner, calendar food log tracker, and Diet Evaluator. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
 
 **IMPORTANT:** Before adding any food, nutrient, or food category, read the **Data Maintenance** section above — multiple files must be updated in sync or things silently break.

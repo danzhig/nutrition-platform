@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nutrition Platform",
-  description: "Interactive heatmap of 212 foods × 39 nutrients. Explore nutrient density across food categories.",
+  description: "Explore nutrient density across 257 foods × 59 nutrients. Sortable data table, meal planner, calendar log, and diet evaluator.",
 };
 
 export default function RootLayout({

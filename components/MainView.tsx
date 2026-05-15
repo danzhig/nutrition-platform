@@ -1,6 +1,6 @@
 'use client'
 
-import type { HeatmapData } from '@/types/nutrition'
+import type { AppData } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import DataView from './DataView'
 import MealPlanner from './MealPlanner'
@@ -10,7 +10,7 @@ import DietView from './DietView'
 type Tab = 'data' | 'meals' | 'calendar' | 'diet'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
   rdaSelection: string
   onRdaSelectionChange: (sel: string) => void

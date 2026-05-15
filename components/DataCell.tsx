@@ -9,7 +9,7 @@ interface Props {
   ulValue?: number
 }
 
-export default function HeatmapCell({
+export default function DataCell({
   value,
   unit,
   nutrientName,

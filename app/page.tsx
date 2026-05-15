@@ -1,9 +1,9 @@
-import { fetchHeatmapData } from '@/lib/fetchHeatmapData'
+import { fetchAppData } from '@/lib/fetchAppData'
 import AppShell from '@/components/AppShell'
 
 export const revalidate = 300
 
 export default async function Home() {
-  const data = await fetchHeatmapData()
+  const data = await fetchAppData()
   return <AppShell data={data} />
 }

@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, Cell, ResponsiveContainer,
 } from 'recharts'
-import type { HeatmapData, NutrientMeta, FoodRow } from '@/types/nutrition'
+import type { AppData, NutrientMeta, FoodRow } from '@/types/nutrition'
 import { PORTION_SIZES } from '@/lib/portionSizes'
 import {
   NUTRIENT_BEHAVIORS,
@@ -16,7 +16,7 @@ import type { RDAProfile } from '@/lib/rdaProfiles'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
 }
 

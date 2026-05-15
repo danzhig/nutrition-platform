@@ -6,13 +6,13 @@ import CalendarMonthGrid from './CalendarMonthGrid'
 import CalendarWeekList from './CalendarWeekList'
 import CalendarDayPanel from './CalendarDayPanel'
 import CalendarAddModal from './CalendarAddModal'
-import type { HeatmapData } from '@/types/nutrition'
+import type { AppData } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import type { FoodLogEntry } from '@/types/calendar'
 import { getEntriesForDateRange } from '@/lib/foodLogStorage'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
 }
 

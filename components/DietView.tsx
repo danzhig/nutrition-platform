@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import type { HeatmapData } from '@/types/nutrition'
+import type { AppData } from '@/types/nutrition'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import type { DietFood } from '@/lib/dietStorage'
 import { loadDietList, saveDietList, clearLocalDietList } from '@/lib/dietStorage'
@@ -20,7 +20,7 @@ import DietCategoryCards from './DietCategoryCards'
 import DietSuggestionsPanel from './DietSuggestionsPanel'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
 }
 

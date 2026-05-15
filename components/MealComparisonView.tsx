@@ -5,7 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, Cell, ResponsiveContainer,
 } from 'recharts'
-import type { HeatmapData, NutrientMeta, FoodRow } from '@/types/nutrition'
+import type { AppData, NutrientMeta, FoodRow } from '@/types/nutrition'
 import {
   NUTRIENT_BEHAVIORS,
   FOOD_METRIC_TARGETS,
@@ -21,7 +21,7 @@ import type { SavedMeal } from '@/lib/savedMealStorage'
 import { buildJuiceFactorMap } from '@/lib/juiceFactors'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
 }
 

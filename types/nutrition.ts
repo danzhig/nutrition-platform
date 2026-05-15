@@ -1,5 +1,5 @@
-// One row as returned by the heatmap query
-export interface HeatmapRow {
+// One row as returned by the data query
+export interface DataRow {
   food_id: number
   food_name: string
   category: string
@@ -29,11 +29,11 @@ export interface NutrientMeta {
   excess_symptoms?: string | null
 }
 
-// Fully shaped data ready for the heatmap component
-export interface HeatmapData {
+// Fully shaped app data fetched server-side
+export interface AppData {
   foods: FoodRow[]
   nutrients: NutrientMeta[]
-  // Per-nutrient min/max for colour normalisation
+  // Per-nutrient min/max (computed but unused since coloring was removed)
   columnRanges: Record<number, { min: number; max: number }>
 }
 

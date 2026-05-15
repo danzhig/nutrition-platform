@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
+import type { AppData, NutrientCategory } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import type { RDAProfile } from '@/lib/rdaProfiles'
@@ -9,16 +9,15 @@ import { NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import type { SavedFilterSet } from '@/lib/filterSetStorage'
 import { loadFilterSets, saveFilterSet, deleteFilterSet } from '@/lib/filterSetStorage'
 import { useAuth } from './AuthProvider'
-import HeatmapCell from './HeatmapCell'
+import DataCell from './DataCell'
 import FilterPanel from './FilterPanel'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
 }
 
-
-export default function HeatmapTable({ data, rdaProfile }: Props) {
+export default function DataTable({ data, rdaProfile }: Props) {
   // Filter / view state
   const [selectedFoods, setSelectedFoods] = useState<string[]>([...FOOD_CATEGORY_LIST])
   const [selectedNutrients, setSelectedNutrients] = useState<NutrientCategory[]>([...ALL_NUTRIENT_CATEGORIES])
@@ -236,7 +235,7 @@ export default function HeatmapTable({ data, rdaProfile }: Props) {
                       const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
 
                       return (
-                        <HeatmapCell
+                        <DataCell
                           key={n.nutrient_id}
                           value={value}
                           unit={n.unit}

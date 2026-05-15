@@ -11,13 +11,13 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts'
-import type { HeatmapData } from '@/types/nutrition'
+import type { AppData } from '@/types/nutrition'
 import { PORTION_SIZES } from '@/lib/portionSizes'
 import { FOOD_CATEGORY_LIST } from '@/lib/filterConstants'
 import { CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from '@/lib/categoryColors'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
 }
 
 interface DotData {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from './AuthProvider'
-import type { HeatmapData } from '@/types/nutrition'
+import type { AppData } from '@/types/nutrition'
 import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
@@ -20,7 +20,7 @@ const LS_RDA_SEL = 'np:global-rda-selection'
 const LS_CUSTOM_RDA = 'np:global-custom-rda'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
 }
 
 export default function AppShell({ data }: Props) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import type { HeatmapData, FoodRow } from '@/types/nutrition'
+import type { AppData, FoodRow } from '@/types/nutrition'
 import type { ActiveMealPlan, Meal } from '@/types/meals'
 import type { SavedMealPlan } from '@/lib/mealStorage'
 import { loadMealPlans, createMealPlan, updateMealPlan, deleteMealPlan } from '@/lib/mealStorage'
@@ -18,7 +18,7 @@ import MealNutritionSidebar from './MealNutritionSidebar'
 import MealNutritionChart from './MealNutritionChart'
 
 interface Props {
-  data: HeatmapData
+  data: AppData
   rdaProfile: RDAProfile | null
   rdaSelection: string
   onRdaSelectionChange: (sel: string) => void
