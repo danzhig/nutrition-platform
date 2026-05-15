@@ -52,49 +52,53 @@ type CursorControls = {
   setClicking: (v: boolean) => void
 }
 
-async function executeAction(actionSteps: TourActionStep[], cursor: CursorControls) {
+async function executeAction(
+  actionSteps: TourActionStep[],
+  cursor: CursorControls,
+  sleepFn: (ms: number) => Promise<void>,
+) {
   for (const s of actionSteps) {
     if (s.type === 'click') {
       const pos = await getCenterOf(s.selector)
       if (!pos) continue
       cursor.move(pos.x, pos.y)
-      await sleep(500)
+      await sleepFn(500)
       cursor.setClicking(true)
-      await sleep(100)
+      await sleepFn(100)
       ;(document.querySelector(s.selector) as HTMLElement | null)?.click()
-      await sleep(100)
+      await sleepFn(100)
       cursor.setClicking(false)
-      await sleep(200)
+      await sleepFn(200)
 
     } else if (s.type === 'type') {
       const pos = await getCenterOf(s.selector)
       if (!pos) continue
       cursor.move(pos.x, pos.y)
-      await sleep(500)
+      await sleepFn(500)
       cursor.setClicking(true)
-      await sleep(80)
+      await sleepFn(80)
       const el = document.querySelector(s.selector) as HTMLInputElement | null
       if (!el) { cursor.setClicking(false); continue }
       el.click()
       el.focus()
       setNativeValue(el, '')
       cursor.setClicking(false)
-      await sleep(150)
+      await sleepFn(150)
       let accumulated = ''
       for (const char of s.text) {
         accumulated += char
         setNativeValue(el, accumulated)
-        await sleep(s.charDelay ?? 75)
+        await sleepFn(s.charDelay ?? 75)
       }
-      await sleep(200)
+      await sleepFn(200)
 
     } else if (s.type === 'wait') {
-      await sleep(s.duration)
+      await sleepFn(s.duration)
 
     } else if (s.type === 'key') {
       const el = document.querySelector(s.selector) as HTMLElement | null
       el?.dispatchEvent(new KeyboardEvent('keydown', { key: s.key, bubbles: true, cancelable: true }))
-      await sleep(150)
+      await sleepFn(150)
     }
   }
 }
@@ -115,6 +119,24 @@ export default function TourOverlay({ steps, onEnd }: Props) {
   // previous step abort instead of calling setSpotBox(null) and killing the
   // spotlight that the new step already set.
   const spotVersionRef = useRef(0)
+
+  // Speed multiplier for animations — pressed Space while running sets this to 2.
+  // Reset to 1 after each action completes.
+  const speedRef = useRef(1)
+  const runningRef = useRef(false)
+  useEffect(() => { runningRef.current = running }, [running])
+
+  // Sleep that respects the current speed multiplier, polling every 16ms.
+  const fastSleep = useCallback((ms: number): Promise<void> => {
+    const start = Date.now()
+    return new Promise<void>((resolve) => {
+      function check() {
+        if (Date.now() - start >= ms / speedRef.current) resolve()
+        else setTimeout(check, 16)
+      }
+      setTimeout(check, 0)
+    })
+  }, [])
 
   const updateSpot = useCallback(() => {
     if (!step?.target) { setSpotBox(null); return }
@@ -169,10 +191,12 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     const current = steps[stepIdx]
     if (current?.action && current.action.length > 0) {
       setRunning(true)
-      await executeAction(current.action, {
-        move: (x, y) => { setCursorX(x); setCursorY(y) },
-        setClicking: setCursorClicking,
-      })
+      await executeAction(
+        current.action,
+        { move: (x, y) => { setCursorX(x); setCursorY(y) }, setClicking: setCursorClicking },
+        fastSleep,
+      )
+      speedRef.current = 1
       setRunning(false)
     }
     if (stepIdx < steps.length - 1) setStepIdx((i) => i + 1)
@@ -185,7 +209,11 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     function onKey(e: KeyboardEvent) {
       if (e.code === 'Space' && !e.repeat) {
         e.preventDefault()
-        goNextRef.current()
+        if (runningRef.current) {
+          speedRef.current = 2
+        } else {
+          goNextRef.current()
+        }
       }
     }
     window.addEventListener('keydown', onKey)
@@ -250,16 +278,19 @@ export default function TourOverlay({ steps, onEnd }: Props) {
         <h3 className="text-sm font-bold text-white mb-1.5">{step?.title}</h3>
         <p className="text-xs text-slate-300 leading-relaxed mb-4">{step?.body}</p>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
           {running ? (
             <span className="text-[11px] text-slate-500 italic animate-pulse">Running…</span>
           ) : (
-            <button
-              onClick={goNext}
-              className="text-xs px-4 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
-            >
-              {isLast ? 'Finish' : 'Next →'}
-            </button>
+            <>
+              <span className="text-[10px] text-slate-500">Press Space or Hit:</span>
+              <button
+                onClick={goNext}
+                className="text-xs px-4 py-1.5 rounded-md bg-violet-600 hover:bg-violet-500 text-white font-semibold transition-colors"
+              >
+                {isLast ? 'Finish' : 'Next →'}
+              </button>
+            </>
           )}
         </div>
       </div>

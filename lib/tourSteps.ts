@@ -179,6 +179,10 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     title: 'Nutrient Info Card',
     body: "Shows what the nutrient does in the body, deficiency symptoms if intake is low, and a breakdown of which foods in your meal are contributing to it.",
     position: 'right',
+    action: [
+      { type: 'click', selector: '[data-tour="nutrient-info-card"] button[aria-label="Close"]' },
+      { type: 'wait', duration: 300 },
+    ],
   },
   {
     target: '[data-tour="save-template-btn"]',
