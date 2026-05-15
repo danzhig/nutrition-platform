@@ -25,6 +25,14 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     advanceOn: 'np:tour:new-plan-clicked',
   },
 
+  // ── Name the plan ──────────────────────────────────────────────────────────
+  {
+    target: '[data-tour="plan-name-btn"]',
+    title: 'Name Your Plan',
+    body: "Click the Plan button to open the name editor. Type 'Example Plan', then click anywhere to close. Click Next when done.",
+    position: 'bottom',
+  },
+
   // ── Build the meal ─────────────────────────────────────────────────────────
   {
     target: '[data-tour="add-meal-btn"]',

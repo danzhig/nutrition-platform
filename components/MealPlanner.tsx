@@ -485,6 +485,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
         <div className="relative" ref={planDropdownRef}>
           <button
             onClick={() => setShowPlanDropdown((v) => !v)}
+            data-tour="plan-name-btn"
             className="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 transition-colors max-w-[220px]"
           >
             <span className="text-slate-500 text-[10px] flex-shrink-0">Plan</span>

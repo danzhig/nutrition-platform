@@ -144,7 +144,7 @@ nutrition-platform/
 | **Diet Evaluator — normalized weight redesign** | ✅ Live — replaced broken monthly-weight bar model with two-pass normalization: ratings × serving sizes determine each food's proportional claim on `dailyWeightG`, so %DV bars always reflect a coherent full day; `computeDietProfile()` returns `{results, compositions}` (compositions reused by stacked bar); `computeDietSuggestions()` updated to use normalized math; `DietCompositionBar.tsx` new component replacing old 4-band weight indicator — 10-color stacked bar with cursor-following tooltip per segment; `RATING_LABELS` updated to frequency language (Rarely / Occasionally / Sometimes / Often / Staple); `DietView` info icon on Panel 2 header explains the frequency-rating model |
 | **Diet Evaluator — per-food %DV distribution bar** | ✅ Live — clicking any nutrient row in Nutrient Coverage panel opens `NutrientInfoCard` with a stacked proportional bar at the top showing which selected foods contribute to that nutrient's %DV; "X% DV total" badge; any nutrient is clickable when foods are selected (not just those with `body_role`); `DietNutrientPanel` computes `computeFoodContribs()` at click time using normalized weights; `NutrientInfoCard` accepts optional `dietContribs` prop; `DietView` passes `selectedFoods` + `dailyWeightG` to `DietNutrientPanel` |
 | **Multi-select category checklist — Charts tab** | ✅ Live — replaces single-select category dropdowns in both Charts tab views with a checklist dropdown (Select all / Deselect all + per-category checkboxes); dimmed scatter dots now render as uniform dark slate instead of transparent category colors, so highlighted series stand out cleanly; legend items remain clickable to toggle individual categories; `NutrientRankingView.tsx` + `NutrientScatterPlot.tsx` updated |
-| **Guided demo tour system** | ✅ Live — `▶ Demo` button in global header; `lib/tourSteps.ts` defines `TourStep[]` with `target` (CSS selector), `title`, `body`, `position`, and optional `advanceOn` (custom event name); `components/TourOverlay.tsx` renders a spotlight ring (box-shadow backdrop + violet border) over each target element, with a floating tooltip card; steps auto-advance when `advanceOn` event fires, otherwise show a Next button; `pointer-events: none` on backdrop so live UI remains interactive; spotlight transitions between targets with 280ms CSS ease; tooltip is viewport-clamped and positions top/bottom/left/right/center relative to target; tab state lifted from `MainView` to `AppShell` so Demo button can switch tabs externally; `np:tour:reset-view` custom event resets MealPlanner to sidebar view on tour start; demo cleanup (`np:tour:demo-cleanup`) auto-deletes the template and plan created during the demo; currently has one tour: `SALMON_MEAL_TOUR` (20 steps covering meal creation, food picker, presets, charts) |
+| **Guided demo tour system** | ✅ Live — `▶ Demo` button in global header; `lib/tourSteps.ts` defines `TourStep[]` with `target` (CSS selector), `title`, `body`, `position`, and optional `advanceOn` (custom event name); `components/TourOverlay.tsx` renders a spotlight ring (box-shadow backdrop + violet border) over each target element, with a floating tooltip card; steps auto-advance when `advanceOn` event fires, otherwise show a Next button; `pointer-events: none` on backdrop so live UI remains interactive; spotlight transitions between targets with 280ms CSS ease; tooltip is viewport-clamped and positions top/bottom/left/right/center relative to target; tab state lifted from `MainView` to `AppShell` so Demo button can switch tabs externally; `np:tour:reset-view` custom event resets MealPlanner to sidebar view on tour start; demo cleanup (`np:tour:demo-cleanup`) auto-deletes the template and plan created during the demo; currently has one tour: `SALMON_MEAL_TOUR` (23 steps covering new-plan reset, plan naming, meal creation, food picker, presets, plan save, charts) |
 
 **Total foods: 257** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types)  
 **Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  
@@ -194,6 +194,7 @@ Components dispatch DOM `CustomEvent`s when key actions occur. `TourOverlay` lis
 
 | Event | Where dispatched | Used by step |
 |---|---|---|
+| `np:tour:new-plan-clicked` | `MealPlanner` New Plan button onClick | Start Fresh |
 | `np:tour:meal-added` | `MealPlanner.addMeal()` | Add Meal |
 | `np:tour:food-picker-opened` | `MealCard` "+ Add food" onClick | Open Food Browser |
 | `np:tour:food-added` | `FoodPickerModal.handleAdd()` / `handleAddSize()` | Each food addition |
@@ -203,6 +204,7 @@ Components dispatch DOM `CustomEvent`s when key actions occur. `TourOverlay` lis
 | `np:tour:preset-loaded` | `MealPlanner.handleLoadPreset()` | Select Preset |
 | `np:tour:plan-saved` | `MealPlanner.handleSave()` on success | Save Plan |
 | `np:tour:charts-opened` | `MealPlanner.switchView('chart')` | Switch to Charts |
+| `np:tour:meal-renamed` | `MealCard` meal name input `onBlur` | *(dispatched but no step uses it — orphaned; candidate for removal)* |
 | `np:tour:reset-view` | `AppShell.startDemo()` | (resets MealPlanner to sidebar) |
 | `np:tour:demo-cleanup` | `AppShell` TourOverlay `onEnd` | (MealPlanner cleanup listener) |
 
@@ -211,7 +213,7 @@ Components dispatch DOM `CustomEvent`s when key actions occur. `TourOverlay` lis
 When the tour ends (user clicks Finish on the last step), `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` has a `useEffect` listening for this that:
 1. Deletes `savedMeals[0]` (the template created during the demo — always newest-first)
 2. Deletes the current `plan.id` if it was saved during the demo
-3. Resets to a blank `newPlan()` and clears all draft localStorage keys
+3. Resets to a blank `newPlan()` and clears all draft localStorage keys: `np:draft-plan`, `np:draft-custom-rda`, `np:draft-snapshot`, `nutrition-active-plan-id`; resets `nutrition-view-mode` to `'sidebar'`
 
 **Important:** The cleanup useEffect has `[savedMeals, plan]` in its dependency array (no `updateSnapshot` since that `useCallback` is declared later in the file — inline the snapshot reset instead).
 
