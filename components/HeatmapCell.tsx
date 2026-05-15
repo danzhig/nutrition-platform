@@ -1,73 +1,49 @@
 'use client'
 
-import { cellColor, textColor } from '@/lib/colorScale'
-import { rdaCellColor, rdaTextColor } from '@/lib/rdaColorScale'
-import type { NutrientBehavior } from '@/lib/rdaProfiles'
-
 interface Props {
   value: number | null
-  min: number
-  max: number
   unit: string
   nutrientName: string
   foodName: string
-  // DV mode props — only provided when a profile is active
-  rdaTarget?: number | null   // daily target value; null = no target for this nutrient
-  behavior?: NutrientBehavior
-  ulValue?: number            // absolute upper limit (same unit as value)
+  rdaTarget?: number | null
+  ulValue?: number
 }
 
 export default function HeatmapCell({
   value,
-  min,
-  max,
   unit,
   nutrientName,
   foodName,
   rdaTarget,
-  behavior = 'normal',
   ulValue,
 }: Props) {
   const dvMode = rdaTarget != null && rdaTarget > 0
 
-  let bg: string
-  let fg: string
   let displayValue: string
   let tooltipText: string
 
   if (dvMode) {
     const pct = value !== null ? (value / rdaTarget!) * 100 : null
-    const ulPct = ulValue != null ? (ulValue / rdaTarget!) * 100 : undefined
-    bg = rdaCellColor(pct, behavior, ulPct)
-    fg = rdaTextColor(pct)
 
     if (pct === null) {
       displayValue = '—'
     } else if (pct >= 1000) {
       displayValue = '>999%'
-    } else if (pct >= 100) {
-      displayValue = `${Math.round(pct)}%`
     } else if (pct >= 10) {
       displayValue = `${Math.round(pct)}%`
     } else {
       displayValue = `${pct.toFixed(1)}%`
     }
 
-    const ulText = ulValue != null && pct !== null && pct > (ulValue / rdaTarget!) * 100
-      ? ` ⚠ over UL (${ulValue} ${unit})`
-      : ''
+    const ulText =
+      ulValue != null && pct !== null && pct > (ulValue / rdaTarget!) * 100
+        ? ` ⚠ over UL (${ulValue} ${unit})`
+        : ''
     tooltipText =
       value === null
         ? `${foodName} — ${nutrientName}: data not available`
         : `${foodName} — ${nutrientName}: ${value} ${unit} = ${displayValue} DV${ulText}`
   } else {
-    // Relative (p10/p90) mode.
-    // For 'limit' nutrients (GI, sat fat, sodium, etc.) invert the scale so
-    // lower values get the green end and higher values get the red end.
-    const relValue = (behavior === 'limit' && value !== null) ? (min + max - value) : value
-    bg = cellColor(relValue, min, max)
-    fg = textColor(relValue, min, max)
-
     displayValue =
       value === null
         ? '—'
@@ -90,8 +66,7 @@ export default function HeatmapCell({
   return (
     <td
       title={tooltipText}
-      style={{ backgroundColor: bg, color: fg }}
-      className="w-12 min-w-[3rem] h-8 text-center text-[10px] font-mono cursor-default select-none border border-white/20 transition-opacity hover:opacity-80"
+      className="w-12 min-w-[3rem] h-8 text-center text-[10px] font-mono cursor-default select-none border border-slate-700/40 text-slate-300"
     >
       {displayValue}
     </td>

@@ -1,13 +1,13 @@
 # Nutrition Platform — Project State
 
-**Last updated:** 2026-05-15 (session 21)
+**Last updated:** 2026-05-15 (session 22)
 **Current phase: Diet Evaluator — ALL 10 PHASES COMPLETE**
 
 ---
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 59 nutrient definitions; 58 nutrients have food data). The app has four main features: an interactive heatmap table, a meal/day planner, a calendar food log tracker, and a Diet Evaluator tab.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 59 nutrient definitions; 58 nutrients have food data). The app has four main features: an interactive data table (sortable/filterable, no cell coloring), a meal/day planner, a calendar food log tracker, and a Diet Evaluator tab.
 
 **Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
 **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
@@ -42,9 +42,9 @@ nutrition-platform/
 │   ├── MainView.tsx            ← Top-level tab switcher: Day Planner | Data View | Calendar; passes rdaProfile down
 │   ├── DataView.tsx            ← Data View: second-level tabs (Heatmap | Charts | Food Comparison | Meal Comparison); passes rdaProfile down
 │   ├── HeatmapTable.tsx        ← Orchestrator: filter state, sort, per-serving; receives rdaProfile from global
-│   ├── HeatmapCell.tsx         ← Single cell: color + tooltip; DV mode aware
+│   ├── HeatmapCell.tsx         ← Single cell: value display + tooltip; DV mode shows % DV; no cell coloring
 │   ├── FilterPanel.tsx         ← Slide-out panel: food/nutrient filters, saved views (DV profile removed — now global)
-│   ├── NutrientSidebar.tsx     ← Vertical avg-profile column right of table
+│   ├── NutrientSidebar.tsx     ← Vertical avg-profile column (file exists but no longer rendered — removed in session 22)
 │   ├── AuthProvider.tsx        ← React context: user, loading, signIn, signUp, signOut
 │   ├── AuthModal.tsx           ← Login/signup modal
 │   ├── AuthButton.tsx          ← Header button
@@ -78,8 +78,8 @@ nutrition-platform/
 │   └── DietSuggestionsPanel.tsx ← Suggestions: horizontal scroll row of up to 10 food cards; "↑ Nutrient" gap tags; [+ Add] button; four states (no-profile / no-selection / all-fulfilled / card list)
 ├── lib/
 │   ├── supabase.ts             ← Supabase client (NEXT_PUBLIC_ env vars)
-│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all
-│   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl)
+│   ├── fetchHeatmapData.ts     ← Server-side query + P10/P90 normalization; parallel pagination via Promise.all (P10/P90 ranges still returned but unused since session 22)
+│   ├── colorScale.ts           ← Relative heatmap color (P10/P90 → hsl) — unused since session 22; only referenced by NutrientSidebar.tsx
 │   ├── filterConstants.ts      ← FOOD_CATEGORY_LIST, NUTRIENT_GROUP_LIST
 │   ├── portionSizes.ts         ← Per-food serving sizes (all 253 foods, keyed by food_id) + S/M/L size variants ← CRITICAL
 │   ├── rdaProfiles.ts          ← 4 built-in RDA profiles; NUTRIENT_BEHAVIORS; NUTRIENT_UPPER_LIMITS
@@ -476,7 +476,7 @@ When the tour ends, `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` 
 | Framework | Next.js 16 App Router | Native Vercel target; server + client components |
 | Styling | Tailwind CSS | Rapid color-scale and layout work |
 | Data client | `@supabase/supabase-js` | Auto-typed from schema; anon key safe for public read |
-| Heatmap normalization | Per-column P10/P90 percentile | Outliers don't compress other foods to grey |
+| Heatmap normalization | Per-column P10/P90 percentile (computed but no longer used — cell coloring removed in session 22) | N/A — Data View is now a plain sortable/filterable table |
 | NULL vs 0 | NULL = unavailable; 0 = genuinely none | Critical for correct color encoding |
 | Auth | Supabase Auth (email/password) | Native to existing Supabase project; no extra service |
 | User data storage | JSONB columns | Flexible schema for RDA values, filter state, meal plans |

@@ -5,28 +5,18 @@ import type { HeatmapData, NutrientCategory } from '@/types/nutrition'
 import { FOOD_CATEGORY_LIST, ALL_NUTRIENT_CATEGORIES } from '@/lib/filterConstants'
 import { getPortionSize } from '@/lib/portionSizes'
 import type { RDAProfile } from '@/lib/rdaProfiles'
-import { NUTRIENT_BEHAVIORS, NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
+import { NUTRIENT_UPPER_LIMITS, FOOD_METRIC_TARGETS } from '@/lib/rdaProfiles'
 import type { SavedFilterSet } from '@/lib/filterSetStorage'
 import { loadFilterSets, saveFilterSet, deleteFilterSet } from '@/lib/filterSetStorage'
 import { useAuth } from './AuthProvider'
 import HeatmapCell from './HeatmapCell'
 import FilterPanel from './FilterPanel'
-import NutrientSidebar from './NutrientSidebar'
 
 interface Props {
   data: HeatmapData
   rdaProfile: RDAProfile | null
 }
 
-/** Linear-interpolation percentile on a pre-sorted array. */
-function percentile(sorted: number[], p: number): number {
-  if (sorted.length === 0) return 0
-  const idx = (p / 100) * (sorted.length - 1)
-  const lo = Math.floor(idx)
-  const hi = Math.ceil(idx)
-  if (lo === hi) return sorted[lo]
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo)
-}
 
 export default function HeatmapTable({ data, rdaProfile }: Props) {
   // Filter / view state
@@ -79,32 +69,6 @@ export default function HeatmapTable({ data, rdaProfile }: Props) {
   const visibleNutrients = useMemo(() => {
     return data.nutrients.filter((n) => selectedNutrients.includes(n.nutrient_category as NutrientCategory))
   }, [data.nutrients, selectedNutrients])
-
-  // p10/p90 ranges — recomputed in per-serving mode
-  const activeRanges = useMemo(() => {
-    if (!perServing) return data.columnRanges
-
-    const columnValues: Record<number, number[]> = {}
-    for (const food of data.foods) {
-      const multiplier = getPortionSize(food.food_id).grams / 100
-      for (const [nIdStr, value] of Object.entries(food.nutrients)) {
-        if (value === null || value === undefined) continue
-        const nId = Number(nIdStr)
-        if (!columnValues[nId]) columnValues[nId] = []
-        columnValues[nId].push((value as number) * multiplier)
-      }
-    }
-
-    const ranges: Record<number, { min: number; max: number }> = {}
-    for (const [nIdStr, values] of Object.entries(columnValues)) {
-      values.sort((a, b) => a - b)
-      ranges[Number(nIdStr)] = {
-        min: percentile(values, 10),
-        max: percentile(values, 90),
-      }
-    }
-    return ranges
-  }, [data.foods, data.columnRanges, perServing])
 
   const visibleFoods = useMemo(() => {
     let foods = data.foods
@@ -188,34 +152,10 @@ export default function HeatmapTable({ data, rdaProfile }: Props) {
             </span>
           )}
         </p>
-        {/* Colour scale legend */}
-        <span className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="text-slate-600 font-medium">Colour scale:</span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(142,76%,28%)' }} />
-            High
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-slate-600" />
-            Mid
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(0,72%,42%)' }} />
-            Low
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-slate-600 opacity-40" />
-            No data
-          </span>
-          <span className="text-slate-600">· normalised per column</span>
-        </span>
       </div>
 
-      {/* Table + nutrient profile sidebar */}
-      <div className="flex gap-2 items-start">
-
-        {/* Scrollable table */}
-        <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-130px)] flex-1 min-w-0">
+      {/* Scrollable table */}
+      <div className="overflow-auto rounded-lg border border-slate-700 shadow-lg max-h-[calc(100vh-130px)]">
           <table className="border-collapse text-xs">
             <thead>
               <tr className="bg-slate-950 text-slate-100">
@@ -290,26 +230,19 @@ export default function HeatmapTable({ data, rdaProfile }: Props) {
                     {visibleNutrients.map((n) => {
                       const raw = food.nutrients[n.nutrient_id] ?? null
                       const value = raw !== null ? raw * multiplier : null
-                      const range = activeRanges[n.nutrient_id] ?? { min: 0, max: 0 }
-
-                      // DV mode props
                       const rdaTarget = rdaProfile
                         ? (rdaProfile.values[n.nutrient_name] ?? FOOD_METRIC_TARGETS[n.nutrient_name] ?? null)
                         : undefined
-                      const behavior = NUTRIENT_BEHAVIORS[n.nutrient_name] ?? 'normal'
-                      const ulValue  = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
+                      const ulValue = NUTRIENT_UPPER_LIMITS[n.nutrient_name]
 
                       return (
                         <HeatmapCell
                           key={n.nutrient_id}
                           value={value}
-                          min={range.min}
-                          max={range.max}
                           unit={n.unit}
                           nutrientName={n.nutrient_name}
                           foodName={food.food_name}
                           rdaTarget={rdaTarget}
-                          behavior={behavior}
                           ulValue={ulValue}
                         />
                       )
@@ -329,17 +262,6 @@ export default function HeatmapTable({ data, rdaProfile }: Props) {
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Nutrient average profile sidebar */}
-        <NutrientSidebar
-          nutrients={data.nutrients}
-          visibleFoods={visibleFoods}
-          columnRanges={activeRanges}
-          perServing={perServing}
-          rdaProfile={rdaProfile}
-        />
-
       </div>
     </>
   )
