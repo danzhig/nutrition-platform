@@ -355,7 +355,7 @@ export default function DVProfilePanel({
       return (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
           <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-          <div className="relative w-80 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden">
+          <div data-tour="dv-profile-panel" className="relative w-80 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
               <span className="text-sm font-semibold text-slate-100">DV Profile</span>
@@ -444,6 +444,7 @@ export default function DVProfilePanel({
                   {RDA_PROFILES.map((p) => (
                     <button
                       key={p.id}
+                      data-tour={p.id === 'male-lowcarb' ? 'dv-profile-male-lowcarb' : undefined}
                       onClick={() => { onRdaSelectionChange(p.id); onClose() }}
                       title={p.description}
                       className={`w-full text-left px-2.5 py-1.5 rounded-md transition-colors ${

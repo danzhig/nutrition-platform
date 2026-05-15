@@ -143,6 +143,7 @@ export default function AppShell({ data }: Props) {
               <span className="font-medium">Demo</span>
             </button>
             <button
+              data-tour="dv-profile-btn"
               onClick={() => setShowDVOverlay(true)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs border transition-colors ${
                 rdaProfile

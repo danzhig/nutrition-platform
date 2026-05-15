@@ -22,6 +22,34 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     position: 'bottom',
   },
 
+  // ── DV Profile ────────────────────────────────────────────────────────────
+  {
+    target: '[data-tour="dv-profile-btn"]',
+    title: 'Set Your Daily Value Profile',
+    body: "Before building a meal, choose a DV profile so every nutrient bar shows how much of your daily target you're hitting. Opening the profile picker now.",
+    position: 'bottom',
+    action: [
+      { type: 'click', selector: '[data-tour="dv-profile-btn"]' },
+      { type: 'wait', duration: 400 },
+    ],
+  },
+  {
+    target: '[data-tour="dv-profile-panel"]',
+    title: 'Choose a Profile',
+    body: "Four built-in profiles cover typical nutritional targets — Male/Female at average or low-carb targets. You can also build a fully custom profile with your own targets.",
+    position: 'right',
+  },
+  {
+    target: '[data-tour="dv-profile-male-lowcarb"]',
+    title: 'Select Male Low-Carb',
+    body: "Selecting the Male Low-Carb profile — higher protein and fat targets, ~50 g net carbs. Nutrient bars across the whole app will now reflect these targets.",
+    position: 'right',
+    action: [
+      { type: 'click', selector: '[data-tour="dv-profile-male-lowcarb"]' },
+      { type: 'wait', duration: 400 },
+    ],
+  },
+
   // ── Clear existing data ────────────────────────────────────────────────────
   {
     target: '#tour-new-plan-btn',
