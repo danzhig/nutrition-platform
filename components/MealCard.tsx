@@ -257,11 +257,11 @@ export default function MealCard({ meal, foods, onChange, onDelete, onSaveAsTemp
                         <input
                           type="number"
                           data-tour="grams-input"
-                          min="1"
+                          min="0"
                           step="1"
                           value={item.grams}
                           onChange={(e) => {
-                            const g = Math.max(1, parseInt(e.target.value) || 1)
+                            const g = Math.max(0, parseInt(e.target.value) || 0)
                             updateItem(item.id, { grams: g })
                           }}
                           className="w-16 bg-slate-700 border border-slate-600 rounded px-1.5 py-0.5 text-xs text-slate-100 text-center focus:outline-none focus:border-violet-500"

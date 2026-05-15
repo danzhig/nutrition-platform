@@ -104,7 +104,7 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     action: [
       { type: 'type', selector: '[data-tour="food-picker-search"]', text: 'Potato' },
       { type: 'wait', duration: 600 },
-      { type: 'click', selector: '[data-food-name*="potato"] [data-size-key="m"]' },
+      { type: 'click', selector: '[data-food-name^="potato"] [data-size-key="m"]' },
       { type: 'wait', duration: 300 },
     ],
   },
@@ -148,9 +148,9 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     body: "Switching the Potato to grams mode and setting it to 120g.",
     position: 'right',
     action: [
-      { type: 'click', selector: '[data-food-name*="potato"] [data-tour="mode-g"]' },
+      { type: 'click', selector: '[data-food-name^="potato"] [data-tour="mode-g"]' },
       { type: 'wait', duration: 300 },
-      { type: 'type', selector: '[data-food-name*="potato"] [data-tour="grams-input"]', text: '120', charDelay: 120 },
+      { type: 'type', selector: '[data-food-name^="potato"] [data-tour="grams-input"]', text: '120', charDelay: 120 },
       { type: 'wait', duration: 200 },
     ],
   },

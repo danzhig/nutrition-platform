@@ -170,12 +170,6 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     else onEnd()
   }
 
-  function goPrev() {
-    if (running) return
-    if (stepIdx > 0) setStepIdx((i) => i - 1)
-  }
-
-  const isFirst = stepIdx === 0
   const isLast = stepIdx === steps.length - 1
   const totalContentSteps = steps.length - 1
   const displayStep = Math.min(stepIdx + 1, totalContentSteps)
@@ -234,14 +228,7 @@ export default function TourOverlay({ steps, onEnd }: Props) {
         <h3 className="text-sm font-bold text-white mb-1.5">{step?.title}</h3>
         <p className="text-xs text-slate-300 leading-relaxed mb-4">{step?.body}</p>
 
-        <div className="flex items-center justify-between">
-          <button
-            onClick={goPrev}
-            disabled={isFirst || running}
-            className="text-xs px-3 py-1.5 rounded-md border border-slate-600 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            ← Back
-          </button>
+        <div className="flex items-center justify-end">
           {running ? (
             <span className="text-[11px] text-slate-500 italic animate-pulse">Running…</span>
           ) : (
