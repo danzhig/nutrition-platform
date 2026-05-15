@@ -147,6 +147,14 @@ export default function TourOverlay({ steps, onEnd }: Props) {
     }
   }, [updateSpot])
 
+  // While an action is running, poll spotlight so it tracks DOM changes
+  // (e.g. a dropdown opening and expanding the target's bounding rect).
+  useEffect(() => {
+    if (!running) return
+    const id = setInterval(updateSpot, 150)
+    return () => clearInterval(id)
+  }, [running, updateSpot])
+
   async function goNext() {
     if (running) return
     const current = steps[stepIdx]

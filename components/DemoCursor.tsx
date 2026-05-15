@@ -23,7 +23,7 @@ export default function DemoCursor({ x, y, clicking }: Props) {
       }}
     >
       {/* Classic arrow cursor. Hot-spot is the tip at SVG (1,1) = CSS (0,0) after offset. */}
-      <svg viewBox="0 0 12 20" width="24" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 12 20" width="18" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M 1 1 L 1 16 L 4.5 13 L 7.5 19.5 L 9.5 18.5 L 6.5 12 L 11 12 Z"
           fill="white"

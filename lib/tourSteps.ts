@@ -35,10 +35,10 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
 
   // ── Name the plan ──────────────────────────────────────────────────────────
   {
-    target: '[data-tour="plan-name-btn"]',
+    target: '[data-tour="plan-dropdown-container"]',
     title: 'Name Your Plan',
     body: "Opening the plan editor and naming this plan 'Example Plan'.",
-    position: 'bottom',
+    position: 'right',
     action: [
       { type: 'click', selector: '[data-tour="plan-name-btn"]' },
       { type: 'wait', duration: 350 },

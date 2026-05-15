@@ -482,7 +482,7 @@ export default function MealPlanner({ data, rdaProfile, rdaSelection, onRdaSelec
 
       {/* Plan picker */}
       <div className="flex items-center gap-2 pb-px">
-        <div className="relative" ref={planDropdownRef}>
+        <div className="relative" ref={planDropdownRef} data-tour="plan-dropdown-container">
           <button
             onClick={() => setShowPlanDropdown((v) => !v)}
             data-tour="plan-name-btn"
