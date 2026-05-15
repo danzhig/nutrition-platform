@@ -80,8 +80,10 @@ async function executeAction(actionSteps: TourActionStep[], cursor: CursorContro
       setNativeValue(el, '')
       cursor.setClicking(false)
       await sleep(150)
+      let accumulated = ''
       for (const char of s.text) {
-        setNativeValue(el, el.value + char)
+        accumulated += char
+        setNativeValue(el, accumulated)
         await sleep(s.charDelay ?? 75)
       }
       await sleep(200)

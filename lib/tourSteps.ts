@@ -137,6 +137,22 @@ export const SALMON_MEAL_TOUR: TourStep[] = [
     position: 'left',
   },
   {
+    target: '[data-tour="nutrient-sidebar-protein"]',
+    title: 'Explore Any Nutrient',
+    body: "Click any nutrient bar to learn about its role in the body and see which foods in your meal are contributing to it.",
+    position: 'left',
+    action: [
+      { type: 'click', selector: '[data-tour="nutrient-sidebar-protein"]' },
+      { type: 'wait', duration: 500 },
+    ],
+  },
+  {
+    target: '[data-tour="nutrient-info-card"]',
+    title: 'Nutrient Info Card',
+    body: "Shows what the nutrient does in the body, deficiency symptoms if intake is low, and a breakdown of which foods in your meal are contributing to it.",
+    position: 'right',
+  },
+  {
     target: '[data-tour="save-template-btn"]',
     title: 'Save as a Template',
     body: "Saving this meal as a reusable template. It will appear under Presets → My Templates.",

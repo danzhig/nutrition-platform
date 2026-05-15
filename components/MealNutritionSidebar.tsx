@@ -265,6 +265,7 @@ export default function MealNutritionSidebar({ nutrients, meals, foodsById, rdaP
                     return (
                       <div
                         key={n.nutrient_id}
+                        data-tour={n.nutrient_name === 'Protein' ? 'nutrient-sidebar-protein' : undefined}
                         className={`flex items-center gap-1.5 px-1 rounded transition-colors ${
                           isClickable ? 'cursor-pointer hover:bg-slate-700/60' : ''
                         } ${isSelected ? 'bg-slate-700/60 ring-1 ring-violet-500/40' : ''}`}

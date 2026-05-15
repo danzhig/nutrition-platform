@@ -93,6 +93,7 @@ export default function NutrientInfoCard({ nutrient, anchorRect, onClose, meals,
   return (
     <div
       ref={cardRef}
+      data-tour="nutrient-info-card"
       className="fixed z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-2xl p-4 text-xs"
       style={{
         width: 288,
