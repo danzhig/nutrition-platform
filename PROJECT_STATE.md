@@ -156,60 +156,191 @@ nutrition-platform/
 
 ## Guided Tour System — Architecture & How to Build New Tours
 
-The tour system is intentionally lightweight — no external dependencies, no context providers, just a DOM-event bus and CSS spotlight.
+The tour system is intentionally lightweight — no external dependencies, no context providers, just a DOM-event bus and CSS spotlight. Everything needed to build a new tour is in `lib/tourSteps.ts` (step definitions) and the components that expose `data-tour` attributes.
+
+---
 
 ### Core files
 
 | File | Role |
 |---|---|
-| `lib/tourSteps.ts` | Step definitions — edit this to change tour content or add new tours |
-| `components/TourOverlay.tsx` | Renders spotlight + tooltip; executes `action` sequences; manages step index + cursor state |
-| `components/DemoCursor.tsx` | Animated OS-style arrow cursor; positioned by TourOverlay; 450ms fly transition; click scale-dip animation |
-| `components/AppShell.tsx` | Owns `tourActive` state; Demo button; `onEnd` dispatches `np:tour:demo-cleanup` |
+| `lib/tourSteps.ts` | All tour step definitions. Add new tours here. |
+| `components/TourOverlay.tsx` | Renders spotlight + tooltip card; runs `action` sequences; manages step index, cursor, and speed state |
+| `components/DemoCursor.tsx` | Animated OS-style arrow cursor; flies to targets in 450ms cubic-bezier; scale-dips on click |
+| `components/AppShell.tsx` | Owns `tourActive` state; ▶ Demo button; dispatches `np:tour:demo-cleanup` on tour end |
 
-### TourStep interface
+---
+
+### Step interface
 
 ```typescript
 interface TourStep {
-  target: string | null        // CSS selector using data-tour attr, or null for center modal
-  title: string                // bold heading in tooltip card
-  body: string                 // descriptive text (not imperative — the cursor shows what's happening)
-  position: 'top' | 'bottom' | 'left' | 'right' | 'center'  // tooltip side relative to spotlight
-  action?: TourActionStep[]    // if set, Next executes these before advancing; button shows "Running…"
+  target: string | null       // CSS selector for the spotlight element; null = dark full-screen backdrop
+  title: string               // Bold heading shown in the tooltip card
+  body: string                // Explanatory text — describe what is happening, not what to do
+  position: 'top' | 'bottom' | 'left' | 'right' | 'center'
+  action?: TourActionStep[]   // When present, Next runs these actions before advancing
 }
 
 type TourActionStep =
   | { type: 'click'; selector: string }
-  | { type: 'type'; selector: string; text: string; charDelay?: number }
-  | { type: 'wait'; duration: number }
-  | { type: 'key'; selector: string; key: string }
+  | { type: 'type';  selector: string; text: string; charDelay?: number }
+  | { type: 'wait';  duration: number }
+  | { type: 'key';   selector: string; key: string }
 ```
 
-**Action runner details:**
-- `click` — flies cursor to element center (with retry up to 10×), pauses 500ms, scale-dips, fires `.click()`
-- `type` — flies cursor to input, focuses it, clears value via `setNativeValue`, then types char-by-char (default 75ms/char) using React-compatible native value setter + `input` event
-- `wait` — plain `sleep(ms)`
-- `key` — dispatches a `keydown` `KeyboardEvent` on the element (used for Enter to confirm inputs)
+**position guide:**
 
-**`position` tips:**
-- Use `'bottom'` for most elements (tooltip appears below)
-- Use `'top'` for elements near the bottom of the viewport
-- Use `'right'` for left-half elements (wide sidebars, left charts)
-- Use `'left'` for right-half elements
-- Use `'center'` or `null` target for full-screen modals or the final "done" step
+| Position | Use when |
+|---|---|
+| `'bottom'` | Default — element is in the upper half of the viewport |
+| `'top'` | Element is near the bottom of the viewport |
+| `'right'` | Element is on the left side (sidebar, left panel) — tooltip appears to its right |
+| `'left'` | Element is on the right side — tooltip appears to its left |
+| `'center'` | Full-screen modals, or `target: null` final step |
 
-### How spotlight works
+---
 
-`TourOverlay` calls `document.querySelector(step.target)`, invokes `scrollIntoView`, then reads `getBoundingClientRect()` in a `requestAnimationFrame`. It positions a fixed div with `box-shadow: 0 0 0 9999px rgba(0,0,0,0.65)` — this single div creates the dark backdrop everywhere **except** inside itself (the spotlight hole). The whole overlay has `pointer-events: none` so the user can click elements freely. Only the tooltip card has `pointer-events: auto`.
+### Action timing reference
+
+Every `action` is a sequence of `TourActionStep` objects executed in order. All delays go through `fastSleep`, which is speed-aware (Space during Running halves them). Reference timings at 1× speed:
+
+#### `click`
+```
+getCenterOf(selector)   ← up to 10 retries × 120ms if element not yet in DOM
+cursor.move(x, y)       ← CSS transition, 450ms (non-blocking — execution continues)
+wait 500ms              ← cursor arrives at target
+cursor scale-dip        ← clicking=true → 100ms → el.click() → 100ms → clicking=false
+wait 200ms              ← brief pause after click lands
+```
+**Total per click: ~900ms.** Use a `{ type: 'wait', duration: 400 }` after clicks that open panels/modals so the animation completes before the next action runs.
+
+#### `type`
+```
+getCenterOf(selector)   ← same retry logic as click
+cursor.move(x, y)       ← 450ms CSS transition
+wait 500ms
+cursor scale-dip + focus  ← clicking=true → 80ms → el.click() + el.focus() + setNativeValue('') → clicking=false
+wait 150ms              ← input is cleared and ready
+for each char:
+  accumulated += char
+  setNativeValue(el, accumulated)   ← fires React input event with full string so far
+  wait charDelay (default 75ms)
+wait 200ms              ← typing complete pause
+```
+**Total for "Example Plan" (12 chars at 75ms): ~2 000ms.** Use `charDelay: 120` for slower, more dramatic typing. Use default 75ms for search inputs that filter in real time.
+
+> **Important:** The `type` action builds the string via its own `accumulated` variable — it does NOT use `el.value + char`. This avoids leading-zero bugs on `type="number"` inputs where React re-renders the controlled value to `"0"` between the clear and the first keystroke.
+
+#### `wait`
+```
+fastSleep(duration)     ← use to pad between actions, let animations settle
+```
+Typical values: 200ms (minor pause), 300ms (modal closing), 400ms (panel opening), 600ms (search results loading), 800ms (floating card rendering and positioning).
+
+#### `key`
+```
+el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+wait 150ms
+```
+Used for Enter to confirm a text input that has an `onKeyDown` handler (e.g. confirming a plan/meal name).
+
+---
+
+### Standard action patterns (copy-paste templates)
+
+**Open a panel or modal:**
+```ts
+{ type: 'click', selector: '[data-tour="some-btn"]' },
+{ type: 'wait',  duration: 400 },
+```
+
+**Type into a search / name input:**
+```ts
+{ type: 'type', selector: '[data-tour="some-input"]', text: 'Search text' },
+{ type: 'wait', duration: 600 },   // wait for results / filter
+```
+
+**Type a name and confirm with Enter:**
+```ts
+{ type: 'click', selector: '[data-tour="name-btn"]' },   // open the input
+{ type: 'wait',  duration: 250 },
+{ type: 'type',  selector: '[data-tour="name-input"]', text: 'My Name' },
+{ type: 'wait',  duration: 200 },
+{ type: 'key',   selector: '[data-tour="name-input"]', key: 'Enter' },
+{ type: 'wait',  duration: 200 },
+```
+
+**Add multiple foods in one step (search → click, repeat):**
+```ts
+{ type: 'type',  selector: '[data-tour="food-picker-search"]', text: 'Salmon' },
+{ type: 'wait',  duration: 600 },
+{ type: 'click', selector: '[data-food-name*="salmon"]' },
+{ type: 'wait',  duration: 400 },
+{ type: 'type',  selector: '[data-tour="food-picker-search"]', text: 'Next Food' },
+{ type: 'wait',  duration: 600 },
+{ type: 'click', selector: '[data-food-name*="next food"]' },
+{ type: 'wait',  duration: 400 },
+```
+
+**Close a floating card before advancing:**
+```ts
+{ type: 'click', selector: '[data-tour="card-root"] button[aria-label="Close"]' },
+{ type: 'wait',  duration: 300 },
+```
+
+**Switch to grams mode and set a value:**
+```ts
+{ type: 'click', selector: '[data-food-name^="potato"] [data-tour="mode-g"]' },
+{ type: 'wait',  duration: 300 },
+{ type: 'type',  selector: '[data-food-name^="potato"] [data-tour="grams-input"]', text: '120', charDelay: 120 },
+{ type: 'wait',  duration: 200 },
+```
+
+---
+
+### SALMON_MEAL_TOUR — complete step breakdown
+
+24 steps total. Steps with no `action` are display-only — the user reads and presses Space/Next.
+
+| # | Title | Target | Action summary |
+|---|---|---|---|
+| 1 | Welcome | `[data-tour="day-planner-tab"]` | None |
+| 2 | Set Your Daily Value Profile | `[data-tour="dv-profile-btn"]` | Click DV Profile header button → wait 400ms |
+| 3 | Choose a Profile | `[data-tour="dv-profile-panel"]` | None — user reads |
+| 4 | Select Male Low-Carb | `[data-tour="dv-profile-male-lowcarb"]` | Click Male Low-Carb button (closes panel) → wait 400ms |
+| 5 | Start Fresh | `#tour-new-plan-btn` | Click New Plan button → wait 200ms |
+| 6 | Name Your Plan | `[data-tour="plan-dropdown-container"]` | Click name btn → wait 350ms → type "Example Plan" → wait 300ms → click name btn (close) → wait 200ms |
+| 7 | Add a Meal | `[data-tour="add-meal-btn"]` | Click + Add Meal → wait 200ms |
+| 8 | Name Your Meal | `[data-tour="meal-name-btn"]` | Click name btn → wait 250ms → type "Salmon & Mashed Potatoes" → wait 200ms → key Enter → wait 200ms |
+| 9 | Open the Food Browser | `[data-tour="meal-add-food-btn"]` | Click + Add food → wait 400ms |
+| 10 | Add Ingredients | `[data-tour="food-picker-modal"]` | Search+click ×4: Salmon, Potato (medium), Olive Oil, Black Pepper; 600ms search wait + 400ms click wait between each |
+| 11 | Close the Food Browser | `[data-tour="food-picker-done-btn"]` | Click Done → wait 300ms |
+| 12 | Adjust the Potato Portion | `[data-tour="meal-items-list"]` | Click mode-g → wait 300ms → type "120" (charDelay 120) → wait 200ms |
+| 13 | Your Nutrition Coverage | `[data-tour="nutrition-sidebar"]` | None — user reads |
+| 14 | Explore Any Nutrient | `[data-tour="nutrient-sidebar-protein"]` | Click Protein name span → wait 800ms |
+| 15 | Nutrient Info Card | `[data-tour="nutrient-info-card"]` | Click Close button → wait 300ms |
+| 16 | Save as a Template | `[data-tour="save-template-btn"]` | Click Save template → wait 600ms |
+| 17 | Explore Preset Meals | `[data-tour="presets-btn"]` | Click Presets → wait 400ms |
+| 18 | Filter by Category | `[data-tour="preset-categories"]` | Click "High Protein" category pill → wait 400ms |
+| 19 | Add a Preset Meal | `[data-tour="presets-list"]` | Click first preset-meal-item → wait 400ms |
+| 20 | Save Your Plan | `[data-tour="save-plan-btn"]` | Click Save Plan → wait 600ms |
+| 21 | Open the Charts View | `[data-tour="charts-view-tab"]` | Click Charts tab → wait 400ms |
+| 22 | Nutrient Bar Chart | `[data-tour="nutrition-bar-chart"]` | None — user reads |
+| 23 | Category Radar | `[data-tour="nutrition-radar-chart"]` | None — user reads |
+| 24 | Macro Donut | `[data-tour="nutrition-donut-chart"]` | None — user reads |
+| — | That's the full tour! | `null` (center) | None — Finish button |
+
+---
 
 ### data-tour attributes in use
 
-The action runner targets elements by CSS selectors — primarily `[data-tour="..."]`, `#id`, or `[data-food-name*="..."]`/`[data-size-key="..."]`.
+All selectors used by tour actions. When adding a new tour, add any new `data-tour` attributes here.
 
 | Attribute | Element | Component |
 |---|---|---|
 | `data-tour="dv-profile-btn"` | DV Profile header button | `AppShell` |
-| `data-tour="dv-profile-panel"` | DV Profile picker overlay panel | `DVProfilePanel` |
+| `data-tour="dv-profile-panel"` | DV Profile picker overlay (inner panel div) | `DVProfilePanel` |
 | `data-tour="dv-profile-male-lowcarb"` | Male Low-Carb built-in profile button | `DVProfilePanel` |
 | `data-tour="day-planner-tab"` | Day Builder tab button | `MainView` |
 | `id="tour-new-plan-btn"` | New Plan button | `MealPlanner` |
@@ -224,10 +355,10 @@ The action runner targets elements by CSS selectors — primarily `[data-tour=".
 | `data-tour="mode-g"` | Grams mode toggle button per food row | `MealCard` |
 | `data-tour="grams-input"` | Grams input per food row | `MealCard` |
 | `data-tour="save-template-btn"` | Save as Template button | `MealCard` |
-| `data-tour="food-picker-modal"` | FoodPickerModal root | `FoodPickerModal` |
+| `data-tour="food-picker-modal"` | FoodPickerModal root div | `FoodPickerModal` |
 | `data-tour="food-picker-search"` | Search input | `FoodPickerModal` |
 | `data-tour="food-picker-done-btn"` | Done button | `FoodPickerModal` |
-| `data-food-name="<lowercase food name>"` | Individual food row | `FoodPickerModal`, `MealCard` |
+| `data-food-name="<lowercase name>"` | Individual food row (picker + meal card) | `FoodPickerModal`, `MealCard` |
 | `data-size-key="s/m/l"` | S/M/L size buttons | `SizeButtons` |
 | `data-tour="presets-btn"` | Presets panel toggle button | `MealPlanner` |
 | `data-tour="preset-categories"` | Category pill row | `MealPlanner` |
@@ -237,51 +368,78 @@ The action runner targets elements by CSS selectors — primarily `[data-tour=".
 | `data-tour="save-plan-btn"` | Save Plan button | `MealPlanner` |
 | `data-tour="charts-view-tab"` | Charts view tab | `MealPlanner` |
 | `data-tour="nutrition-sidebar"` | Nutrition %DV sidebar | `MealNutritionSidebar` |
-| `data-tour="nutrient-sidebar-protein"` | Protein **name span** inside the nutrient row (cursor clicks label; click bubbles to row's `onClick`) | `MealNutritionSidebar` |
-| `data-tour="nutrient-info-card"` | NutrientInfoCard floating panel | `NutrientInfoCard` |
+| `data-tour="nutrient-sidebar-protein"` | Protein **name span** (click bubbles to row `onClick`; do NOT put on the row div — cursor targets the label, not the bar) | `MealNutritionSidebar` |
+| `data-tour="nutrient-info-card"` | NutrientInfoCard floating panel root | `NutrientInfoCard` |
 | `data-tour="nutrition-bar-chart"` | Bar chart | `MealNutritionChart` |
 | `data-tour="nutrition-radar-chart"` | Radar chart | `MealNutritionChart` |
 | `data-tour="nutrition-donut-chart"` | Donut chart | `MealNutritionChart` |
 
-### Custom events (non-action infrastructure)
+**Selector patterns for dynamic elements:**
+- `[data-food-name*="salmon"]` — contains match (use for unique names)
+- `[data-food-name^="potato"]` — starts-with match (avoids matching "Sweet Potato")
+- `[data-food-name^="potato"] [data-size-key="m"]` — child selector for S/M/L buttons on a specific food
+- `[data-tour="nutrient-info-card"] button[aria-label="Close"]` — close button inside a named container
 
-The `advanceOn` system has been removed. Only two infrastructure events remain:
+---
+
+### How spotlight works
+
+`TourOverlay` calls `document.querySelector(step.target)`, invokes `scrollIntoView`, then reads `getBoundingClientRect()`. It positions a fixed div with `box-shadow: 0 0 0 9999px rgba(0,0,0,0.65)` — this single div creates the dark backdrop everywhere **except** inside its own bounds (the spotlight hole). The overlay has `pointer-events: none`; only the tooltip card has `pointer-events: auto`.
+
+**Spotlight retries:** `measure()` retries up to 8× at 100ms intervals when the target isn't in the DOM yet (e.g. a modal that's still animating open). A `spotVersionRef` counter is incremented on every `updateSpot` call — each retry checks the counter and aborts if the step has already changed, preventing stale retries from wiping the new step's spotlight.
+
+**Polling during actions:** While `running` is true, `updateSpot` runs on a 150ms `setInterval` so the spotlight tracks DOM changes live (e.g. a dropdown that expands the target element's bounding rect).
+
+---
+
+### Speed and keyboard controls
+
+- **Space (idle)** → advances to the next step (same as clicking Next)
+- **Space (running)** → sets `speedRef.current = 2`, halving all remaining `fastSleep` waits in the current action sequence. Speed resets to 1 after the action completes.
+- `fastSleep(ms)` polls every 16ms and resolves when `Date.now() - start >= ms / speedRef.current`. All `executeAction` delays go through this function, so they all respond to the speed multiplier.
+
+---
+
+### Custom events (infrastructure only)
 
 | Event | Where dispatched | Purpose |
 |---|---|---|
 | `np:tour:reset-view` | `AppShell.startDemo()` | Resets MealPlanner to sidebar view before tour starts |
 | `np:tour:demo-cleanup` | `AppShell` TourOverlay `onEnd` | Triggers MealPlanner to delete demo template + plan and reset to blank state |
 
+---
+
 ### Cleanup mechanism
 
-When the tour ends (user clicks Finish on the last step), `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` has a `useEffect` listening for this that:
-1. Deletes `savedMeals[0]` (the template created during the demo — always newest-first)
+When the tour ends, `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` listens and:
+1. Deletes `savedMeals[0]` (the demo template — always newest-first)
 2. Deletes the current `plan.id` if it was saved during the demo
-3. Resets to a blank `newPlan()` and clears all draft localStorage keys: `np:draft-plan`, `np:draft-custom-rda`, `np:draft-snapshot`, `nutrition-active-plan-id`; resets `nutrition-view-mode` to `'sidebar'`
+3. Resets to `newPlan()` and clears localStorage keys: `np:draft-plan`, `np:draft-custom-rda`, `np:draft-snapshot`, `nutrition-active-plan-id`; resets `nutrition-view-mode` to `'sidebar'`
 
-**Important:** The cleanup useEffect has `[savedMeals, plan]` in its dependency array (no `updateSnapshot` since that `useCallback` is declared later in the file — inline the snapshot reset instead).
+**Important:** The cleanup `useEffect` dep array is `[savedMeals, plan]` — do not add `updateSnapshot` (TDZ issue: it's a `useCallback` declared later in the file).
 
-### Adding a new tour
+---
 
-1. Add a new exported `const MY_TOUR: TourStep[]` to `lib/tourSteps.ts`
-2. Add `data-tour="my-step-id"` (or `data-food-name`, `data-size-key`, etc.) attributes to target elements in the relevant components
-3. Write `action` arrays for each step using `click`, `type`, `wait`, and `key` action steps — no custom events needed
-4. In `AppShell.tsx`: add a second demo button / selector, import the new tour array, and pass it to `<TourOverlay steps={MY_TOUR} />`
-5. If the new tour creates data (templates, plans, entries), extend the `np:tour:demo-cleanup` handler in `MealPlanner.tsx` to clean it up
+### Adding a new tour — checklist
 
-### Known nuances & gotchas
+1. **Define steps** — add `export const MY_TOUR: TourStep[]` to `lib/tourSteps.ts`
+2. **Add `data-tour` attributes** to any new target elements; add them to the table above
+3. **Wire in AppShell** — add a button/selector, import `MY_TOUR`, pass to `<TourOverlay steps={MY_TOUR} />`
+4. **Write actions** using the standard patterns above; use the timing reference to choose wait durations
+5. **Handle cleanup** — if the tour creates data, extend the `np:tour:demo-cleanup` listener in `MealPlanner.tsx`
+6. **Test at 1× and 2× speed** (press Space during Running) to confirm nothing breaks when waits are halved
 
-- **Modal steps**: Steps targeting elements inside `FoodPickerModal` (z-50) work because the spotlight ring at z-9997 is transparent — you see the modal content through it. The dark box-shadow backdrop appears behind the modal's own backdrop layer (z-50 < z-9997), so the whole-modal spotlight correctly covers only the modal.
-- **Stale closure in cleanup**: The cleanup `useEffect` uses `savedMeals` and `plan` from state. Since these are in the dep array, the handler always captures current values. Do not add `updateSnapshot` to deps — it's a `useCallback` declared later in the file (TDZ issue).
-- **Spotlight repositioning**: `updateSpot` re-fires on every `scroll` and `resize` event (captured via `addEventListener(..., true)` for the scroll). This keeps the ring aligned when the page scrolls during `scrollIntoView`. While an action is running, `updateSpot` additionally runs on a 150ms `setInterval` so that DOM changes (e.g. a dropdown expanding the target's bounding rect) are tracked live.
-- **Stale spotlight retries**: `measure()` inside `updateSpot` retries up to 8× every 100ms when the target element isn't found yet. These `setTimeout` retries are not cancelled by the `useEffect` cleanup. A `spotVersionRef` counter (incremented at the start of each `updateSpot` call) solves this: every retry checks whether the version still matches before calling `setSpotBox`, so retries from a previous step silently abort instead of clearing the new step's spotlight.
-- **Nutrient row click**: `MealNutritionSidebar` nutrient rows use `onClick` (not `onMouseDown`). The tour fires `.click()` — `onMouseDown` would be silently ignored. If you change this back to `onMouseDown`, tour clicks on nutrient rows will stop working.
-- **Speed-up during running**: `executeAction` takes a `sleepFn` parameter instead of calling the module-level `sleep` directly. The component creates `fastSleep` (a `useCallback`) backed by `speedRef` (default 1). It polls every 16ms and resolves when `elapsed >= ms / speedRef.current`. Pressing Space while an action is running sets `speedRef.current = 2`, halving all remaining waits. Speed resets to 1 after the action completes.
-- **Space-bar footer hint**: tooltip footer shows "Press Space or Hit: [Next →]" when idle; shows "Running…" (pulsing) while an action executes. Space during running speeds up rather than advancing.
-- **React-controlled inputs**: `setNativeValue()` in `TourOverlay` uses the native `HTMLInputElement.prototype.value` setter descriptor to bypass React's synthetic event system, then fires an `input` event. This is the correct way to programmatically set a value in a React-controlled `<input>` without the component ignoring the change. The `type` action builds typed text via its own `accumulated` string (not `el.value + char`) to avoid leading-zero artifacts on `type="number"` inputs where React re-renders with value `0` between the clear and first keystroke.
-- **Cursor z-index**: `DemoCursor` renders at z-10001 (above the tooltip at z-9999) so it's always visible over every layer. Its hot-spot is the tip at SVG `(1,1)`, offset to `(0,0)` via `left: x-1, top: y-1`.
-- **`data-food-name` selector format**: Food rows use `data-food-name="<lowercase name>"`. Action selectors like `[data-food-name*="salmon"]` (contains) work for ambiguous matches; `[data-food-name^="potato"]` (starts-with) avoids matching "Sweet Potato". Combine with a child selector for size buttons: `[data-food-name^="potato"] [data-size-key="m"]`.
-- **Tooltip height estimate**: `TOOLTIP_H_EST = 200` in `TourOverlay.tsx` is used for positioning math. If tooltip content grows taller (long body text), increase this constant or the tooltip will clip at the viewport bottom.
+---
+
+### Known gotchas
+
+- **`onMouseDown` vs `onClick`**: Tour fires `.click()` — only `onClick` handlers respond. `onMouseDown` is silently ignored. `MealNutritionSidebar` nutrient rows use `onClick` for this reason.
+- **Floating cards must be closed via action**: If a step opens a floating card (e.g. NutrientInfoCard), the *next* step's action (or the opening step's action) must click its close button. Otherwise the card stays open as the tour advances.
+- **`type` on `type="number"` inputs**: Use the `accumulated` pattern (already implemented). Never rely on `el.value + char` — React re-renders the controlled value to `"0"` after the clear, producing leading zeros.
+- **Modal z-index**: Modals at z-50 are visible through the spotlight hole (z-9997 ring is transparent inside its bounds). The dark box-shadow backdrop renders behind the modal's own backdrop.
+- **Tooltip clipping**: `TOOLTIP_H_EST = 200` in `TourOverlay.tsx` drives positioning math. Increase it if a step's body text is unusually long, or the tooltip clips at the viewport bottom.
+- **Cleanup dep array**: Do not add `updateSnapshot` to the cleanup `useEffect` deps — it's a `useCallback` declared later in `MealPlanner.tsx` (temporal dead zone).
+- **DemoCursor z-index**: z-10001 (above tooltip at z-9999). Hot-spot is SVG tip at `(1,1)`, offset via `left: x-1, top: y-1`.
 
 ---
 
