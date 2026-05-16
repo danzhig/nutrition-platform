@@ -71,7 +71,6 @@ function abbr(name: string): string {
     .replace('Antioxidant Capacity', 'Antioxidant')
     .replace('Omega-3 Fatty Acids', 'Omega-3')
     .replace('Omega-6 Fatty Acids', 'Omega-6')
-    .replace('Lutein & Zeaxanthin', 'Lutein & Zea.')
     .replace('Net Carbohydrates', 'Net Carbs')
 }
 

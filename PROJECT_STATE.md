@@ -7,7 +7,7 @@
 
 ## What Is This Project
 
-A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 59 nutrient definitions; 58 nutrients have food data). The app has four main features: an interactive data table (sortable/filterable, no cell coloring), a meal/day planner, a calendar food log tracker, and a Diet Evaluator tab.
+A public-facing nutrition web app built on **Next.js 16 + Supabase + Vercel**, source-controlled on **GitHub**. The database layer is fully complete (253 foods × 58 nutrient definitions; all 58 nutrients have food data). The app has four main features: an interactive data table (sortable/filterable, no cell coloring), a meal/day planner, a calendar food log tracker, and a Diet Evaluator tab.
 
 **Deployment:** every push to `main` → Vercel auto-deploy → calls Supabase REST API. PRs get preview URLs.  
 **Env vars:** `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` and Vercel dashboard.  
@@ -131,7 +131,7 @@ nutrition-platform/
 | **My Templates merged into Presets pane** | ✅ Live — saved templates appear as a violet pill in the category row (only when user has templates); same nutrient sort, score badges, delete buttons; loading a template closes the Presets pane |
 | **S/M/L size selector** | ✅ Live — inline S/M/L buttons on variable-size foods (fruits, vegetables, chicken, eggs); present in FoodPickerModal, CalendarAddModal, MealCard, CalendarDayPanel; implemented in `SizeButtons.tsx` + `portionSizes.ts` size variants |
 | **Dried fruits & vegetables** | ✅ Live — 10 dried food entries (IDs 244–253): Raisins, Prunes, Dried Apricots, Dried Figs, Dried Cranberries, Dried Mango, Dried Blueberries, Dried Cherries (all Fruits cat.), Sun-Dried Tomatoes, Dried Shiitake Mushrooms (Vegetables cat.); data from USDA SR Legacy via FDC IDs; spot-checked against nutritionvalue.org (raisins Vitamin C corrected to 2.3 mg; sun-dried tomatoes sodium corrected to 107 mg, Vitamin K confirmed 43 mcg); 40g serving for dried fruits, 27g for sun-dried tomatoes, 15g for dried shiitake |
-| **7 new nutrients (IDs 53–59)** | ✅ Live — Biotin (B7, mcg, Vitamin), EPA (mg, Fatty Acid), DHA (mg, Fatty Acid), Lutein & Zeaxanthin (mcg, Vitamin — nutrient definition only, food data deferred), Lycopene (mg, Vitamin), Betaine (mg, Amino Acid), CoQ10 (mg, Food Metric); full `body_role` / `deficiency_symptoms` / `excess_symptoms` tooltip text in DB; USDA FDC values for all 253 foods (6 of 7 nutrients); RDA targets in all 4 DV profiles; `NUTRIENT_BEHAVIORS` updated in `rdaProfiles.ts` |
+| **6 new nutrients (IDs 53–55, 57–59)** | ✅ Live — Biotin (B7, mcg, Vitamin), EPA (mg, Fatty Acid), DHA (mg, Fatty Acid), Lycopene (mg, Vitamin), Betaine (mg, Amino Acid), CoQ10 (mg, Food Metric); full `body_role` / `deficiency_symptoms` / `excess_symptoms` tooltip text in DB; USDA FDC values for all 253 foods; RDA targets in all 4 DV profiles; `NUTRIENT_BEHAVIORS` updated in `rdaProfiles.ts`. *(Lutein & Zeaxanthin, ID 56, was removed — no food data available.)* |
 | **Diet Evaluator — Phase 1** | ✅ Complete — `dailyWeightG: number` added to `RDAProfile` interface and all 4 built-in profiles (male-avg: 1700, female-avg: 1500, male-lowcarb: 2000, female-lowcarb: 1800); `getProfile()` extracts `dailyWeightG` from custom values (defaults to 1700); DVProfilePanel custom editor shows "Daily Food Weight (g)" input with 500–5000 validation in both inline and overlay modes; `seedFrom()` copies `dailyWeightG` from built-in profiles; AppShell saved-profile case includes `dailyWeightG` |
 | **Diet Evaluator — Phase 2** | ✅ Live — "Diet" tab added to MainView after Calendar (`type Tab` extended, localStorage key `np:mainTab` updated); `DietView.tsx` shell renders three-column top section + Category Overview + Suggestions placeholder rows; `lib/dietStorage.ts` created with `loadDietList(userId?)` / `saveDietList(foods, userId?)` / `clearLocalDietList()` using localStorage + async Supabase upsert; `user_diet_lists` Supabase table deployed with RLS (owner read/write, unique index on user_id) |
 | **Diet Evaluator — Phase 3** | ✅ Live — `DietFoodBrowser.tsx` built: 16-category accordion (FOOD_CATEGORY_LIST order), all collapsed by default; search bar filters food names across all categories and auto-expands matching ones (clearing restores collapsed state); food rows show violet checkmark/tint when selected; category headers show "(N selected)" count; click-to-add / click-to-remove wired to DietView state; `DietView` now accepts `data: AppData` prop (MainView updated) to feed food list to browser and future phases |
@@ -148,7 +148,7 @@ nutrition-platform/
 | **Guided demo tour system** | ✅ Live — `▶ Demo` button in global header; `lib/tourSteps.ts` defines `TourStep[]` with `target` (CSS selector), `title`, `body`, `position`, and optional `action` (array of `TourActionStep`); `components/TourOverlay.tsx` renders a spotlight ring (box-shadow backdrop + violet border) over each target element with a floating tooltip card; when a step has an `action` array, clicking Next runs the action sequence (click/type/wait/key) and disables the button showing "Running…" during execution; `components/DemoCursor.tsx` renders an OS-style arrow cursor that flies smoothly between targets (450ms cubic-bezier transition) and scale-dips on click (70ms/160ms spring); `pointer-events: none` on backdrop so live UI remains interactive; spotlight polls every 150ms while actions run so it tracks DOM changes (e.g. dropdown expanding); 280ms CSS ease between targets; tooltip viewport-clamped; tab state lifted from `MainView` to `AppShell`; `np:tour:reset-view` resets MealPlanner to sidebar view on tour start; demo cleanup (`np:tour:demo-cleanup`) auto-deletes the template and plan created during the demo; currently has one tour: `SALMON_MEAL_TOUR` (24 steps covering DV profile selection, new-plan reset, plan naming, meal creation, food picker with all 4 foods added in one step, nutrient info card demo, presets, plan save, charts) — fully automated; Space bar or Next button both advance the tour |
 
 **Total foods: 257** (218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types)  
-**Total nutrients: 59** (52 original + Biotin, EPA, DHA, Lutein & Zeaxanthin, Lycopene, Betaine, CoQ10; Lutein & Zeaxanthin has no food data yet)  
+**Total nutrients: 58** (52 original + Biotin, EPA, DHA, Lycopene, Betaine, CoQ10)  
 **Total food_nutrients rows: ~14,731** (~12,977 pre-existing + 1,518 new nutrient rows + 236 salt rows)  
 **Total preset meals: 113** (107 original + 6 Low Sug Juices)
 
@@ -489,7 +489,7 @@ When the tour ends, `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` 
 
 ```
 nutrient_categories  (6 rows)     — Macronutrients, Vitamins, Minerals, Fatty Acids, Amino Acid, Food Metric
-nutrients            (59 rows)    — All nutrients with unit, category, description
+nutrients            (58 rows)    — All nutrients with unit, category, description
 food_categories      (16 rows)    — Fruits, Vegetables, Meat, Dairy, Supplements, etc.
 foods               (257 rows)    — 218 original + 25 cooked legumes/grains + 10 dried fruits/vegetables + 4 salt types
 food_nutrients   (~14,495 rows)   — food_id × nutrient_id × value_per_100g
@@ -662,6 +662,6 @@ SELECT name FROM nutrients ORDER BY name;
 ## Cold-Start Instructions
 
 **To pick up where we left off:**
-> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 257 foods × 59 nutrients (58 with food data). Four live features: Data View (sortable/filterable table + charts), meal/day planner, calendar food log tracker, and Diet Evaluator. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
+> Read PROJECT_STATE.md. This is a nutrition web app: Next.js 16 + Supabase + Vercel, source at github.com/danzhig/nutrition-platform. 257 foods × 58 nutrients (all with food data). Four live features: Data View (sortable/filterable table + charts), meal/day planner, calendar food log tracker, and Diet Evaluator. Supabase Auth is live. Direct Supabase REST API credentials are in memory. The preset_meals table (113 meals) lives only in Supabase — no local seed file. Before writing any code, tell me what you see as the current state and ask what I want to do.
 
 **IMPORTANT:** Before adding any food, nutrient, or food category, read the **Data Maintenance** section above — multiple files must be updated in sync or things silently break.

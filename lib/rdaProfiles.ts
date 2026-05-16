@@ -46,7 +46,6 @@ export const NUTRIENT_BEHAVIORS: Record<string, NutrientBehavior> = {
   'Biotin':              'normal',
   'EPA':                 'normal',
   'DHA':                 'normal',
-  'Lutein & Zeaxanthin': 'normal',
   'Lycopene':            'normal',
   'Betaine':             'normal',
   'CoQ10':               'normal',
@@ -171,7 +170,6 @@ const MALE_AVG: RDAValues = {
   'Biotin':              30,     // AI: 30 mcg/day (NAM 1998; no sex/activity difference in AI)
   'EPA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
   'DHA':                 250,    // WHO/AHA: 500 mg/day combined EPA+DHA → 250 mg each
-  'Lutein & Zeaxanthin': 6000,   // 6 mg/day; AREDS2 used 10 mg — 6 mg is conservative evidence-based target
   'Lycopene':            10,     // 10 mg/day; research-derived (no official DRI)
   'Betaine':             500,    // 500 mg/day; evidence-based dietary target (no official DRI)
   'CoQ10':               5,      // 5 mg/day; typical healthy dietary intake target (no official DRI)
@@ -236,7 +234,6 @@ const FEMALE_AVG: RDAValues = {
   'Biotin':              30,
   'EPA':                 250,
   'DHA':                 250,
-  'Lutein & Zeaxanthin': 6000,
   'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
@@ -299,7 +296,6 @@ const MALE_LOWCARB: RDAValues = {
   'Biotin':              30,
   'EPA':                 250,
   'DHA':                 250,
-  'Lutein & Zeaxanthin': 6000,
   'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
@@ -361,7 +357,6 @@ const FEMALE_LOWCARB: RDAValues = {
   'Biotin':              30,
   'EPA':                 250,
   'DHA':                 250,
-  'Lutein & Zeaxanthin': 6000,
   'Lycopene':            10,
   'Betaine':             500,
   'CoQ10':               5,
