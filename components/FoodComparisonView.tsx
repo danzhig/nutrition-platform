@@ -540,6 +540,12 @@ export default function FoodComparisonView({ data, rdaProfile }: Props) {
     return m
   }, [data.foods])
 
+  // GI is a dimensionless index — it does not scale with portion size
+  const giNutrientId = useMemo(
+    () => data.nutrients.find((n) => n.nutrient_name === 'Glycemic Index')?.nutrient_id ?? null,
+    [data.nutrients]
+  )
+
   const foodA = foodAId != null ? (foodsById.get(foodAId) ?? null) : null
   const foodB = foodBId != null ? (foodsById.get(foodBId) ?? null) : null
 
@@ -558,20 +564,26 @@ export default function FoodComparisonView({ data, rdaProfile }: Props) {
     const mult = gramsA / 100
     const result: Record<number, number | null> = {}
     for (const [idStr, val] of Object.entries(foodA.nutrients)) {
-      result[Number(idStr)] = val != null ? (val as number) * mult : null
+      const nid = Number(idStr)
+      // GI is portion-size-independent — do not scale by grams
+      const scale = (giNutrientId != null && nid === giNutrientId) ? 1 : mult
+      result[nid] = val != null ? (val as number) * scale : null
     }
     return result
-  }, [foodA, gramsA])
+  }, [foodA, gramsA, giNutrientId])
 
   const valuesB = useMemo<Record<number, number | null>>(() => {
     if (!foodB) return {}
     const mult = gramsB / 100
     const result: Record<number, number | null> = {}
     for (const [idStr, val] of Object.entries(foodB.nutrients)) {
-      result[Number(idStr)] = val != null ? (val as number) * mult : null
+      const nid = Number(idStr)
+      // GI is portion-size-independent — do not scale by grams
+      const scale = (giNutrientId != null && nid === giNutrientId) ? 1 : mult
+      result[nid] = val != null ? (val as number) * scale : null
     }
     return result
-  }, [foodB, gramsB])
+  }, [foodB, gramsB, giNutrientId])
 
   const valuesDiff = useMemo<Record<number, number | null>>(() => {
     const result: Record<number, number | null> = {}

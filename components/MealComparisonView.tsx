@@ -64,10 +64,13 @@ function fmtVal(val: number): string {
   return Math.round(val).toString()
 }
 
+// GI is a dimensionless index — not a cumulative quantity.
+// Skip it in the linear sum and compute a carb-weighted average separately.
 function computeMealValues(
   meal: MealOption,
   foodsById: Map<number, FoodRow>,
-  juiceFactorById: Map<number, number>
+  juiceFactorById: Map<number, number>,
+  giNutrientId: number | null
 ): Record<number, number | null> {
   const result: Record<number, number | null> = {}
   for (const item of meal.items) {
@@ -76,6 +79,7 @@ function computeMealValues(
     const mult = item.grams / 100
     for (const [idStr, rawVal] of Object.entries(food.nutrients)) {
       const nid = Number(idStr)
+      if (nid === giNutrientId) continue  // handled by computeWeightedGI
       if (rawVal != null) {
         const jFactor = meal.isJuice ? (juiceFactorById.get(nid) ?? 0.85) : 1
         result[nid] = (result[nid] ?? 0) + rawVal * mult * jFactor
@@ -85,12 +89,41 @@ function computeMealValues(
   return result
 }
 
+// Carb-weighted average GI — mirrors MealNutritionSidebar logic exactly.
+function computeWeightedGI(
+  items: { food_id: number; grams: number }[],
+  isJuice: boolean,
+  foodsById: Map<number, FoodRow>,
+  juiceFactorById: Map<number, number>,
+  giNutrientId: number,
+  carbsNutrientId: number
+): number | null {
+  const carbFactor = isJuice ? (juiceFactorById.get(carbsNutrientId) ?? 0.85) : 1
+  let sumGIxCarbs = 0
+  let sumCarbs = 0
+  for (const item of items) {
+    const food = foodsById.get(item.food_id)
+    if (!food) continue
+    const mult = item.grams / 100
+    const gi = food.nutrients[giNutrientId]
+    const carbs = food.nutrients[carbsNutrientId]
+    if (gi == null || carbs == null) continue
+    const carbAmount = (carbs as number) * mult * carbFactor
+    if (carbAmount > 0) {
+      sumGIxCarbs += (gi as number) * carbAmount
+      sumCarbs += carbAmount
+    }
+  }
+  return sumCarbs > 0 ? Math.round(sumGIxCarbs / sumCarbs) : null
+}
+
 function computeSingleFoodValues(
   foodId: number,
   grams: number,
   isJuice: boolean,
   foodsById: Map<number, FoodRow>,
-  juiceFactorById: Map<number, number>
+  juiceFactorById: Map<number, number>,
+  giNutrientId: number | null
 ): Record<number, number | null> {
   const result: Record<number, number | null> = {}
   const food = foodsById.get(foodId)
@@ -98,6 +131,7 @@ function computeSingleFoodValues(
   const mult = grams / 100
   for (const [idStr, rawVal] of Object.entries(food.nutrients)) {
     const nid = Number(idStr)
+    if (nid === giNutrientId) continue  // handled by computeWeightedGI
     const jFactor = isJuice ? (juiceFactorById.get(nid) ?? 0.85) : 1
     result[nid] = rawVal != null ? (rawVal as number) * mult * jFactor : null
   }
@@ -650,6 +684,15 @@ export default function MealComparisonView({ data, rdaProfile }: Props) {
 
   const juiceFactorById = useMemo(() => buildJuiceFactorMap(data.nutrients), [data.nutrients])
 
+  const giNutrientId = useMemo(
+    () => data.nutrients.find((n) => n.nutrient_name === 'Glycemic Index')?.nutrient_id ?? null,
+    [data.nutrients]
+  )
+  const carbsNutrientId = useMemo(
+    () => data.nutrients.find((n) => n.nutrient_name === 'Net Carbohydrates')?.nutrient_id ?? null,
+    [data.nutrients]
+  )
+
   // Combine preset and saved meals into unified MealOption list
   const allMeals = useMemo<MealOption[]>(() => {
     const preset: MealOption[] = presetMeals.map((p) => ({
@@ -692,28 +735,52 @@ export default function MealComparisonView({ data, rdaProfile }: Props) {
 
   const valuesA = useMemo<Record<number, number | null>>(() => {
     if (!mealA) return {}
-    return computeMealValues(mealA, foodsById, juiceFactorById)
-  }, [mealA, foodsById, juiceFactorById])
+    const base = computeMealValues(mealA, foodsById, juiceFactorById, giNutrientId)
+    if (giNutrientId != null && carbsNutrientId != null) {
+      base[giNutrientId] = computeWeightedGI(
+        mealA.items, mealA.isJuice, foodsById, juiceFactorById, giNutrientId, carbsNutrientId
+      )
+    }
+    return base
+  }, [mealA, foodsById, juiceFactorById, giNutrientId, carbsNutrientId])
 
   const valuesB = useMemo<Record<number, number | null>>(() => {
     if (!mealB) return {}
-    return computeMealValues(mealB, foodsById, juiceFactorById)
-  }, [mealB, foodsById, juiceFactorById])
+    const base = computeMealValues(mealB, foodsById, juiceFactorById, giNutrientId)
+    if (giNutrientId != null && carbsNutrientId != null) {
+      base[giNutrientId] = computeWeightedGI(
+        mealB.items, mealB.isJuice, foodsById, juiceFactorById, giNutrientId, carbsNutrientId
+      )
+    }
+    return base
+  }, [mealB, foodsById, juiceFactorById, giNutrientId, carbsNutrientId])
 
   // Drill-down display values: single food when selected, full meal otherwise
   const displayValuesA = useMemo<Record<number, number | null>>(() => {
     if (!mealA || selectedFoodA === null) return valuesA
     const item = mealA.items.find((i) => i.food_id === selectedFoodA)
     if (!item) return valuesA
-    return computeSingleFoodValues(selectedFoodA, item.grams, mealA.isJuice, foodsById, juiceFactorById)
-  }, [mealA, selectedFoodA, valuesA, foodsById, juiceFactorById])
+    const base = computeSingleFoodValues(selectedFoodA, item.grams, mealA.isJuice, foodsById, juiceFactorById, giNutrientId)
+    if (giNutrientId != null && carbsNutrientId != null) {
+      base[giNutrientId] = computeWeightedGI(
+        [item], mealA.isJuice, foodsById, juiceFactorById, giNutrientId, carbsNutrientId
+      )
+    }
+    return base
+  }, [mealA, selectedFoodA, valuesA, foodsById, juiceFactorById, giNutrientId, carbsNutrientId])
 
   const displayValuesB = useMemo<Record<number, number | null>>(() => {
     if (!mealB || selectedFoodB === null) return valuesB
     const item = mealB.items.find((i) => i.food_id === selectedFoodB)
     if (!item) return valuesB
-    return computeSingleFoodValues(selectedFoodB, item.grams, mealB.isJuice, foodsById, juiceFactorById)
-  }, [mealB, selectedFoodB, valuesB, foodsById, juiceFactorById])
+    const base = computeSingleFoodValues(selectedFoodB, item.grams, mealB.isJuice, foodsById, juiceFactorById, giNutrientId)
+    if (giNutrientId != null && carbsNutrientId != null) {
+      base[giNutrientId] = computeWeightedGI(
+        [item], mealB.isJuice, foodsById, juiceFactorById, giNutrientId, carbsNutrientId
+      )
+    }
+    return base
+  }, [mealB, selectedFoodB, valuesB, foodsById, juiceFactorById, giNutrientId, carbsNutrientId])
 
   const valuesDiff = useMemo<Record<number, number | null>>(() => {
     const result: Record<number, number | null> = {}
