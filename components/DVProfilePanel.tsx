@@ -18,6 +18,10 @@ interface Props {
   onRdaSelectionChange: (sel: string) => void
   onCustomValuesChange: (values: RDAValues) => void
   onSavedProfilesChange: (profiles: SavedProfile[]) => void
+  /** null = no default set; '' = None; any other string = profile key */
+  defaultProfileKey?: string | null
+  /** Called with null to clear the default, or a profile key to set it */
+  onSetDefault?: (key: string | null) => void
   /** When true: renders only the custom editor (no profile list). Used when embedded below the tab bar. */
   editorOnly?: boolean
   /** When provided: renders as a floating overlay instead of inline. */
@@ -50,6 +54,8 @@ export default function DVProfilePanel({
   onRdaSelectionChange,
   onCustomValuesChange,
   onSavedProfilesChange,
+  defaultProfileKey = null,
+  onSetDefault,
   editorOnly = false,
   onClose,
 }: Props) {
@@ -63,6 +69,11 @@ export default function DVProfilePanel({
   // Overlay-only state
   const [overlayView, setOverlayView] = useState<'picker' | 'editor'>('picker')
   const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null)
+
+  function handleStarClick(profileKey: string) {
+    if (!onSetDefault) return
+    onSetDefault(defaultProfileKey === profileKey ? null : profileKey)
+  }
 
   function seedFrom(baseId: ProfileId) {
     const base = RDA_PROFILES.find((p) => p.id === baseId)
@@ -402,6 +413,19 @@ export default function DVProfilePanel({
                           >
                             {sp.name}
                           </button>
+                          {onSetDefault && (
+                            <button
+                              onClick={() => handleStarClick(`saved:${sp.id}`)}
+                              title={defaultProfileKey === `saved:${sp.id}` ? 'Default — click to clear' : 'Set as default'}
+                              className={`shrink-0 text-sm leading-none transition-colors px-1 ${
+                                defaultProfileKey === `saved:${sp.id}`
+                                  ? 'text-amber-400 hover:text-amber-300'
+                                  : 'text-slate-600 hover:text-slate-400'
+                              }`}
+                            >
+                              {defaultProfileKey === `saved:${sp.id}` ? '★' : '☆'}
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               setEditingProfileId(sp.id)
@@ -433,27 +457,60 @@ export default function DVProfilePanel({
               <div className="px-3 py-2">
                 <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Built-in</p>
                 <div className="space-y-1">
-                  <button
-                    onClick={() => { onRdaSelectionChange(''); onClose() }}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                      rdaSelection === '' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
-                  >
-                    None
-                  </button>
-                  {RDA_PROFILES.map((p) => (
+                  {/* None */}
+                  <div className={`flex items-center rounded-md group transition-colors ${
+                    rdaSelection === '' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
+                  }`}>
                     <button
+                      onClick={() => { onRdaSelectionChange(''); onClose() }}
+                      className="flex-1 text-left px-2.5 py-1.5 text-[11px] font-medium"
+                    >
+                      None
+                    </button>
+                    {isLoggedIn && onSetDefault && (
+                      <button
+                        onClick={() => handleStarClick('')}
+                        title={defaultProfileKey === '' ? 'Default — click to clear' : 'Set as default'}
+                        className={`shrink-0 px-2 py-1.5 text-sm leading-none transition-colors ${
+                          defaultProfileKey === ''
+                            ? 'text-amber-400 hover:text-amber-300'
+                            : 'text-slate-600 group-hover:text-slate-400'
+                        }`}
+                      >
+                        {defaultProfileKey === '' ? '★' : '☆'}
+                      </button>
+                    )}
+                  </div>
+                  {RDA_PROFILES.map((p) => (
+                    <div
                       key={p.id}
-                      data-tour={p.id === 'male-lowcarb' ? 'dv-profile-male-lowcarb' : undefined}
-                      onClick={() => { onRdaSelectionChange(p.id); onClose() }}
-                      title={p.description}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-md transition-colors ${
-                        rdaSelection === p.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      className={`flex items-center rounded-md group transition-colors ${
+                        rdaSelection === p.id ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white'
                       }`}
                     >
-                      <span className="block text-[11px] font-medium">{p.label}</span>
-                      <span className="block text-[9px] opacity-60 mt-0.5 leading-tight">{p.description}</span>
-                    </button>
+                      <button
+                        data-tour={p.id === 'male-lowcarb' ? 'dv-profile-male-lowcarb' : undefined}
+                        onClick={() => { onRdaSelectionChange(p.id); onClose() }}
+                        title={p.description}
+                        className="flex-1 text-left px-2.5 py-1.5"
+                      >
+                        <span className="block text-[11px] font-medium">{p.label}</span>
+                        <span className="block text-[9px] opacity-60 mt-0.5 leading-tight">{p.description}</span>
+                      </button>
+                      {isLoggedIn && onSetDefault && (
+                        <button
+                          onClick={() => handleStarClick(p.id)}
+                          title={defaultProfileKey === p.id ? 'Default — click to clear' : 'Set as default'}
+                          className={`shrink-0 px-2 py-1.5 text-sm leading-none transition-colors ${
+                            defaultProfileKey === p.id
+                              ? 'text-amber-400 hover:text-amber-300'
+                              : 'text-slate-600 group-hover:text-slate-400'
+                          }`}
+                        >
+                          {defaultProfileKey === p.id ? '★' : '☆'}
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

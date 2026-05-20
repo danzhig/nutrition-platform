@@ -7,6 +7,7 @@ import type { ProfileId, RDAProfile, RDAValues } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
 import { loadSavedProfiles } from '@/lib/profileStorage'
+import { loadUserPreferences, saveUserPreferences, deleteUserPreferences } from '@/lib/userPreferencesStorage'
 import AuthButton from '@/components/AuthButton'
 import MainView from './MainView'
 import DVProfilePanel from './DVProfilePanel'
@@ -55,6 +56,7 @@ export default function AppShell({ data }: Props) {
 
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
   const [showDVOverlay, setShowDVOverlay] = useState(false)
+  const [defaultProfileKey, setDefaultProfileKey] = useState<string | null>(null)
 
   // Read persisted values after mount (avoids SSR hydration mismatch).
   useEffect(() => {
@@ -98,11 +100,30 @@ export default function AppShell({ data }: Props) {
   useEffect(() => {
     if (!user) {
       setSavedProfiles([])
+      setDefaultProfileKey(null)
       setRdaSelection((sel) => (sel.startsWith('saved:') ? 'male-avg' : sel))
       return
     }
-    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
+    Promise.all([loadSavedProfiles(), loadUserPreferences()])
+      .then(([profiles, prefs]) => {
+        setSavedProfiles(profiles)
+        if (prefs !== null) {
+          setDefaultProfileKey(prefs.default_profile)
+          setRdaSelection(prefs.default_profile)
+        }
+      })
+      .catch(console.error)
   }, [user])
+
+  async function handleSetDefault(key: string | null) {
+    if (key === null) {
+      setDefaultProfileKey(null)
+      deleteUserPreferences().catch(console.error)
+    } else {
+      setDefaultProfileKey(key)
+      saveUserPreferences({ default_profile: key }).catch(console.error)
+    }
+  }
 
   const rdaProfile = useMemo<RDAProfile | null>(() => {
     if (!rdaSelection) return null
@@ -198,6 +219,8 @@ export default function AppShell({ data }: Props) {
           onRdaSelectionChange={setRdaSelection}
           onCustomValuesChange={setCustomRdaValues}
           onSavedProfilesChange={setSavedProfiles}
+          defaultProfileKey={defaultProfileKey}
+          onSetDefault={handleSetDefault}
         />
       )}
     </main>
