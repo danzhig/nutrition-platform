@@ -104,9 +104,9 @@ export default function AppShell({ data }: Props) {
       setRdaSelection((sel) => (sel.startsWith('saved:') ? 'male-avg' : sel))
       return
     }
-    Promise.all([loadSavedProfiles(), loadUserPreferences()])
-      .then(([profiles, prefs]) => {
-        setSavedProfiles(profiles)
+    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
+    loadUserPreferences()
+      .then((prefs) => {
         if (prefs !== null) {
           setDefaultProfileKey(prefs.default_profile)
           setRdaSelection(prefs.default_profile)
