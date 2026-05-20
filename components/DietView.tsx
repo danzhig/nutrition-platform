@@ -146,6 +146,19 @@ export default function DietView({ data, rdaProfile }: Props) {
 
   return (
     <div className="space-y-5">
+      {/* ── Suggestions ───────────────────────────────────────────────────── */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-4">
+        <p className="text-sm font-semibold text-slate-200 mb-3">
+          Foods that would strengthen your diet
+        </p>
+        <DietSuggestionsPanel
+          suggestions={dietSuggestions}
+          onAdd={handleAdd}
+          hasSelection={selectedFoods.length > 0}
+          hasProfile={rdaProfile !== null}
+        />
+      </div>
+
       {/* ── Three-column top section ───────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-4 h-[560px]">
         {/* Panel 1 — Browse Foods */}
@@ -243,18 +256,6 @@ export default function DietView({ data, rdaProfile }: Props) {
         <DietCategoryCards results={dietResults} allNutrients={data.nutrients} />
       </div>
 
-      {/* ── Suggestions ───────────────────────────────────────────────────── */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-4">
-        <p className="text-sm font-semibold text-slate-200 mb-3">
-          Foods that would strengthen your diet
-        </p>
-        <DietSuggestionsPanel
-          suggestions={dietSuggestions}
-          onAdd={handleAdd}
-          hasSelection={selectedFoods.length > 0}
-          hasProfile={rdaProfile !== null}
-        />
-      </div>
     </div>
   )
 }
