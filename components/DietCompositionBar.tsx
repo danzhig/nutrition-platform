@@ -18,14 +18,20 @@ const PALETTE = [
 
 interface Props {
   compositions: DietFoodComposition[]
-  dailyWeightG: number
+  monthlyBudgetG: number  // dailyWeightG × 28
 }
 
-export default function DietCompositionBar({ compositions, dailyWeightG }: Props) {
+export default function DietCompositionBar({ compositions, monthlyBudgetG }: Props) {
   const barRef = useRef<HTMLDivElement>(null)
   const [hovered, setHovered] = useState<{ idx: number; x: number; y: number } | null>(null)
 
   if (compositions.length === 0) return null
+
+  const totalFilledG = compositions.reduce((s, c) => s + c.monthlyGrams, 0)
+  const overfilled = totalFilledG > monthlyBudgetG
+  const filledKg = (totalFilledG / 1000).toFixed(1)
+  const budgetKg = (monthlyBudgetG / 1000).toFixed(1)
+  const fillPct = Math.round((totalFilledG / monthlyBudgetG) * 100)
 
   const hoveredComp = hovered !== null ? compositions[hovered.idx] : null
 
@@ -33,10 +39,11 @@ export default function DietCompositionBar({ compositions, dailyWeightG }: Props
     if (!barRef.current) return
     const rect = barRef.current.getBoundingClientRect()
     const xRatio = (e.clientX - rect.left) / rect.width
+
     let cumulative = 0
     for (let i = 0; i < compositions.length; i++) {
-      cumulative += compositions[i].proportion
-      if (xRatio <= cumulative) {
+      cumulative += compositions[i].monthlyGrams / monthlyBudgetG
+      if (xRatio <= Math.min(cumulative, 1)) {
         setHovered({ idx: i, x: e.clientX, y: e.clientY })
         return
       }
@@ -45,20 +52,20 @@ export default function DietCompositionBar({ compositions, dailyWeightG }: Props
   }
 
   return (
-    <div className="px-4 py-3 border-b border-slate-700 flex-shrink-0 space-y-1.5">
-      {/* Stacked bar — hover detection is on the container to avoid segment-boundary jitter */}
+    <div className="px-4 py-3 border-b border-slate-700 flex-shrink-0 space-y-2">
+      {/* Fill bar — grey background is the unfilled budget remainder */}
       <div
         ref={barRef}
-        className="flex h-3 rounded-full overflow-hidden cursor-default"
+        className="flex h-4 rounded-sm overflow-hidden cursor-default bg-slate-700/50"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHovered(null)}
       >
-        {compositions.map(({ foodId, proportion }, i) => (
+        {compositions.map(({ foodId, monthlyGrams }, i) => (
           <div
             key={foodId}
-            className="h-full transition-opacity duration-100"
+            className="h-full flex-shrink-0 transition-opacity duration-100"
             style={{
-              width: `${proportion * 100}%`,
+              width: `${(monthlyGrams / monthlyBudgetG) * 100}%`,
               background: PALETTE[i % PALETTE.length],
               opacity: hovered === null || hovered.idx === i ? 1 : 0.35,
             }}
@@ -66,11 +73,17 @@ export default function DietCompositionBar({ compositions, dailyWeightG }: Props
         ))}
       </div>
 
-      <p className="text-[9px] text-slate-500 leading-none">
-        Diet composition — normalized to {dailyWeightG} g/day from DV profile
-      </p>
+      {/* Labels */}
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`text-[9px] font-medium ${overfilled ? 'text-amber-400' : 'text-slate-300'}`}>
+          {filledKg} kg filled{overfilled ? ' — over budget' : ''}
+        </span>
+        <span className="text-[9px] text-slate-500 tabular-nums">
+          {fillPct}% of {budgetKg} kg · 28-day budget
+        </span>
+      </div>
 
-      {/* Fixed tooltip follows cursor */}
+      {/* Hover tooltip */}
       {hoveredComp && hovered && (
         <div
           className="fixed z-50 px-2 py-1 bg-slate-900 border border-slate-600 rounded text-[10px] text-slate-200 whitespace-nowrap pointer-events-none shadow-lg"
@@ -82,7 +95,7 @@ export default function DietCompositionBar({ compositions, dailyWeightG }: Props
         >
           <span className="font-medium">{hoveredComp.foodName}</span>
           <span className="text-slate-400 ml-1">
-            — {Math.round(hoveredComp.proportion * 100)}% of daily diet
+            — {(hoveredComp.monthlyGrams / 1000).toFixed(2)} kg/month
           </span>
         </div>
       )}

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef, useLayoutEffect } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
 import type { DietNutrientResult, FoodNutrientMap } from '@/lib/dietProfile'
-import { RATING_MULTIPLIERS, WEIGHTED_AVERAGE_NUTRIENTS } from '@/lib/dietProfile'
+import { WEIGHTED_AVERAGE_NUTRIENTS } from '@/lib/dietProfile'
 import type { DietFood } from '@/lib/dietStorage'
 import { rdaCellColor } from '@/lib/rdaColorScale'
 import { getPortionSize } from '@/lib/portionSizes'
@@ -40,7 +40,6 @@ interface Props {
   allFoodNutrients: FoodNutrientMap
   selectedFoodIds: Set<number>
   selectedFoods: DietFood[]
-  dailyWeightG: number
   onAddFood: (foodId: number) => void
 }
 
@@ -81,26 +80,19 @@ function computeFoodContribs(
   selectedFoods: DietFood[],
   allFoodNutrients: FoodNutrientMap,
   foodsById: Map<number, FoodRow>,
-  dailyWeightG: number,
 ): DietFoodContrib[] {
-  // Recompute raw weights (mirrors computeDietProfile Pass 1)
-  let totalRaw = 0
-  const rawWeights = new Map<number, number>()
-  for (const { foodId, rating } of selectedFoods) {
-    const raw = getPortionSize(foodId).grams * RATING_MULTIPLIERS[rating]
-    rawWeights.set(foodId, raw)
-    totalRaw += raw
+  // Mirrors computeDietProfile: daily weight = portionSize × (daysPerWeek / 7)
+  const dailyWeights = new Map<number, number>()
+  for (const { foodId, daysPerWeek } of selectedFoods) {
+    dailyWeights.set(foodId, getPortionSize(foodId).grams * (daysPerWeek / 7))
   }
 
   const contribs: { foodName: string; contribPctDV: number }[] = []
 
   if (WEIGHTED_AVERAGE_NUTRIENTS.has(result.nutrientName)) {
-    // Weighted-average path (mirrors computeDietProfile exactly).
-    // GI is a dimensionless index, not a per-100g amount, so each food's
-    // contribution = GI × (its weight share) / rdaTarget.
-    // Denominator includes ALL foods with non-null data (even GI=0).
+    // Weighted-average path: GI = Σ(value × dailyW) / Σ(dailyW)
     let denominator = 0
-    const entries: { foodName: string; rawValue: number; normalizedW: number }[] = []
+    const entries: { foodName: string; rawValue: number; dailyW: number }[] = []
 
     for (const { foodId } of selectedFoods) {
       const nutrients = allFoodNutrients[foodId]
@@ -108,19 +100,18 @@ function computeFoodContribs(
       const rawValue = nutrients[result.nutrientId]
       if (rawValue === null || rawValue === undefined) continue
 
-      const rawW = rawWeights.get(foodId) ?? 0
-      const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
-      denominator += normalizedW
-      entries.push({ foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`, rawValue, normalizedW })
+      const dailyW = dailyWeights.get(foodId) ?? 0
+      denominator += dailyW
+      entries.push({ foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`, rawValue, dailyW })
     }
 
-    for (const { foodName, rawValue, normalizedW } of entries) {
-      const contribPctDV = denominator > 0 ? (rawValue * (normalizedW / denominator)) / result.rdaTarget : 0
+    for (const { foodName, rawValue, dailyW } of entries) {
+      const contribPctDV = denominator > 0 ? (rawValue * (dailyW / denominator)) / result.rdaTarget : 0
       if (contribPctDV < 0.001) continue
       contribs.push({ foodName, contribPctDV })
     }
   } else {
-    // Standard summing path for genuine per-100g nutrients.
+    // Standard summing path
     for (const { foodId } of selectedFoods) {
       const nutrients = allFoodNutrients[foodId]
       if (!nutrients) continue
@@ -128,9 +119,8 @@ function computeFoodContribs(
       const rawValue = nutrients[result.nutrientId]
       if (rawValue === null || rawValue === undefined || rawValue === 0) continue
 
-      const rawW = rawWeights.get(foodId) ?? 0
-      const normalizedW = totalRaw > 0 ? (rawW / totalRaw) * dailyWeightG : 0
-      const contribPctDV = ((rawValue / 100) * normalizedW) / result.rdaTarget
+      const dailyW = dailyWeights.get(foodId) ?? 0
+      const contribPctDV = ((rawValue / 100) * dailyW) / result.rdaTarget
 
       if (contribPctDV < 0.001) continue
       contribs.push({ foodName: foodsById.get(foodId)?.food_name ?? `Food #${foodId}`, contribPctDV })
@@ -281,7 +271,6 @@ export default function DietNutrientPanel({
   allFoodNutrients,
   selectedFoodIds,
   selectedFoods,
-  dailyWeightG,
   onAddFood,
 }: Props) {
   const [filter, setFilter] = useState<FilterMode>(() => {
@@ -359,7 +348,7 @@ export default function DietNutrientPanel({
       }
 
       const contribs = hasSelection
-        ? computeFoodContribs(result, selectedFoods, allFoodNutrients, foodsById, dailyWeightG)
+        ? computeFoodContribs(result, selectedFoods, allFoodNutrients, foodsById)
         : []
 
       // Only open if there's something to show
@@ -371,7 +360,7 @@ export default function DietNutrientPanel({
       setInfoDietTotalPctDV(result.pctDV)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [infoNutrient, nutrientMetaById, hasSelection, selectedFoods, allFoodNutrients, foodsById, dailyWeightG],
+    [infoNutrient, nutrientMetaById, hasSelection, selectedFoods, allFoodNutrients, foodsById],
   )
 
   // ── Top sources for the hovered nutrient ─────────────────────────────────

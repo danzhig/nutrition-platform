@@ -1,5 +1,10 @@
 /**
  * Diet Evaluator calculation engine.
+ *
+ * Model: each food's daily contribution = portionSize × (daysPerWeek / 7).
+ * No normalization to dailyWeightG — coverage reflects what the person
+ * actually eats. The 28-day budget (dailyWeightG × 28) is informational,
+ * used only by the monthly fill bar.
  */
 
 import type { DietFood } from '@/lib/dietStorage'
@@ -13,24 +18,6 @@ import {
 import { getPortionSize } from '@/lib/portionSizes'
 import { NUTRIENT_GROUP_LIST } from '@/lib/filterConstants'
 
-// ─── Rating scale ─────────────────────────────────────────────────────────────
-
-export const RATING_MULTIPLIERS: Record<number, number> = {
-  1: 0.5,
-  2: 0.75,
-  3: 1.0,
-  4: 1.25,
-  5: 1.5,
-}
-
-export const RATING_LABELS: Record<number, string> = {
-  1: 'Rarely (a few times a month)',
-  2: 'Sometimes (weekly)',
-  3: 'Regularly (a few times a week)',
-  4: 'Often (most days)',
-  5: 'Staple (daily or more)',
-}
-
 // ─── Result types ─────────────────────────────────────────────────────────────
 
 /** foodId → nutrientId → value_per_100g (null = data unavailable) */
@@ -41,26 +28,24 @@ export interface DietNutrientResult {
   nutrientName: string
   nutrientCategory: string
   unit: string
-  pctDV: number        // total normalized contribution / RDA — may exceed 1.0
-  sourcesCount: number // foods contributing ≥5% DV at their normalized weight
-  rdaTarget: number    // from active RDA profile (or FOOD_METRIC_TARGETS fallback)
+  pctDV: number        // total daily contribution / RDA — may exceed 1.0
+  sourcesCount: number // foods contributing ≥5% DV at their daily weight
+  rdaTarget: number
   behavior: string     // 'normal' | 'limit' | 'normal-with-ul'
   upperLimit?: number
 }
 
-/** Per-food proportion of the daily food weight budget (for the composition bar). */
+/** Per-food monthly gram total (portionSize × daysPerWeek × 4) for the fill bar. */
 export interface DietFoodComposition {
   foodId: number
   foodName: string
-  proportion: number  // 0.0–1.0 fraction of total daily weight
+  monthlyGrams: number
 }
 
 // ─── Weighted-average nutrients ──────────────────────────────────────────────
 //
-// These nutrients are stored as dimensionless indices (not per-100g amounts),
-// so they must be computed as a weight-proportion-weighted average across the
-// diet rather than summed. Adding more food doesn't change the diet's GI —
-// only the composition of the diet changes it.
+// These nutrients are dimensionless indices (not per-100g amounts) and must be
+// computed as a weight-proportion-weighted average rather than summed.
 export const WEIGHTED_AVERAGE_NUTRIENTS = new Set(['Glycemic Index'])
 
 // ─── Category sort order ──────────────────────────────────────────────────────
@@ -70,14 +55,12 @@ const CATEGORY_ORDER = NUTRIENT_GROUP_LIST.map((g) => g.value)
 // ─── Main calculation ─────────────────────────────────────────────────────────
 
 /**
- * Compute per-nutrient diet coverage using a two-pass normalized model.
+ * Compute per-nutrient diet coverage using an absolute daily-average model.
  *
- * Pass 1: raw weights = portionSize × RATING_MULTIPLIER; sum to totalRawWeight.
- * Pass 2: each food's normalizedWeight = (rawWeight / totalRawWeight) × dailyWeightG.
- *         Nutrient contributions are derived from normalizedWeight, so the total
- *         of all foods always equals dailyWeightG regardless of selection size.
- *
- * Returns both the nutrient results and per-food composition proportions.
+ * Each food's daily gram contribution = portionSize × (daysPerWeek / 7).
+ * This equals (portionSize × daysPerWeek × 4) / 28 — the food's share of
+ * the 28-day budget averaged back to a single day. Nutrients are summed
+ * across all foods from these actual daily weights with no further scaling.
  */
 export function computeDietProfile(
   selectedFoods: DietFood[],
@@ -86,26 +69,20 @@ export function computeDietProfile(
   nutrients: NutrientMeta[],
   foodNames?: Map<number, string>,
 ): { results: DietNutrientResult[]; compositions: DietFoodComposition[] } {
-  const dailyWeightG = rdaProfile.dailyWeightG ?? 1700
-
-  // ── Pass 1: raw weights ──────────────────────────────────────────────────
-  const rawWeights = new Map<number, number>()
-  let totalRawWeight = 0
-  for (const { foodId, rating } of selectedFoods) {
-    const portionG = getPortionSize(foodId).grams
-    const raw = portionG * RATING_MULTIPLIERS[rating]
-    rawWeights.set(foodId, raw)
-    totalRawWeight += raw
+  // Daily weight per food
+  const dailyWeights = new Map<number, number>()
+  for (const { foodId, daysPerWeek } of selectedFoods) {
+    dailyWeights.set(foodId, getPortionSize(foodId).grams * (daysPerWeek / 7))
   }
 
-  // ── Composition proportions (for the stacked bar) ────────────────────────
-  const compositions: DietFoodComposition[] = selectedFoods.map(({ foodId }) => ({
+  // Monthly gram totals for the fill bar
+  const compositions: DietFoodComposition[] = selectedFoods.map(({ foodId, daysPerWeek }) => ({
     foodId,
     foodName: foodNames?.get(foodId) ?? `Food #${foodId}`,
-    proportion: totalRawWeight > 0 ? (rawWeights.get(foodId) ?? 0) / totalRawWeight : 0,
+    monthlyGrams: getPortionSize(foodId).grams * daysPerWeek * 4,
   }))
 
-  // ── Pass 2: nutrient contributions via normalized weights ────────────────
+  // Nutrient results
   const results: DietNutrientResult[] = []
 
   for (const nutrient of nutrients) {
@@ -124,9 +101,7 @@ export function computeDietProfile(
     let sourcesCount: number
 
     if (WEIGHTED_AVERAGE_NUTRIENTS.has(nutrient.nutrient_name)) {
-      // Weighted-average path: diet-level index = Σ(value × weight) / Σ(weight)
-      // Only foods with actual data (non-null, including genuine 0) participate.
-      // sourcesCount = how many foods have GI data (quality signal for the average).
+      // Weighted-average path: diet-level index = Σ(value × dailyW) / Σ(dailyW)
       let numerator = 0
       let denominator = 0
       sourcesCount = 0
@@ -137,18 +112,16 @@ export function computeDietProfile(
         const rawValue = foodRow[nutrient.nutrient_id]
         if (rawValue === null || rawValue === undefined) continue
 
-        const rawW = rawWeights.get(foodId) ?? 0
-        const normalizedW =
-          totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
-        numerator += rawValue * normalizedW
-        denominator += normalizedW
+        const dailyW = dailyWeights.get(foodId) ?? 0
+        numerator += rawValue * dailyW
+        denominator += dailyW
         sourcesCount++
       }
 
       const weightedAvg = denominator > 0 ? numerator / denominator : 0
       pctDV = weightedAvg / rdaTarget
     } else {
-      // Standard summing path for genuine per-100g nutrients.
+      // Standard summing path
       let totalContrib = 0
       sourcesCount = 0
 
@@ -160,10 +133,8 @@ export function computeDietProfile(
         const value = rawValue ?? 0
         if (value === 0) continue
 
-        const rawW = rawWeights.get(foodId) ?? 0
-        const normalizedW =
-          totalRawWeight > 0 ? (rawW / totalRawWeight) * dailyWeightG : 0
-        const contrib = (value / 100) * normalizedW
+        const dailyW = dailyWeights.get(foodId) ?? 0
+        const contrib = (value / 100) * dailyW
 
         totalContrib += contrib
         if (contrib / rdaTarget >= 0.05) sourcesCount++

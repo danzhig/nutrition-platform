@@ -2,7 +2,18 @@ import { supabase } from '@/lib/supabase'
 
 export interface DietFood {
   foodId: number
-  rating: number // 1–5
+  daysPerWeek: number // 1–7
+}
+
+// Maps legacy rating (1–5) to the nearest days-per-week value
+const LEGACY_RATING_TO_DAYS: Record<number, number> = { 1: 1, 2: 2, 3: 4, 4: 6, 5: 7 }
+
+function migrateEntries(raw: unknown[]): DietFood[] {
+  return raw.map((entry: any) => {
+    if (typeof entry.daysPerWeek === 'number') return entry as DietFood
+    const days = LEGACY_RATING_TO_DAYS[entry.rating as number] ?? 4
+    return { foodId: entry.foodId as number, daysPerWeek: days }
+  })
 }
 
 const LS_KEY = 'np:diet:foods'
@@ -36,15 +47,15 @@ export async function loadDietList(userId?: string): Promise<DietFood[]> {
   if (userId) {
     const remote = await fetchFromSupabase(userId)
     if (remote !== null) {
-      // Cache locally
-      try { localStorage.setItem(LS_KEY, JSON.stringify(remote)) } catch { /* ignore */ }
-      return remote
+      const migrated = migrateEntries(remote)
+      try { localStorage.setItem(LS_KEY, JSON.stringify(migrated)) } catch { /* ignore */ }
+      return migrated
     }
   }
   // Fallback: localStorage
   try {
     const raw = localStorage.getItem(LS_KEY)
-    if (raw) return JSON.parse(raw) as DietFood[]
+    if (raw) return migrateEntries(JSON.parse(raw))
   } catch { /* ignore */ }
   return []
 }

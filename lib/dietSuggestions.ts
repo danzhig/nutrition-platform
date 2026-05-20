@@ -1,7 +1,6 @@
 import type { FoodRow } from '@/types/nutrition'
 import type { DietFood } from '@/lib/dietStorage'
 import type { DietNutrientResult, FoodNutrientMap } from '@/lib/dietProfile'
-import { RATING_MULTIPLIERS } from '@/lib/dietProfile'
 import { getPortionSize } from '@/lib/portionSizes'
 
 export interface SuggestedFood {
@@ -17,16 +16,15 @@ const GAP_THRESHOLD = 0.70  // pctDV ratio — must match DietNutrientPanel
  * Rank all foods not in the user's diet list by how much they would improve
  * the current nutrient gaps (pctDV < 70%), and return the top 10.
  *
- * Uses the normalized weight model: adding a candidate at rating 3 redistributes
- * the dailyWeightG budget proportionally, diluting existing foods and granting
- * the new food its share. Score = net gap reduction / total gap capacity.
+ * Uses the absolute daily-weight model: the candidate enters at 4 days/week,
+ * contributing portionSize × (4/7) grams/day. Adding a food is purely additive —
+ * existing foods' daily contributions are unchanged (no normalization dilution).
  */
 export function computeDietSuggestions(
   selectedFoods: DietFood[],
   currentResults: DietNutrientResult[],
   allFoodNutrients: FoodNutrientMap,
   foods: FoodRow[],
-  dailyWeightG: number,
 ): SuggestedFood[] {
   if (currentResults.length === 0) return []
 
@@ -40,11 +38,8 @@ export function computeDietSuggestions(
     0,
   )
 
-  // Pre-compute totalRaw for the current selection (needed for normalization)
-  let totalRaw = 0
-  for (const { foodId, rating } of selectedFoods) {
-    totalRaw += getPortionSize(foodId).grams * RATING_MULTIPLIERS[rating]
-  }
+  // Candidate enters at 4 days/week — a reasonable default frequency
+  const CANDIDATE_DAYS_PER_WEEK = 4
 
   const scored: {
     foodId: number
@@ -60,14 +55,7 @@ export function computeDietSuggestions(
     const foodNutrients = allFoodNutrients[food.food_id]
     if (!foodNutrients) continue
 
-    // Candidate enters at rating 3 (1.0× multiplier = standard serving)
-    const rawW_cand = getPortionSize(food.food_id).grams * 1.0
-    const newTotalRaw = totalRaw + rawW_cand
-
-    // Scale factor applied to existing foods: their normalized weights shrink
-    const scaleFactor = totalRaw > 0 ? totalRaw / newTotalRaw : 0
-    // Candidate's share of the daily weight budget
-    const candNormW = (rawW_cand / newTotalRaw) * dailyWeightG
+    const candDailyW = getPortionSize(food.food_id).grams * (CANDIDATE_DAYS_PER_WEEK / 7)
 
     let totalFill = 0
     const nutrientFills: { name: string; fill: number }[] = []
@@ -76,11 +64,10 @@ export function computeDietSuggestions(
       const value = foodNutrients[gap.nutrientId]
       if (value === null || value === undefined || value === 0) continue
 
-      // New pctDV after adding the candidate (existing foods diluted + candidate added)
-      const candContrib = ((value / 100) * candNormW) / gap.rdaTarget
-      const newPctDV = gap.pctDV * scaleFactor + candContrib
+      // Adding the candidate is purely additive — no dilution of existing foods
+      const candContrib = ((value / 100) * candDailyW) / gap.rdaTarget
+      const newPctDV = gap.pctDV + candContrib
 
-      // Net improvement toward the gap threshold (capped at threshold)
       const fill = Math.min(newPctDV, GAP_THRESHOLD) - gap.pctDV
 
       if (fill > 0.001) {

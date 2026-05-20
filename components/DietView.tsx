@@ -25,7 +25,7 @@ interface Props {
 }
 
 const INFO_TOOLTIP =
-  'Rate foods by how often you eat them per month. Each rating maps to a monthly frequency (e.g. "Staple" = 30×/month). Serving sizes are scaled by frequency, then the whole diet is proportionally normalized to the daily food weight set in your DV profile. This lets the Nutrient Coverage panel show what a real average day of this diet looks like.'
+  'Build your 4-week diet by choosing how many days per week you eat each food (1–7). Each food fills part of your 28-day budget: serving size × days/week × 4. Nutrient Coverage shows the daily average — total monthly nutrients ÷ 28. No artificial scaling: if chicken is your only food at 7 days/week, the panel shows exactly what one daily serving of chicken provides.'
 
 export default function DietView({ data, rdaProfile }: Props) {
   const { user } = useAuth()
@@ -78,6 +78,7 @@ export default function DietView({ data, rdaProfile }: Props) {
   }, [data.foods])
 
   const dailyWeightG = rdaProfile?.dailyWeightG ?? 1700
+  const monthlyBudgetG = dailyWeightG * 28
 
   const { results: dietResults, compositions: dietCompositions } = useMemo<{
     results: DietNutrientResult[]
@@ -100,13 +101,12 @@ export default function DietView({ data, rdaProfile }: Props) {
       dietResults,
       foodNutrients,
       data.foods,
-      dailyWeightG,
     )
-  }, [selectedFoods, dietResults, foodNutrients, data.foods, rdaProfile, dailyWeightG])
+  }, [selectedFoods, dietResults, foodNutrients, data.foods, rdaProfile])
 
   function handleAdd(foodId: number) {
     if (selectedFoodIds.has(foodId)) return
-    const next = [...selectedFoods, { foodId, rating: 3 }]
+    const next = [...selectedFoods, { foodId, daysPerWeek: 4 }]
     setSelectedFoods(next)
     saveDietList(next, user?.id)
   }
@@ -117,8 +117,8 @@ export default function DietView({ data, rdaProfile }: Props) {
     saveDietList(next, user?.id)
   }
 
-  function handleRatingChange(foodId: number, rating: number) {
-    const next = selectedFoods.map((f) => (f.foodId === foodId ? { ...f, rating } : f))
+  function handleFrequencyChange(foodId: number, daysPerWeek: number) {
+    const next = selectedFoods.map((f) => (f.foodId === foodId ? { ...f, daysPerWeek } : f))
     setSelectedFoods(next)
     saveDietList(next, user?.id)
   }
@@ -188,7 +188,7 @@ export default function DietView({ data, rdaProfile }: Props) {
               </div>
             </div>
             <p className="text-[10px] text-slate-500 mt-0.5">
-              How often do you eat each food per month?
+              How many days per week do you eat each food?
             </p>
           </div>
           <div className="flex-1 overflow-hidden min-h-0">
@@ -196,8 +196,8 @@ export default function DietView({ data, rdaProfile }: Props) {
               foods={selectedFoods}
               foodMeta={foodMeta}
               compositions={dietCompositions}
-              dailyWeightG={dailyWeightG}
-              onRatingChange={handleRatingChange}
+              monthlyBudgetG={monthlyBudgetG}
+              onFrequencyChange={handleFrequencyChange}
               onRemove={handleRemove}
               onClearAll={handleClearAll}
             />
@@ -222,7 +222,6 @@ export default function DietView({ data, rdaProfile }: Props) {
               allFoodNutrients={foodNutrients}
               selectedFoodIds={selectedFoodIds}
               selectedFoods={selectedFoods}
-              dailyWeightG={dailyWeightG}
               onAddFood={handleAdd}
             />
           </div>

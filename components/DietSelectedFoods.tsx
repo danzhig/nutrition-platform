@@ -3,15 +3,15 @@
 import type { FoodRow } from '@/types/nutrition'
 import type { DietFood } from '@/lib/dietStorage'
 import type { DietFoodComposition } from '@/lib/dietProfile'
-import DietRatingControl from './DietRatingControl'
+import DietFrequencyControl from './DietFrequencyControl'
 import DietCompositionBar from './DietCompositionBar'
 
 interface Props {
   foods: DietFood[]
   foodMeta: Map<number, FoodRow>
   compositions: DietFoodComposition[]
-  dailyWeightG: number
-  onRatingChange: (foodId: number, rating: number) => void
+  monthlyBudgetG: number
+  onFrequencyChange: (foodId: number, daysPerWeek: number) => void
   onRemove: (foodId: number) => void
   onClearAll: () => void
 }
@@ -20,8 +20,8 @@ export default function DietSelectedFoods({
   foods,
   foodMeta,
   compositions,
-  dailyWeightG,
-  onRatingChange,
+  monthlyBudgetG,
+  onFrequencyChange,
   onRemove,
   onClearAll,
 }: Props) {
@@ -39,12 +39,12 @@ export default function DietSelectedFoods({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Diet composition bar */}
-      <DietCompositionBar compositions={compositions} dailyWeightG={dailyWeightG} />
+      {/* Monthly fill bar */}
+      <DietCompositionBar compositions={compositions} monthlyBudgetG={monthlyBudgetG} />
 
       {/* Food list */}
       <div className="flex-1 overflow-y-auto min-h-0 py-1">
-        {foods.map(({ foodId, rating }) => {
+        {foods.map(({ foodId, daysPerWeek }) => {
           const food = foodMeta.get(foodId)
           const name = food?.food_name ?? `Food #${foodId}`
           return (
@@ -55,7 +55,10 @@ export default function DietSelectedFoods({
               <span className="flex-1 min-w-0 text-[11px] text-slate-300 truncate" title={name}>
                 {name}
               </span>
-              <DietRatingControl value={rating} onChange={(r) => onRatingChange(foodId, r)} />
+              <DietFrequencyControl
+                value={daysPerWeek}
+                onChange={(d) => onFrequencyChange(foodId, d)}
+              />
               <button
                 onClick={() => onRemove(foodId)}
                 className="ml-1 text-slate-600 hover:text-red-400 transition-colors text-xs leading-none flex-shrink-0"
