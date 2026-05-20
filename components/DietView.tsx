@@ -123,6 +123,14 @@ export default function DietView({ data, rdaProfile }: Props) {
     saveDietList(next, user?.id)
   }
 
+  function handleGramsOverrideChange(foodId: number, grams: number | undefined) {
+    const next = selectedFoods.map((f) =>
+      f.foodId === foodId ? { ...f, gramsOverride: grams } : f
+    )
+    setSelectedFoods(next)
+    saveDietList(next, user?.id)
+  }
+
   function handleClearAll() {
     setSelectedFoods([])
     saveDietList([], user?.id)
@@ -198,6 +206,7 @@ export default function DietView({ data, rdaProfile }: Props) {
               compositions={dietCompositions}
               monthlyBudgetG={monthlyBudgetG}
               onFrequencyChange={handleFrequencyChange}
+              onGramsOverrideChange={handleGramsOverrideChange}
               onRemove={handleRemove}
               onClearAll={handleClearAll}
             />

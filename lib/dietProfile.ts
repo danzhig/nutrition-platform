@@ -69,17 +69,18 @@ export function computeDietProfile(
   nutrients: NutrientMeta[],
   foodNames?: Map<number, string>,
 ): { results: DietNutrientResult[]; compositions: DietFoodComposition[] } {
-  // Daily weight per food
+  // Daily weight per food — gramsOverride replaces the default portion size when set
   const dailyWeights = new Map<number, number>()
-  for (const { foodId, daysPerWeek } of selectedFoods) {
-    dailyWeights.set(foodId, getPortionSize(foodId).grams * (daysPerWeek / 7))
+  for (const { foodId, daysPerWeek, gramsOverride } of selectedFoods) {
+    const portionG = gramsOverride ?? getPortionSize(foodId).grams
+    dailyWeights.set(foodId, portionG * (daysPerWeek / 7))
   }
 
   // Monthly gram totals for the fill bar
-  const compositions: DietFoodComposition[] = selectedFoods.map(({ foodId, daysPerWeek }) => ({
+  const compositions: DietFoodComposition[] = selectedFoods.map(({ foodId, daysPerWeek, gramsOverride }) => ({
     foodId,
     foodName: foodNames?.get(foodId) ?? `Food #${foodId}`,
-    monthlyGrams: getPortionSize(foodId).grams * daysPerWeek * 4,
+    monthlyGrams: (gramsOverride ?? getPortionSize(foodId).grams) * daysPerWeek * 4,
   }))
 
   // Nutrient results

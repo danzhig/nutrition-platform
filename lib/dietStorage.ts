@@ -2,7 +2,8 @@ import { supabase } from '@/lib/supabase'
 
 export interface DietFood {
   foodId: number
-  daysPerWeek: number // 1–7
+  daysPerWeek: number   // 1–7
+  gramsOverride?: number // when set, overrides the default portion size for this food
 }
 
 // Maps legacy rating (1–5) to the nearest days-per-week value

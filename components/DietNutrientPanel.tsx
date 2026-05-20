@@ -83,8 +83,8 @@ function computeFoodContribs(
 ): DietFoodContrib[] {
   // Mirrors computeDietProfile: daily weight = portionSize × (daysPerWeek / 7)
   const dailyWeights = new Map<number, number>()
-  for (const { foodId, daysPerWeek } of selectedFoods) {
-    dailyWeights.set(foodId, getPortionSize(foodId).grams * (daysPerWeek / 7))
+  for (const { foodId, daysPerWeek, gramsOverride } of selectedFoods) {
+    dailyWeights.set(foodId, (gramsOverride ?? getPortionSize(foodId).grams) * (daysPerWeek / 7))
   }
 
   const contribs: { foodName: string; contribPctDV: number }[] = []
