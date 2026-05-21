@@ -110,8 +110,9 @@ export default function NutrientScatterPlot({ data }: Props) {
     return parseSavedCats(localStorage.getItem('np:scatter:highlightCat')) ?? new Set(FOOD_CATEGORY_LIST)
   })
   const [perServing, setPerServing] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('np:scatter:perServing') === 'true'
+    if (typeof window === 'undefined') return true
+    const saved = localStorage.getItem('np:scatter:perServing')
+    return saved === null ? true : saved === 'true'
   })
   const [maxX, setMaxX] = useState<string>(() => {
     if (typeof window === 'undefined') return ''

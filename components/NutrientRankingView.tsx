@@ -95,8 +95,9 @@ export default function NutrientRankingView({ data }: Props) {
     return parseSavedCats(localStorage.getItem('np:ranking:catFilter')) ?? new Set(FOOD_CATEGORY_LIST)
   })
   const [perServing, setPerServing] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('np:ranking:perServing') === 'true'
+    if (typeof window === 'undefined') return true
+    const saved = localStorage.getItem('np:ranking:perServing')
+    return saved === null ? true : saved === 'true'
   })
   const [catOpen, setCatOpen] = useState(false)
   const catRef = useRef<HTMLDivElement>(null)
