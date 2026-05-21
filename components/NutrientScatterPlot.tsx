@@ -185,6 +185,18 @@ export default function NutrientScatterPlot({ data }: Props) {
       .filter(Boolean) as DotData[]
   }, [data.foods, xId, yId, zId, perServing, xNutrient, yNutrient, zNutrient])
 
+  // Actual data extents — used for the diagnostic strip and axis domain computation.
+  // Without allowDataOverflow on the axis, Recharts ignores domain max when any dot
+  // exceeds it. We compute extents here so the diagnostic strip can flag that case.
+  const dataExtents = useMemo(() => {
+    let xMax = 0, yMax = 0
+    for (const d of allDots) {
+      if (d.x > xMax) xMax = d.x
+      if (d.y > yMax) yMax = d.y
+    }
+    return { xMax, yMax }
+  }, [allDots])
+
   const dotsByCategory = useMemo(() => {
     const byCat: Record<string, DotData[]> = {}
     for (const d of allDots) {
@@ -376,6 +388,42 @@ export default function NutrientScatterPlot({ data }: Props) {
         {perServing ? 'per serving' : 'per 100g'}
       </p>
 
+      {/* Axis cap diagnostic strip — shows when a cap is set so the user can confirm it's working */}
+      {(maxX || maxY) && (
+        <div className="flex flex-wrap gap-x-6 gap-y-1 mb-3 px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-xs">
+          {maxX && (
+            <span>
+              <span className="text-slate-500">X data max:</span>{' '}
+              <span className={dataExtents.xMax > Number(maxX) ? 'text-amber-400 font-medium' : 'text-slate-300'}>
+                {dataExtents.xMax.toFixed(1)} {xNutrient?.unit}
+              </span>
+              <span className="text-slate-500 ml-2">→ capped at</span>{' '}
+              <span className="text-violet-400 font-medium">{maxX} {xNutrient?.unit}</span>
+              {dataExtents.xMax > Number(maxX) && (
+                <span className="ml-2 text-amber-500">
+                  ({allDots.filter(d => d.x > Number(maxX)).length} dot{allDots.filter(d => d.x > Number(maxX)).length !== 1 ? 's' : ''} clipped)
+                </span>
+              )}
+            </span>
+          )}
+          {maxY && (
+            <span>
+              <span className="text-slate-500">Y data max:</span>{' '}
+              <span className={dataExtents.yMax > Number(maxY) ? 'text-amber-400 font-medium' : 'text-slate-300'}>
+                {dataExtents.yMax.toFixed(1)} {yNutrient?.unit}
+              </span>
+              <span className="text-slate-500 ml-2">→ capped at</span>{' '}
+              <span className="text-emerald-400 font-medium">{maxY} {yNutrient?.unit}</span>
+              {dataExtents.yMax > Number(maxY) && (
+                <span className="ml-2 text-amber-500">
+                  ({allDots.filter(d => d.y > Number(maxY)).length} dot{allDots.filter(d => d.y > Number(maxY)).length !== 1 ? 's' : ''} clipped)
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Chart */}
       <div style={{ width: '100%', height: 500 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -386,6 +434,7 @@ export default function NutrientScatterPlot({ data }: Props) {
               dataKey="x"
               name={xNutrient?.nutrient_name}
               domain={[0, maxX ? Number(maxX) : 'auto']}
+              allowDataOverflow={!!maxX}
               tick={{ fill: '#94a3b8', fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: '#334155' }}
@@ -403,6 +452,7 @@ export default function NutrientScatterPlot({ data }: Props) {
               dataKey="y"
               name={yNutrient?.nutrient_name}
               domain={[0, maxY ? Number(maxY) : 'auto']}
+              allowDataOverflow={!!maxY}
               tick={{ fill: '#94a3b8', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
