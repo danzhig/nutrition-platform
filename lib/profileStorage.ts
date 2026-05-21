@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { RDAValues } from './rdaProfiles'
+import { PREFS_SENTINEL } from './userPreferencesStorage'
 
 export interface SavedProfile {
   id: string
@@ -13,6 +14,7 @@ export async function loadSavedProfiles(): Promise<SavedProfile[]> {
   const { data, error } = await supabase
     .from('user_rda_profiles')
     .select('id, name, values, created_at, updated_at')
+    .neq('name', PREFS_SENTINEL)
     .order('created_at', { ascending: true })
 
   if (error) throw new Error(error.message)
