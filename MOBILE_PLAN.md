@@ -216,7 +216,7 @@ No calendar grid at all. A vertical list of day sections, today anchored on load
 
 ---
 
-## Section 4 — Adding Food/Meals to a Day
+## Section 4 — Adding Food/Meals to a Day ✅ DECIDED: Option A
 
 Triggered by the FAB or "+ Add" button. Opens a modal for choosing what to log.
 
@@ -1298,7 +1298,7 @@ Mark each as confirmed:
 - [x] **Architecture:** ~~Option A~~ / **Option B** ✅ / ~~Option C~~ — separate `/m` route, desktop untouched
 - [x] **Navigation:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — bottom tab bar (Calendar · Nutrition · Account)
 - [x] **Calendar layout:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — week strip + scrollable day log with FAB
-- [ ] **Add food:** Option **A** / B
+- [x] **Add food:** **Option A** ✅ / ~~Option B~~ — bottom sheet with type tabs + food search
 - [ ] **Nutrition list:** Option **A** / B / C
 - [ ] **Gram input:** Option **A** / B / C
 - [ ] **Unit toggle:** Option **A** / B
