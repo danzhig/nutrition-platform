@@ -64,7 +64,7 @@ Same as Option B but with full PWA treatment from the start: service worker (via
 
 ---
 
-## Section 2 — Navigation: Mobile Shell Structure
+## Section 2 — Navigation: Mobile Shell Structure ✅ DECIDED: Option A
 
 The shell wraps both screens and provides persistent navigation.
 
@@ -1296,7 +1296,7 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 Mark each as confirmed:
 
 - [x] **Architecture:** ~~Option A~~ / **Option B** ✅ / ~~Option C~~ — separate `/m` route, desktop untouched
-- [ ] **Navigation:** Option **A** / B / C
+- [x] **Navigation:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — bottom tab bar (Calendar · Nutrition · Account)
 - [ ] **Calendar layout:** Option **A** / B / C
 - [ ] **Add food:** Option **A** / B
 - [ ] **Nutrition list:** Option **A** / B / C
