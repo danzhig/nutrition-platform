@@ -14,7 +14,7 @@ Each section presents **2–3 industry-standard options**. Choose one per sectio
 
 ---
 
-## Section 1 — Architecture: How to Deliver Mobile
+## Section 1 — Architecture: How to Deliver Mobile ✅ DECIDED: Option B
 
 How the mobile experience is routed and structured in the codebase.
 
@@ -1295,7 +1295,7 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 
 Mark each as confirmed:
 
-- [ ] **Architecture:** Option A / **B** / C
+- [x] **Architecture:** ~~Option A~~ / **Option B** ✅ / ~~Option C~~ — separate `/m` route, desktop untouched
 - [ ] **Navigation:** Option **A** / B / C
 - [ ] **Calendar layout:** Option **A** / B / C
 - [ ] **Add food:** Option **A** / B
