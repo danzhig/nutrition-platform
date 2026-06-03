@@ -126,7 +126,7 @@ Three panels stacked horizontally; swipe left/right to switch. Small dot indicat
 
 ---
 
-## Section 3 — Calendar Screen Layout
+## Section 3 — Calendar Screen Layout ✅ DECIDED: Option A
 
 The calendar tab shows logged food entries and allows adding new ones.
 
@@ -1297,7 +1297,7 @@ Mark each as confirmed:
 
 - [x] **Architecture:** ~~Option A~~ / **Option B** ✅ / ~~Option C~~ — separate `/m` route, desktop untouched
 - [x] **Navigation:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — bottom tab bar (Calendar · Nutrition · Account)
-- [ ] **Calendar layout:** Option **A** / B / C
+- [x] **Calendar layout:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — week strip + scrollable day log with FAB
 - [ ] **Add food:** Option **A** / B
 - [ ] **Nutrition list:** Option **A** / B / C
 - [ ] **Gram input:** Option **A** / B / C
