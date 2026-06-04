@@ -260,7 +260,7 @@ Tapping "+ Add" opens a full-screen view (like a push navigation) with food sear
 
 ---
 
-## Section 5 — Nutrition Lookup Screen Layout
+## Section 5 — Nutrition Lookup Screen Layout ✅ DECIDED: Option A
 
 The nutrition screen lets you search for any food and see its full nutrient breakdown. Core controls:
 - Food search bar
@@ -1299,7 +1299,7 @@ Mark each as confirmed:
 - [x] **Navigation:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — bottom tab bar (Calendar · Nutrition · Account)
 - [x] **Calendar layout:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — week strip + scrollable day log with FAB
 - [x] **Add food:** **Option A** ✅ / ~~Option B~~ — bottom sheet with type tabs + food search
-- [ ] **Nutrition list:** Option **A** / B / C
+- [x] **Nutrition list:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — sticky food card + accordion by category
 - [ ] **Gram input:** Option **A** / B / C
 - [ ] **Unit toggle:** Option **A** / B
 - [ ] **DV profile:** Option **A** / B
