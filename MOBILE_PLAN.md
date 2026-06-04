@@ -457,7 +457,7 @@ A single button that cycles through the three modes on each tap:
 
 ---
 
-## Section 8 — DV Profile Selector (Mobile)
+## Section 8 — DV Profile Selector (Mobile) ✅ DECIDED: Option A
 
 Needs to appear on both the Calendar screen (for Day Total %DV) and the Nutrition screen (for nutrient %DV). First selection on a device should become the local default.
 
@@ -1302,5 +1302,5 @@ Mark each as confirmed:
 - [x] **Nutrition list:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — sticky food card + accordion by category
 - [x] **Gram input:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — tap-to-edit inline chip
 - [x] **Unit toggle:** **Option A** ✅ / ~~Option B~~ — segmented control (%DV · /srv · /100g)
-- [ ] **DV profile:** Option **A** / B
+- [x] **DV profile:** **Option A** ✅ / ~~Option B~~ — persistent header chip → bottom sheet picker
 - [ ] **Build phase order:** confirmed above or reordered
