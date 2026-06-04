@@ -918,11 +918,11 @@ Native app sheets can be dragged down with a finger to dismiss them. This is exp
 
 ### Summary of New Decisions Required
 
-| Item | Choice needed |
+| Item | Decision |
 |---|---|
-| App icon (180×180px) | Create custom icon, use favicon scaled up, or skip for now |
-| Portrait lock | **Option A** (soft overlay) vs Option B (Screen Orientation API) |
-| Swipe-to-dismiss sheets | Include from the start vs add later |
+| App icon (180×180px) | ✅ Use existing favicon scaled up to 180×180px |
+| Portrait lock | ✅ **Option A** — soft overlay when landscape detected |
+| Swipe-to-dismiss sheets | ✅ Include from the start |
 
 ### Reused from Desktop (no changes to existing files)
 
@@ -1280,14 +1280,14 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 | 3 | Category radar on day summary | 1 | Low | No — include in P5 |
 | 4 | Complement score on add-food | 1 | Low | No — include in P6 |
 | 5 | "Log to Today" from nutrition screen | 1 | Medium | No — include in P4 |
-| 6 | Macro donut on day summary | 2 | Medium | **Option A or B (swipe vs stack)** |
-| 7 | Top foods for a nutrient | 2 | Medium | Include or skip? |
-| 8 | Food quick-compare | 2 | Med-High | Include or skip? |
-| 9 | Diet suggestions widget | 2 | Medium | **Placement: A, B, or C** |
-| 10 | Logging streak indicator | 2 | Medium | Include or skip? |
-| 11 | Weekly nutrient coverage (7-day avg) | 3 | High | Phase 8+ or skip? |
-| 12 | Meal quick-builder | 3 | High | Phase 8+ or skip? |
-| 13 | Barcode scanner | 3 | Very High | Future — placeholder only? |
+| 6 | Macro donut on day summary | 2 | Medium | ✅ **Option A** — swipeable card pair with radar |
+| 7 | Top foods for a nutrient | 2 | Medium | ✅ Include |
+| 8 | Food quick-compare | 2 | Med-High | ✅ Skip — keep desktop-only |
+| 9 | Diet suggestions widget | 2 | Medium | ✅ **Option B** — top of add-food sheet |
+| 10 | Logging streak indicator | 2 | Medium | ✅ Include |
+| 11 | Weekly nutrient coverage (7-day avg) | 3 | High | ✅ Phase 8+ (defer) |
+| 12 | Meal quick-builder | 3 | High | ✅ Phase 8+ (defer) |
+| 13 | Barcode scanner | 3 | Very High | ✅ Placeholder only ("Coming soon") |
 
 ---
 
@@ -1303,4 +1303,4 @@ Mark each as confirmed:
 - [x] **Gram input:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — tap-to-edit inline chip
 - [x] **Unit toggle:** **Option A** ✅ / ~~Option B~~ — segmented control (%DV · /srv · /100g)
 - [x] **DV profile:** **Option A** ✅ / ~~Option B~~ — persistent header chip → bottom sheet picker
-- [ ] **Build phase order:** confirmed above or reordered
+- [x] **Build phase order:** ✅ confirmed as P1–P7 above
