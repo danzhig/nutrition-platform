@@ -361,7 +361,7 @@ The nutrition screen lets you search for any food and see its full nutrient brea
 
 ---
 
-## Section 6 — Gram Input UX (Nutrition Screen)
+## Section 6 — Gram Input UX (Nutrition Screen) ✅ DECIDED: Option A
 
 How the user enters a custom gram weight (e.g. "350g for a steak").
 
@@ -1300,7 +1300,7 @@ Mark each as confirmed:
 - [x] **Calendar layout:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — week strip + scrollable day log with FAB
 - [x] **Add food:** **Option A** ✅ / ~~Option B~~ — bottom sheet with type tabs + food search
 - [x] **Nutrition list:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — sticky food card + accordion by category
-- [ ] **Gram input:** Option **A** / B / C
+- [x] **Gram input:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — tap-to-edit inline chip
 - [ ] **Unit toggle:** Option **A** / B
 - [ ] **DV profile:** Option **A** / B
 - [ ] **Build phase order:** confirmed above or reordered
