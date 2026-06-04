@@ -418,7 +418,7 @@ A row with `[-]` / `[+]` flanking an editable number field. Tap the field to typ
 
 ---
 
-## Section 7 — Unit Toggle (%DV / per serving / per 100g)
+## Section 7 — Unit Toggle (%DV / per serving / per 100g) ✅ DECIDED: Option A
 
 Appears in the Nutrition screen above the nutrient list.
 
@@ -1301,6 +1301,6 @@ Mark each as confirmed:
 - [x] **Add food:** **Option A** ✅ / ~~Option B~~ — bottom sheet with type tabs + food search
 - [x] **Nutrition list:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — sticky food card + accordion by category
 - [x] **Gram input:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — tap-to-edit inline chip
-- [ ] **Unit toggle:** Option **A** / B
+- [x] **Unit toggle:** **Option A** ✅ / ~~Option B~~ — segmented control (%DV · /srv · /100g)
 - [ ] **DV profile:** Option **A** / B
 - [ ] **Build phase order:** confirmed above or reordered
