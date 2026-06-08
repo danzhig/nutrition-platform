@@ -239,7 +239,7 @@ Triggered by the FAB or "+ Add" button. Opens a modal for choosing what to log.
 ```
 
 - Sheet height: 80vh. Handle at top for drag-to-dismiss.
-- After tapping a food: shows a gram confirmation card (same as desktop) with +/− or custom gram input, then [Log It].
+- After tapping a food: shows a gram confirmation card with the inline tap-to-edit gram chip (`MobileGramInput`) pre-filled to the standard serving size, then [Log It]. No `+/−` steppers — consistent with the Section 6 gram input decision.
 - Type tabs scroll to Meal / Plan for preset/saved-plan picking.
 
 **Pros:** Standard mobile sheet pattern. Search auto-focus saves taps. Dismissible by drag.  
@@ -277,7 +277,7 @@ The nutrition screen lets you search for any food and see its full nutrient brea
 │  🔍  Search foods...             │  ← sticky search bar
 ├──────────────────────────────────┤
 │  Salmon (Atlantic, Farmed)       │  ← selected food name
-│  172g  [–][+]  [ 172 g ↑ ]      │  ← gram input row (tap number to edit)
+│  [ 172 g ↑ ]                     │  ← tap chip to edit grams (Section 6 Option A)
 │  [ %DV ] [ /srv ] [ /100g ]     │  ← 3-way unit toggle
 │  Profile: Male Avg  [Change ▾]  │  ← DV profile selector
 ├──────────────────────────────────┤
@@ -468,7 +468,7 @@ Needs to appear on both the Calendar screen (for Day Total %DV) and the Nutritio
 A small chip in the top app bar of each screen shows the active profile name. Tap it → bottom sheet slides up with the profile list (same profiles as desktop: None, Male Avg, Female Avg, Male Low-Carb, Female Low-Carb, and any saved custom profiles).
 
 ```
-Top bar:  [Nutrition Platform]  [Male Avg ▾]  [👤]
+Top bar:  [Nutrition Platform]  [🔥 4]  [Male Avg ▾]
 
 Sheet:
   ┌──────────────────────────────┐
@@ -483,8 +483,9 @@ Sheet:
   └──────────────────────────────┘
 ```
 
+- The `[👤]` account icon is **not** in the header — Account is already the third bottom tab and duplicating it in the header creates confusion. The header holds only: app title (left), streak pill (center-right, hidden when streak = 0), and DV profile chip (far right).
 - First time a profile is selected, a toast: "Set as default on this device?" [Yes / Not now].
-- Device default stored to `np:mobile-default-rda` in localStorage (separate from desktop key to avoid conflict).
+- Device default stored to `np:m:rda-sel` in localStorage (same key as the active profile — confirming "Yes" just persists the current selection so it reloads on next visit). Set `np:m:rda-default-set = 'true'` to suppress the toast on future selections.
 - Star icon sets the device default independently of the Supabase account default.
 
 **Pros:** Always one tap away. Consistent header location on both screens. Sheet follows standard modal pattern.
@@ -589,6 +590,7 @@ All layouts must be tested / verified against this minimum:
 - Inputs: minimum **16px font-size** — below this iOS auto-zooms the viewport on focus.
 - Screen horizontal padding: **16px per side** → content column = 328px at minimum. Nothing inside may overflow that column.
 - No horizontal scroll anywhere at 360px viewport.
+- FAB (floating action button) bottom offset: `bottom: calc(56px + env(safe-area-inset-bottom) + 16px)` — sits 16px above the top of the tab bar on all devices. On iPhone XS this equals ~106px from the physical bottom edge.
 
 ---
 
@@ -833,12 +835,7 @@ On iOS, momentum scrolling (the coast-to-a-stop feel) is now the default in mode
 
 **No horizontal scroll anywhere**
 
-Enforced via:
-```css
-body { overflow-x: hidden; }
-```
-
-And verified at 360px viewport width during testing of every screen.
+Already enforced by `body { overflow: hidden }` from Section 10c (both axes locked). Verified at 360px viewport width during testing of every screen.
 
 ---
 
@@ -886,19 +883,26 @@ Recommendation: **Option A** — soft lock with an overlay. Works in all context
 
 **Back gesture / sheet dismissal (Android)**
 
-On Android, the hardware back button and swipe-from-left gesture fire `popstate`. If a bottom sheet is open and the user presses back, the browser navigates away from `/m` instead of closing the sheet. Fix with the History API:
+On Android, the hardware back button and swipe-from-left gesture fire `popstate`. If a bottom sheet is open and the user presses back, the browser navigates away from `/m` instead of closing the sheet.
+
+**Important — do not call `router.push()` or a raw `window.history.pushState` path through Next.js's router.** At `/m`, calling the Next.js router for a no-URL state entry can corrupt the App Router's internal history stack. Instead, push a sentinel entry directly via `window.history.pushState` (no URL change) and listen for `popstate` in a React effect:
 
 ```ts
-// When a sheet opens:
-window.history.pushState({ sheet: 'add-food' }, '')
-
-// In a popstate listener:
-window.addEventListener('popstate', (e) => {
-  if (sheetOpen) { closeSheet(); /* do not navigate */ }
-})
+// In each bottom sheet component:
+useEffect(() => {
+  if (!open) return
+  // Push a no-URL sentinel so back has somewhere to pop to
+  window.history.pushState({ sheet: true }, '')
+  const onPop = () => onClose()
+  window.addEventListener('popstate', onPop, { once: true })
+  return () => window.removeEventListener('popstate', onPop)
+}, [open])
 ```
 
-This makes back = close sheet, exactly as native apps behave. Only needed on Android (iOS doesn't have a hardware back button in the browser).
+- `{ once: true }` fires the listener exactly once — either on back press or on the next open/close cycle.
+- Since the pushed state has the same URL (`/m`), Next.js treats it as a no-op navigation and does not re-render.
+- If the sheet closes via backdrop or button (not back), the sentinel entry remains in history as a harmless extra step — acceptable cost.
+- Only needed on Android (iOS has no hardware back button in the browser).
 
 ---
 
@@ -1001,12 +1005,11 @@ Given:
 ```
 valueForDisplay:
   /100g  →  valuesPer100g[nutrientId]
-  /srv   →  valuesPer100g[nutrientId] * (portionGrams / 100)
+  /srv   →  valuesPer100g[nutrientId] * (selectedGrams / 100)
   %DV    →  valuesPer100g[nutrientId] * (selectedGrams / 100) / rdaTarget * 100
-  custom →  valuesPer100g[nutrientId] * (selectedGrams / 100)   (same as /srv if selectedGrams = portionGrams)
 ```
 
-When the user enters a custom gram value, `/srv` mode uses that value as if it were the serving size. The `%DV` mode always uses `selectedGrams`.
+`selectedGrams` is initialised to `portionGrams` (the food's standard serving from `portionSizes.ts`) and updated whenever the user edits the gram chip. `/100g` is a fixed per-100g view that always ignores `selectedGrams`. `/srv` and `%DV` both scale by `selectedGrams`, so editing the chip updates both modes immediately.
 
 ### %DV bar color
 
@@ -1027,10 +1030,10 @@ Confirmed after choices above are locked in.
 | **P1 — Shell + Routing** | `/m` route, layout, MobileShell, bottom tab bar, MobileHeader, DV chip placeholder | `app/m/`, `MobileShell.tsx`, `MobileHeader.tsx` |
 | **P2 — Account Screen** | Full-page login/register form, logged-in state, sign out | `MobileAccountScreen.tsx` |
 | **P3 — DV Profile Sheet** | Profile bottom sheet, device default logic, localStorage | `MobileDVProfileSheet.tsx` |
-| **P4 — Nutrition Screen** | Food search, gram input, unit toggle, accordion, nutrient rows with %DV | `MobileNutritionScreen.tsx`, `MobileNutrientAccordion.tsx`, `MobileNutrientRow.tsx`, `MobileGramInput.tsx`, `MobileUnitToggle.tsx` |
-| **P5 — Calendar Screen** | Week strip, day log, entry cards, day nav, day total | `MobileCalendarScreen.tsx`, `MobileWeekStrip.tsx`, `MobileDayLog.tsx` |
-| **P6 — Add Food/Meal Sheet** | Bottom sheet, Food/Meal/Plan tabs, food search, gram confirm, write food_log | `MobileAddSheet.tsx` |
-| **P7 — Polish & iOS safe areas** | Safe area insets, scroll rubber-banding, tap highlights, test on 375px | All mobile components |
+| **P4 — Nutrition Screen** | Food search, gram input, unit toggle, accordion, nutrient rows with %DV; nutrient info bottom sheet (feature 2, accessible from accordion rows and day log Day Total); "Log to Today" sticky bar (feature 5); top foods sheet (feature 7, accessible from nutrient info sheet) | `MobileNutritionScreen.tsx`, `MobileNutrientAccordion.tsx`, `MobileNutrientRow.tsx`, `MobileGramInput.tsx`, `MobileUnitToggle.tsx`, `MobileNutrientInfoSheet.tsx`, `MobileNutrientRanking.tsx` |
+| **P5 — Calendar Screen** | Week strip, day log, entry cards, day nav, day total; calorie + macro summary chip (feature 1); swipeable donut + radar card pair (feature 6); streak pill in header (feature 10) | `MobileCalendarScreen.tsx`, `MobileWeekStrip.tsx`, `MobileDayLog.tsx` |
+| **P6 — Add Food/Meal Sheet** | Bottom sheet, Food/Meal/Plan tabs, food search, gram confirm, write food_log; complement score badges (feature 4); diet suggestions row at top of Food tab (feature 9) | `MobileAddSheet.tsx` |
+| **P7 — Polish & iOS safe areas** | Safe area insets, scroll rubber-banding, tap highlights, FAB positioning, portrait overlay, test on 375px | All mobile components |
 
 ---
 
@@ -1062,7 +1065,7 @@ This section is a menu of ideas — not all are required for launch. Each comes 
 
 #### 2. Nutrient Info Bottom Sheet (tap any nutrient row)
 
-**What it is:** Tapping any nutrient row in the nutrition accordion opens a bottom sheet (instead of a floating card) showing: body role, deficiency symptoms, excess symptoms, and the food-source stacked bar.
+**What it is:** Tapping any nutrient row opens a bottom sheet (instead of a floating card) showing: body role, deficiency symptoms, excess symptoms, and the food-source stacked bar. Accessible from two entry points: (1) any row in the **Nutrition Screen accordion**, and (2) any nutrient name in the **Day Log's Day Total** row. Both entry points use the same `MobileNutrientInfoSheet` component.
 
 **Why it works on mobile:** `NutrientInfoCard.tsx` already has all this content — it just uses absolute viewport positioning as a floating card, which breaks on mobile (too narrow, overlaps controls). A bottom sheet slides up over 60–70% of the screen, fits all the text comfortably, and is dismissible by swipe-down.
 
@@ -1209,9 +1212,14 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 | B | As a "Suggestions" card at the top of Add-Food sheet | When opening the add food modal |
 | C | A dedicated fourth tab "Suggest" (replaces Account — move account to a header icon) | Always accessible |
 
-**Mobile rendering:** Horizontally scrollable card row. Each card: food name, top 2 gap nutrients it fills (small colored tags), `[+ Log to Today]` button. Same as desktop `DietSuggestionsPanel` but cards are 140px wide × 110px tall.
+**Mobile rendering:** Horizontally scrollable card row at the top of the add-food sheet, rendered only when the **Food** tab is active. The row is hidden when the Meal or Plan tab is active — diet suggestions are food-level recommendations and are irrelevant when browsing meal templates or saved plans. Each card: food name, top 2 gap nutrients it fills (small colored tags), `[+ Log to Today]` button. Same as desktop `DietSuggestionsPanel` but cards are 140px wide × 110px tall.
 
 **Effort:** Medium. Logic unchanged (`computeDietSuggestions`). New rendering for the card row at mobile proportions.
+
+**Empty states:** Three cases must be handled:
+1. **No DV profile set** → widget hidden entirely (no profile = no gap calculation possible).
+2. **Profile set but no diet data** (user has never used the Desktop Diet tab, `user_diet_lists` row is empty or absent) → show a single muted prompt card: "Set up your diet on desktop to see personalised suggestions."
+3. **Diet data exists but all nutrients fulfilled** (all ≥70% DV) → show the same "All gaps filled" congratulations state as the desktop `DietSuggestionsPanel`.
 
 **Decision required:** Placement option A / B / C?
 
