@@ -1,9 +1,46 @@
 # Mobile Build Plan — Execution Guide
 
 **Created:** 2026-06-05  
+**Revised:** 2026-08-07 — code audit against the live repo; Phase 0 added, API signatures corrected (see Revision Notes at the bottom)  
 **Based on:** MOBILE_PLAN.md (all decisions finalized, Sections 1–16)  
 **Project state file:** PROJECT_STATE.md  
 **Target route:** `/m` (separate from desktop `/`)
+
+---
+
+## ⚠️ Read This First — Verified API Reference
+
+Every signature below was read directly from the repo on 2026-08-07. **Where this table and any prose in this file or MOBILE_PLAN.md disagree, this table wins.** Do not infer a signature from a phase description.
+
+| What | Actual signature / shape | File |
+|---|---|---|
+| Food log fetch | `getEntriesForDateRange(startDate: string, endDate: string)` — **no userId**; RLS scopes rows. Guard with `if (!user) return []` like `CalendarView.tsx:79` | `lib/foodLogStorage.ts:4` |
+| Food log write | `addEntry(entry: NewFoodLogEntry)` — takes a **whole entry object**, not loose args | `lib/foodLogStorage.ts:19` |
+| `NewFoodLogEntry` | `{ log_date, entry_type, label, items, source_id, notes }` | `types/calendar.ts:23` |
+| Entry type field | `entry.entry_type`, values `'plan' \| 'meal' \| 'food'`. **Not** `entry.type`, and **not** meal times | `types/calendar.ts:11` |
+| Log item shape | `{ food_id, food_name, amount_g, mode: 'servings'\|'grams', meal_label? }`. Grams live in **`amount_g`**, always grams regardless of `mode` (`mode` is display-only) | `types/calendar.ts:3` |
+| Saved profiles | `loadSavedProfiles()` — **no args** | `lib/profileStorage.ts:13` |
+| Saved meals | `loadSavedMeals()` — **no args** | `lib/savedMealStorage.ts:13` |
+| Meal plans | `loadMealPlans()` — **no args** | `lib/mealStorage.ts:14` |
+| Preset meals | `loadPresetMeals()` — no args | `lib/presetMealStorage.ts:13` |
+| Diet list | `loadDietList(userId?: string)` → `DietFood[]` = `{ foodId, daysPerWeek, gramsOverride? }[]` | `lib/dietStorage.ts:47` |
+| Nutrient groups | `NUTRIENT_GROUP_LIST: { value: NutrientCategory; label: string }[]` — **does NOT list member nutrients**. Group by `nutrient.nutrient_category`. Values are **singular** (`'Macronutrient'`), labels plural (`'Macronutrients'`) | `lib/filterConstants.ts:10` |
+| Food nutrient values | `food.nutrients: Record<number, number \| null>` (nutrient_id → per-100g) | `types/nutrition.ts:14` |
+| `FoodNutrientMap` | `Record<number, Record<number, number \| null>>` — a plain nested **Record**, not a `Map` | `lib/dietProfile.ts:24` |
+| DV targets | `rdaProfile.values[nutrient_name] ?? FOOD_METRIC_TARGETS[nutrient_name] ?? null` — the fallback is **required**, see below | `lib/rdaProfiles.ts:83` |
+| Complement score | `computeComplementScore(candidateItems, currentMeals, nutrients, rdaProfile, foodsById)` — `rdaProfile` is **non-nullable**; skip scoring entirely when no profile is set | `lib/complementScore.ts:12` |
+| Diet profile | `computeDietProfile(selectedFoods, foodNutrients, rdaProfile, nutrients, foodNames?)` | `lib/dietProfile.ts:65` |
+| Diet suggestions | `computeDietSuggestions(selectedFoods, currentResults, allFoodNutrients, foods)` | `lib/dietSuggestions.ts:23` |
+| Portion size | `getPortionSize(foodId)` → `{ grams, label, sizes? }` (always returns a value; 100g fallback built in) | `lib/portionSizes.ts:339` |
+| Donut chart | `<MacroDonutChart nutrients meals foodsById />` — no ring-visibility prop today; see Ph-5b | `components/MacroDonutChart.tsx` |
+| Radar chart | `<MealCategoryRadar nutrients rdaProfile totals />` — `totals` is **raw gram-scaled values**, the component divides by RDA itself. Do not pre-divide | `components/MealCategoryRadar.tsx` |
+| Auth | `useAuth()` → `{ user, loading, signIn, signUp, signOut }` | `components/AuthProvider.tsx` |
+
+### Two computation rules that are easy to get wrong
+
+1. **DV target resolution.** Always resolve a nutrient's target as `rdaProfile.values[name] ?? FOOD_METRIC_TARGETS[name] ?? null`. Using `rdaProfile.values` alone leaves the entire **Food Metrics** group with no %DV. This is what desktop does (`MealCategoryRadar.tsx:51`, `computeDietProfile`).
+
+2. **Glycemic Index is a weighted average, not a sum.** When totalling nutrients across multiple foods (day totals, macro chips, radar `totals`), every nutrient sums as `value_per_100g × grams / 100` **except** those in `WEIGHTED_AVERAGE_NUTRIENTS` (`lib/dietProfile.ts:49` — currently just `Glycemic Index`), which must be a carb-weighted average. Summing GI × grams is a bug that has already been fixed twice on desktop (see PROJECT_STATE entries for `MealComparisonView` and `computeFoodContribs`). Mirror the desktop logic; do not re-derive it.
 
 ---
 
@@ -25,6 +62,7 @@
 
 | Phase | Name | Status |
 |---|---|---|
+| Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ⬜ Not started |
 | Ph-1 | Foundation: Route, Layout, Shell, Header | ⬜ Not started |
 | Ph-2 | Account Screen + Auth | ⬜ Not started |
 | Ph-3 | DV Profile Sheet | ⬜ Not started |
@@ -42,7 +80,84 @@
 
 ---
 
+### ⬜ Phase 0 — Unblock `/m`: Route Group, Viewport Export, Mobile Entry Point
+
+**Why this phase exists:** The current root layout makes `/m` impossible to see on a phone. `app/layout.tsx:32-45` renders a full-screen "Open on Desktop" gate (`md:hidden fixed inset-0 z-[9999]`) and wraps all children in `<div className="hidden md:contents">`. Because `app/m/layout.tsx` nests inside the root layout, every mobile component built in Ph-1 onward would be `display: none` under 768px, behind an opaque overlay. **Phase 1's acceptance test cannot pass until this is fixed.** Nothing in this phase is mobile UI — it is purely making the route reachable.
+
+**Goal:** Visiting `/m` on a 375px viewport shows a blank slate-900 page with no desktop gate. Visiting `/` is byte-for-byte unchanged on desktop.
+
+**Files to create:**
+
+| File | Purpose |
+|---|---|
+| `app/(desktop)/layout.tsx` | Holds the "Open on Desktop" gate + the `hidden md:contents` wrapper, moved verbatim out of the root layout. Route groups add no URL segment, so `/` still resolves to the same page. |
+| `app/(desktop)/page.tsx` | The current `app/page.tsx`, moved unchanged (including `export const revalidate = 300`). |
+
+**Files to modify:**
+
+| File | Change |
+|---|---|
+| `app/layout.tsx` | Keep `<html>`, `<body>`, fonts, `globals.css`, `metadata`, and `<AuthProvider>` (mobile needs auth context too). **Remove** the mobile gate div and the `hidden md:contents` wrapper — those move to `(desktop)/layout.tsx`. |
+| `app/page.tsx` | Deleted (moved into the route group). |
+
+**Key implementation details:**
+
+- After the move, the tree is: root layout (html/body/AuthProvider) → either `(desktop)/layout.tsx` (gate + desktop chrome) or `app/m/layout.tsx` (mobile, no gate). Auth session is shared because `AuthProvider` stays at the root.
+- Verify `/` still renders `AppShell` and the gate still appears when the desktop route is viewed under 768px. The gate's behaviour on `/` is unchanged by design.
+- **Mobile entry point (decide and implement one):**
+  - **A (recommended, zero-dependency):** edit the gate copy in `(desktop)/layout.tsx` to add a violet `<a href="/m">Open the mobile app →</a>` button. Users who land on `/` on a phone get a one-tap path to `/m`.
+  - **B:** add `middleware.ts` that UA-sniffs touch devices and redirects `/` → `/m`. More automatic, but UA sniffing is brittle and interferes with anyone deliberately opening the desktop site on a tablet.
+  - Ship A now regardless; B can be layered on later.
+
+**Viewport / metadata — use the framework API, not raw tags:**
+
+MOBILE_PLAN.md Sections 10c and 10d Group 1 show raw `<meta name="viewport">` / `<meta name="apple-mobile-web-app-*">` tags. **Do not hand-write the viewport tag in JSX** — Next injects its own viewport meta and you will end up with two conflicting tags. Use the App Router exports in `app/m/layout.tsx` (created in Ph-1, but the shape is specified here so Ph-1 gets it right first time):
+
+```ts
+import type { Metadata, Viewport } from 'next'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',        // REQUIRED for env(safe-area-inset-*) to resolve to anything but 0
+  themeColor: '#0f172a',
+}
+
+export const metadata: Metadata = {
+  title: 'Nutrition',
+  manifest: '/m/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'Nutrition',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: { apple: '/apple-touch-icon.png' },
+}
+```
+
+`viewportFit: 'cover'` was previously listed only in Ph-7. It must be present from Ph-1, because Ph-1's tab bar already uses `env(safe-area-inset-bottom)` — without it those insets are 0 and the bar sits under the iOS home indicator for six phases before anyone notices.
+
+**Note on `userScalable: false`:** iOS Safari has ignored this since iOS 10 — pinch-zoom still works there, and that is fine. The rule that actually prevents the disruptive focus-zoom is the 16px minimum input font size (Section 10c), which is enforced per-phase and in the Ph-7 audit. Do not treat the viewport line as sufficient on its own.
+
+**PROJECT_STATE.md update (agent writes this at end):**
+```
+| **Mobile — Phase 0: Route Unblock** | ✅ Complete — desktop page + "Open on Desktop" gate moved into app/(desktop)/ route group; root layout reduced to html/body/fonts/AuthProvider so /m is no longer hidden by the md:hidden gate; mobile entry link added to the gate. Desktop / unchanged. |
+```
+
+**Repository structure additions:**
+```
+app/(desktop)/
+  layout.tsx      ← gate + desktop chrome (moved from app/layout.tsx)
+  page.tsx        ← moved from app/page.tsx
+```
+
+---
+
 ### ⬜ Phase 1 — Foundation: Route, Layout, Shell, Header
+
+**Prerequisite:** Phase 0 must be complete. If `app/(desktop)/` does not exist, stop and do Phase 0 first — otherwise nothing built here is visible on a phone.
 
 **Goal:** Everything needed before a single screen can render. After this phase, visiting `/m` shows a blank dark shell with a bottom tab bar and a top header.
 
@@ -50,8 +165,8 @@
 
 | File | Purpose |
 |---|---|
-| `app/m/layout.tsx` | Minimal layout: sets all viewport meta, PWA meta, apple-touch tags, manifest link, body overflow hidden, slate-900 background. No desktop nav chrome. |
-| `app/m/page.tsx` | Server component: calls `fetchAppData()` (reuse existing), passes `AppData` to `<MobileShell>`. |
+| `app/m/layout.tsx` | Minimal layout: `export const viewport` + `export const metadata` exactly as specified in Phase 0 (PWA / apple-web-app / manifest / viewport-fit all go through those exports — **no hand-written `<meta>` tags**), slate-900 background. No desktop nav chrome. |
+| `app/m/page.tsx` | Server component: calls `fetchAppData()` (reuse existing), passes `AppData` to `<MobileShell>`. Include `export const revalidate = 300` to match the desktop page. |
 | `public/m/manifest.json` | PWA manifest (start_url=/m, standalone display, slate-900 theme/bg). |
 | `components/mobile/MobileShell.tsx` | Root client wrapper: owns `activeTab` state ('calendar'\|'nutrition'\|'account'), renders `<MobileHeader>` + active screen placeholder + bottom tab bar. Visual Viewport API effect for keyboard-safe tab bar. |
 | `components/mobile/MobileHeader.tsx` | Top bar: app title left, DV profile chip right (placeholder text "No Profile" for now — wired in Ph-3), streak pill center-right (hidden if streak=0, placeholder for Ph-5b). |
@@ -59,10 +174,11 @@
 
 **Key implementation details:**
 
-- `app/m/layout.tsx` must include every meta tag from MOBILE_PLAN.md Sections 10c and 10d Group 1 exactly as written.
+- `app/m/layout.tsx` covers everything MOBILE_PLAN.md Sections 10c and 10d Group 1 ask for, but via the `viewport` / `metadata` exports from Phase 0 rather than the raw tags shown in those sections.
+- **Data payload warning:** `fetchAppData()` returns all 257 foods × 58 nutrients (~14.7k values) plus nutrient metadata, and passing it into a client component serializes the whole thing into the RSC payload — on the order of a megabyte of JSON over cellular before the user touches anything. Option B's "mobile bundle only loads mobile code" covers JS, not data. **Measure the `/m` transfer size at the end of this phase** and record it in PROJECT_STATE. If it is over ~500 KB compressed, open a follow-up to slim the mobile fetch (food id/name/category list + nutrient meta up front, per-food nutrient values fetched on selection). Do not silently absorb this and discover it in Ph-7.
 - `MobileShell.tsx` bottom tab bar: 56px tall, `pb-[env(safe-area-inset-bottom)]`, three tabs — Calendar (calendar icon), Nutrition (search icon), Account (person icon). Active tab uses violet text + icon fill; inactive slate-400.
 - Tab icons: use inline SVG or Heroicons (already available in the project if used elsewhere, otherwise inline minimal SVG paths). Do NOT introduce a new icon library dependency.
-- `MobileShell.tsx` must set `overflow: hidden` on body root via a `useEffect` on mount (`document.body.style.overflow = 'hidden'`) and restore on unmount (though `/m` is a separate route so this is mostly for correctness).
+- `MobileShell.tsx` must set `overflow: hidden` on body root via a `useEffect` on mount (`document.body.style.overflow = 'hidden'`) and **must restore the previous value on unmount** — this is required, not cosmetic. `/` and `/m` share the same `<body>` (one root layout), and client-side navigation between them does not remount it, so a missing restore leaves the desktop app unscrollable.
 - Visual Viewport API in `MobileShell.tsx` — the `setTabBarBottom` state from the MOBILE_PLAN.md snippet: pins tab bar bottom offset to `window.innerHeight - vv.height - vv.offsetTop` when keyboard is open on Android.
 - Screen area between header and tab bar: `flex-1 overflow-y-auto overscroll-contain` — this is the scrollable content region.
 - Each screen placeholder is just a `<div className="p-4 text-slate-400">Coming in Phase N</div>` for the two screens not yet built.
@@ -141,7 +257,9 @@ components/mobile/
 - Star icon: clicking star saves `np:m:rda-default` = profile key to localStorage, suppresses future toast (`np:m:rda-default-set = 'true'`).
 - Toast on first selection: appears for 2.5s at bottom of screen above tab bar: "Set as default on this device? [Yes] [Not now]". Clicking Yes sets `np:m:rda-default-set = 'true'`. Plain `setTimeout`-based implementation, no library.
 - localStorage keys: `np:m:rda-sel` (active profile id), `np:m:rda-default-set` (suppress toast), `np:m:rda-default` (device default profile key).
-- Load saved profiles: call `loadSavedProfiles(user?.id)` from `lib/profileStorage.ts` — same as desktop. Show them below a "── Saved Profiles ──" divider.
+- Load saved profiles: call `loadSavedProfiles()` from `lib/profileStorage.ts` — **takes no arguments**; RLS scopes rows to the signed-in user, and it already filters out the `__np_prefs__` sentinel row. Call it only when `user` is set. Show results below a "── Saved Profiles ──" divider.
+- Built-in profiles come from `RDA_PROFILES` in `lib/rdaProfiles.ts`; resolve a selection to a profile object with `getProfile(id, customValues?)`.
+- **Sheet state placement:** `MobileShell` should own a single `openSheet` state (`'dv' | 'nutrient' | null` plus its payload) rather than each screen owning its own. Ph-4c's nutrient info sheet is opened from both the Nutrition accordion and the Ph-5b macro chips on the Calendar screen — hoisting the state now avoids duplicating sheet plumbing in two screens later.
 - Custom profile stored locally: read `np:m:custom-rda` from localStorage when "Custom" profile is selected. Set via `DVProfilePanel` in a future enhancement; for now allow selecting built-ins only.
 - Pass `rdaProfile: RDAProfile | null` down from `MobileShell` to both `MobileCalendarScreen` and `MobileNutritionScreen` (even though those screens are placeholders in this phase — add the prop to their interfaces now so Ph-4 and Ph-5 don't need to touch MobileShell again for this).
 - Android back button handling: `window.history.pushState({ sheet: true }, '')` on sheet open; `popstate` listener calls `onClose`. Exactly as described in Section 10d Group 5.
@@ -196,13 +314,14 @@ components/mobile/
 
 **Key implementation details:**
 
-- Group definitions: iterate `NUTRIENT_GROUP_LIST` from `lib/filterConstants.ts` — this already defines the 6 groups and which nutrient names belong to each group. Use this as the source of truth.
+- **Group definitions — corrected.** `NUTRIENT_GROUP_LIST` (`lib/filterConstants.ts:10`) is only `{ value, label }[]`; it does **not** list which nutrients belong to each group. Use it for group **order and display labels**, and derive membership by filtering `appData.nutrients` on `n.nutrient_category === group.value`. Note the category values are **singular** (`'Macronutrient'`, `'Vitamin'`, `'Mineral'`, `'Fatty Acid'`, `'Amino Acid'`, `'Food Metric'`) while the labels are plural — matching on the label will return zero nutrients for every group. (PROJECT_STATE.md's "Adding a New NUTRIENT" checklist also describes a member-name array on this constant; that description is stale — ignore it.)
 - Value computation per mode (from MOBILE_PLAN.md Section 13):
   - `/100g` → `valuesPer100g[nutrientId]`
   - `/srv` → `valuesPer100g[nutrientId] * (selectedGrams / 100)`
   - `%DV` → `valuesPer100g[nutrientId] * (selectedGrams / 100) / rdaTarget * 100`
 - `valuesPer100g` is accessed directly from the selected `FoodRow` via `food.nutrients` — a `Record<number, number | null>` already present on every `FoodRow` in `AppData.foods`. No separate lookup map needed.
-- `rdaTarget` comes from `rdaProfile.values[nutrientName]` (same key pattern as desktop `DataCell`). If null → no %DV, show raw value only.
+- **`rdaTarget` resolution — corrected.** `rdaProfile.values[nutrientName] ?? FOOD_METRIC_TARGETS[nutrientName] ?? null` (import `FOOD_METRIC_TARGETS` from `lib/rdaProfiles.ts`). Using `rdaProfile.values` alone leaves every nutrient in the **Food Metrics** group with no target and therefore no %DV bar — desktop resolves the fallback (`MealCategoryRadar.tsx:51`, `computeDietProfile`). If the resolved target is null → no %DV, show raw value only.
+- This screen shows **one food at a time**, so no cross-food totalling happens here and the Glycemic Index weighted-average rule does not apply. It does apply in Ph-5b — see that phase.
 - %DV bar: `width: min(pctDv, 200)%` capped at 200% visual width (200% = double the bar container). Color from `rdaCellColor`.
 - Accordion animation: `grid-template-rows` trick — outer div has `overflow: hidden`; inner div renders all rows; outer transitions `grid-template-rows` from `0fr` to `1fr` via a CSS transition on the `grid-rows` property. Tailwind class toggling: `grid-rows-[0fr]` → `grid-rows-[1fr]` (requires Tailwind JIT, which is already used in this project).
 - Calories special case: always shown in kcal, no %DV bar (Calories has a DV target but it's dietary guidance, not a hard limit — show the value but omit bar for cleanliness, or include bar — match desktop DataTable behavior for Calories).
@@ -240,7 +359,25 @@ components/mobile/
 - Content: `[ + Log 172g to Today ]`. Updates label as gram input changes.
 - Only visible when a food is selected (hide when search is shown).
 - If not logged in: button reads "Sign in to log"; tapping navigates to Account tab.
-- On tap (logged in): calls `addEntry()` from `lib/foodLogStorage.ts`. Show a 1.5s toast: "Logged Salmon (172g) to [today's date]". Today = `new Date().toISOString().slice(0, 10)`.
+- On tap (logged in): calls `addEntry()` from `lib/foodLogStorage.ts` with a **complete `NewFoodLogEntry`** — it does not accept loose arguments. Mirror `CalendarAddModal.tsx:228`:
+
+```ts
+await addEntry({
+  log_date:   new Date().toISOString().slice(0, 10),
+  entry_type: 'food',
+  label:      food.food_name,
+  items: [{
+    food_id:   food.food_id,
+    food_name: food.food_name,
+    amount_g:  selectedGrams,   // NOT `grams` — the field is amount_g
+    mode:      'grams',
+  }],
+  source_id: null,
+  notes:     null,
+})
+```
+
+  Show a 1.5s toast: "Logged Salmon (172g) to [today's date]".
 - Toast implementation: a fixed bottom div that fades in/out via CSS `opacity` transition. No library.
 - The accordion list must have `padding-bottom` tall enough to not hide behind this bar + the tab bar.
 
@@ -265,16 +402,20 @@ components/mobile/
 |---|---|
 | `components/mobile/MobileCalendarScreen.tsx` | Orchestrator: owns `selectedDate` (today on mount), `weekStart` (Mon of current week), entries map (date → FoodLogEntry[]). Loads entries for ±14 days around today on mount; reloads on week navigation. Passes data down. |
 | `components/mobile/MobileWeekStrip.tsx` | 7-day horizontal pill row (Mon–Sun). Props: `weekStart: Date`, `selectedDate: Date`, `onSelectDate`, `onPrevWeek`, `onNextWeek`, `entries: Record<string, FoodLogEntry[]>`. Active day: violet ring. Today: violet fill (if not active). Days with entries: small dot below the day number. Left/right arrow buttons for week navigation. |
-| `components/mobile/MobileDayLog.tsx` | Scrollable list of entry cards for `selectedDate`. Groups entries by type (Breakfast, Lunch, Dinner, Snack, Other) — same grouping as desktop `CalendarDayPanel`. Each entry shows food items as a comma-separated list and total gram count. Tap entry → expand to show individual items. Each item has a gram value. "No entries" empty state. FAB: `+` violet circle, `position: fixed`, `bottom: calc(56px + env(safe-area-inset-bottom) + 16px)`, `right: 16px`. Tapping FAB → calls `onOpenAddSheet()` (wired in Ph-6). |
+| `components/mobile/MobileDayLog.tsx` | Scrollable list of entry cards for `selectedDate`, grouped as described under "Entry grouping" below. Each card shows its type badge, label, and kcal; tap to expand individual items with gram values. "No entries" empty state. FAB: `+` violet circle, `position: fixed`, `bottom: calc(56px + env(safe-area-inset-bottom) + 16px)`, `right: 16px`. Tapping FAB → calls `onOpenAddSheet()` (wired in Ph-6). |
 
 **Key implementation details:**
 
 - `MobileCalendarScreen` receives `appData: AppData`, `rdaProfile: RDAProfile | null`, `user` from `MobileShell`.
-- Load entries: `getEntriesForDateRange(userId, startDate, endDate)` from `lib/foodLogStorage.ts`. Start = 14 days before today; end = 14 days after. Store in `entriesByDate: Record<string, FoodLogEntry[]>` (key = YYYY-MM-DD).
+- **Load entries — corrected signature:** `getEntriesForDateRange(startDate, endDate)`. There is **no userId parameter** — Supabase RLS scopes rows to the signed-in user. Guard first: `if (!user) { setEntries([]); return }`, exactly as `CalendarView.tsx:79` does. Start = 14 days before today; end = 14 days after. Store in `entriesByDate: Record<string, FoodLogEntry[]>` (key = YYYY-MM-DD).
 - Week strip shows Mon through Sun. `weekStart` is the Monday of the selected date's week. Calculate with `getDay()` + offset.
 - Prev/Next week arrows: update `weekStart` by ±7 days. If navigating beyond the loaded range, extend the fetch.
-- Entry grouping: use `entry.type` field (same as desktop `CalendarDayPanel` which groups by `FoodLogEntryType`). If entry has no type or type = null, group under "Other".
-- Inline item display: each item in `entry.items` shows `food_name · Ng`. Find food name from `appData.foods` by `item.food_id`.
+- **Entry grouping — corrected.** The field is `entry.entry_type`, and its values are `'plan' | 'meal' | 'food'` — **there is no breakfast/lunch/dinner/snack concept anywhere in this app.** The schema has no meal-time column, and desktop `CalendarDayPanel.tsx:243-262` groups by `entry_type`, not time of day. Mirror desktop:
+  - Render one card per entry, in `created_at` order, with a type badge (`plan` violet / `meal` teal / `food` amber — see `entryBadgeClass` in `CalendarDayPanel.tsx:48`).
+  - `food` and `meal` entries list their items flat.
+  - `plan` entries sub-group their items by `item.meal_label` (the meal name captured at log time), with `'Other'` for items with no label.
+  - MOBILE_PLAN.md Section 3's mockup shows "Breakfast" / "Lunch" cards — that mockup is illustrative only and does not reflect the data model. If meal-time grouping is genuinely wanted, it is a schema change (new column on `food_log` + a picker in the add flow) and must be scoped as its own phase, not smuggled into the mobile build.
+- Inline item display: each item in `entry.items` shows `item.food_name · {item.amount_g}g`. The field is **`amount_g`**, not `grams`; it is always grams regardless of the item's `mode`. `food_name` is stored on the item itself — no lookup needed (fall back to `appData.foods` only if absent).
 - Day log must have `padding-bottom` to clear the FAB and the tab bar. Approx `pb-32` (8rem) should be safe.
 - Week strip: `np:m:cal-view` localStorage key (only 'week' mode for now, just save/restore selected date `np:m:cal-date`).
 
@@ -307,19 +448,24 @@ components/mobile/
 | `MobileVisualizationCard` (in own file) | Swipeable card container with dot indicator. Two cards: Card 1 = MacroDonut (inner ring only, reuse `MacroDonutChart.tsx` by passing `meals` built from day entries). Card 2 = Radar (reuse `MealCategoryRadar.tsx` with `totals` computed from day entries). Swipe via touch events or snap scroll. Only shown when day has entries + DV profile active. |
 
 **Streak computation:**
-- Call `getEntriesForDateRange(userId, 30daysAgo, today)` on mount.
-- Walk backward from today: count consecutive days where `entriesByDate[date]?.length > 0`.
-- Stop at the first day with no entries.
-- If today has no entries, streak = 0 (no guilt mechanic — don't show).
+- **Do not issue a second fetch.** Ph-5a already loads ±14 days. Widen that single call to `getEntriesForDateRange(today − 30d, today + 14d)` and compute the streak from the same `entriesByDate` map. (Signature is `(startDate, endDate)` — no userId.)
+- Walk backward from today: count consecutive days where `entriesByDate[date]?.length > 0`, stopping at the first empty day.
+- **Start the walk at yesterday, not today.** If the count starts at today, every user's streak silently resets to 0 at midnight and only reappears after they log — which reads as a bug, not a nudge. Count the unbroken run ending yesterday, and include today in it once today has an entry.
+- Streak of 0 → pill hidden entirely (no guilt mechanic).
+
+**Converting a day's entries to `Meal[]` (needed by the donut, and again in Ph-6):**
+- Build one `Meal` whose `items` are the `MealItem`s for every log item across all of the day's entries. **Reuse `logItemToMealItem()` from `CalendarDayPanel.tsx:34`** rather than writing the conversion inline — it already handles `amount_g → grams`, servings derivation, and portion metadata. Extract it to a shared helper (e.g. `lib/foodLogAdapters.ts`) and have `CalendarDayPanel` import it from there, so the two paths cannot drift.
+- Note `MealItem.grams` and `FoodLogItem.amount_g` are different field names for the same quantity; the adapter is the only place that should know that.
 
 **MacroDonut wiring:**
-- `MacroDonutChart.tsx` accepts `{ meals: Meal[], nutrients: NutrientMeta[], foodsById: Map<number, FoodRow> }`. Convert today's food_log entries into a `Meal[]`: one `Meal` object whose `items` array contains one `MealItem` per food item across all entries (`{ food_id, grams, name: food.food_name }`).
-- Import: `import MacroDonutChart from '@/components/MacroDonutChart'`.
-- The component always renders both inner and outer rings — there is no `showOuterRing` prop. To show only the inner (macro) ring on mobile, wrap in a fixed-size container `<div className="overflow-hidden" style={{ height: 220 }}>` sized to clip the outer ring, which renders further out from the center.
+- `MacroDonutChart.tsx` accepts `{ nutrients, meals, foodsById }`. Import: `import MacroDonutChart from '@/components/MacroDonutChart'`.
+- The component always renders both rings — there is no visibility prop. **The clip-to-220px trick previously specified here does not work:** the macro labels are drawn *outward* at `outerRadius * (70/48) + 16` (`MacroDonutChart.tsx:56`), so a container that clips the outer ring also clips the labels off the inner one.
+- Instead add an optional, defaulted prop to the desktop component: `innerOnly?: boolean` (default `false`) that skips the outer `<Pie>` and shrinks the label radius. It is a ~3-line additive change, no desktop behaviour moves, and it is the only clean way to get the mobile rendering. This is a deliberate, scoped exception to "do not touch desktop files."
 
 **MealCategoryRadar wiring:**
-- `MealCategoryRadar.tsx` accepts `totals: Record<number, number>` (nutrient_id → raw accumulated value) + `rdaProfile: RDAProfile` + `nutrients: NutrientMeta[]`. The component computes %DV internally — do NOT pre-divide by RDA.
-- Compute `totals` from day entries: for each entry's items, look up the food in `appData.foods` by `item.food_id`, then sum `food.nutrients[nutrientId] * (item.grams / 100)` across all items and all entries. The result is a `Record<number, number>` keyed by numeric nutrient ID with raw gram-scaled values.
+- `MealCategoryRadar.tsx` accepts `totals: Record<number, number>` (nutrient_id → raw accumulated value) + `rdaProfile: RDAProfile` + `nutrients: NutrientMeta[]`. The component computes %DV internally (including the `FOOD_METRIC_TARGETS` fallback) — do NOT pre-divide by RDA.
+- Compute `totals` from day entries: for each item, look up the food in `appData.foods` by `item.food_id` and sum `food.nutrients[nutrientId] * (item.amount_g / 100)`.
+- **Glycemic Index must not be summed this way.** GI is in `WEIGHTED_AVERAGE_NUTRIENTS` (`lib/dietProfile.ts:49`) and has to be a carb-weighted average across the day's foods — summing `GI × grams` inflates it without bound. This exact bug has already been found and fixed twice on desktop (`MealComparisonView` / `FoodComparisonView`, and `computeFoodContribs`; both are logged in PROJECT_STATE). Mirror `MealNutritionSidebar`'s handling; do not re-derive it. The same rule applies to the Ph-5b macro chips and any future day/week totalling.
 
 **PROJECT_STATE.md update (agent writes this at end):**
 ```
@@ -341,24 +487,30 @@ components/mobile/
 **Food tab sub-flow:**
 1. Search input (reuse `MobileFoodSearch.tsx` from Ph-4a).
 2. Each food row shows: food name · default grams (muted) · complement score badge (colored pill, 0-100). Sorted by complement score descending when DV profile is active. Score = `computeComplementScore(candidateItems, currentMeals, allNutrients, rdaProfile, foodsById)` from `lib/complementScore.ts` — full signature: `candidateItems` is `[{ food_id, grams }]` at the food's default serving; `currentMeals` is today's entries converted to `Meal[]` (same conversion as MacroDonut in Ph-5b); `allNutrients` is `appData.nutrients`; `foodsById` is a `Map<number, FoodRow>` built from `appData.foods`. Compute scores in a `useMemo` keyed on `currentDayEntries` — map `foodId → score` for all visible foods.
-3. Diet suggestions row at the very top of the Food tab (above search): A horizontal scroll row of food cards when diet suggestions are available. Render only when Food tab is active. Uses `computeDietSuggestions()` from `lib/dietSuggestions.ts`. Three empty states from MOBILE_PLAN.md Section 16 feature 9.
-4. Tapping a food → gram confirm card: food name, `MobileGramInput` pre-filled to portion size, `[Log It]` button, back arrow to return to search.
-5. `[Log It]` → calls `addEntry()` from `lib/foodLogStorage.ts`. Closes sheet. Shows toast on `MobileCalendarScreen`. Refreshes `entriesByDate` for today.
+3. Diet suggestions row at the very top of the Food tab (above search): A horizontal scroll row of food cards when diet suggestions are available. Render only when Food tab is active. Sourced from the user's diet list — see "Diet suggestions" under Key implementation details. Three empty states from MOBILE_PLAN.md Section 16 feature 9.
+4. Tapping a food → gram confirm card: food name, `MobileGramInput` pre-filled to `getPortionSize(food_id).grams`, `[Log It]` button, back arrow to return to search.
+5. `[Log It]` → calls `addEntry()` with a full `NewFoodLogEntry` (same payload shape as Ph-4c's "Log to Today", but with `log_date` = the sheet's `selectedDate`, not today). Closes sheet. Shows toast on `MobileCalendarScreen`. Refreshes `entriesByDate` for that date.
 
 **Meal tab sub-flow:**
-1. Two sections: "My Templates" (from `loadSavedMeals(userId)`) + "Presets" (from `loadPresetMeals()`).
+1. Two sections: "My Templates" (from `loadSavedMeals()` — **no arguments**) + "Presets" (from `loadPresetMeals()`).
 2. Meal cards: name + item count + complement score badge.
-3. Tapping a meal → adds all items as a single `food_log` entry with `type = 'meal'` and `source_id = meal.id`.
+3. Tapping a meal → adds all items as a single `food_log` entry with `entry_type: 'meal'` (not `type`), `label` = meal name, `source_id` = meal.id, and each item carrying `amount_g` + `meal_label` = meal name. Copy the exact payload from `CalendarAddModal.tsx:168`.
 
 **Plan tab sub-flow:**
-1. List of saved plans from `loadMealPlans(userId)`. Plan name + meal count.
-2. Tapping a plan → adds each meal as a separate entry (same behavior as desktop `CalendarAddModal` Plan tab).
+1. List of saved plans from `loadMealPlans()` — **no arguments**. Plan name + meal count.
+2. Tapping a plan → writes one `entry_type: 'plan'` entry whose items span all meals, each item tagged with `meal_label` = its meal's name (this is what lets the day log sub-group plan entries). Copy the payload from `CalendarAddModal.tsx:192` — note desktop writes a *single* plan entry, not one entry per meal.
 
 **Key implementation details:**
 - `MobileAddSheet` receives `open: boolean`, `onClose: () => void`, `selectedDate: string`, `appData: AppData`, `userId: string | null`, `currentDayEntries: FoodLogEntry[]`, `rdaProfile: RDAProfile | null`, `onEntriesChanged: () => void` (triggers a re-fetch in `MobileCalendarScreen`).
 - Wire from `MobileDayLog.tsx` FAB → `MobileCalendarScreen` → `MobileAddSheet` open state.
-- Complement score for each food in the search list: call `computeComplementScore` at search time. This is computed in a `useMemo` keyed on `currentDayEntries` — map `foodId → score` for all matching foods.
-- Diet suggestions: first call `computeDietProfile(selectedFoods, allFoodNutrients, rdaProfile, appData.nutrients)` from `lib/dietProfile.ts` to get `{ results }`, then call `computeDietSuggestions(selectedFoods, results, allFoodNutrients, appData.foods)` from `lib/dietSuggestions.ts`. Build `selectedFoods: DietFood[]` by mapping today's entry items to `{ foodId: item.food_id, daysPerWeek: 7 }`. Build `allFoodNutrients: FoodNutrientMap` (a `Map<number, Map<number, number>>` of foodId → nutrientId → value_per_100g) from `appData.foods` once on mount. `computeDietProfile` derives `dailyWeightG` from `rdaProfile` internally — no separate param needed. Run both calls inside a `useMemo` keyed on `currentDayEntries + rdaProfile`.
+- Complement score for each food in the search list: call `computeComplementScore` at search time, in a `useMemo` keyed on `currentDayEntries` — map `foodId → score`. **`rdaProfile` is non-nullable in that signature**: when no profile is selected, skip scoring entirely, hide the badges, and fall back to A–Z sort. Convert `currentDayEntries` to the `currentMeals: Meal[]` argument with the shared adapter from Ph-5b.
+- **Diet suggestions — data source corrected.** This widget reflects the user's *habitual* diet, not one day of logging. `computeDietSuggestions` is built around `user_diet_lists` (foods with a days-per-week frequency); feeding it a single day's entries at `daysPerWeek: 7` asserts the user eats exactly today's foods every day and produces noise. Use the real list:
+  - `const selectedFoods = await loadDietList(user?.id)` from `lib/dietStorage.ts` → `DietFood[]` = `{ foodId, daysPerWeek, gramsOverride? }[]`.
+  - `computeDietProfile(selectedFoods, allFoodNutrients, rdaProfile, appData.nutrients)` → `{ results }`.
+  - `computeDietSuggestions(selectedFoods, results, allFoodNutrients, appData.foods)`.
+  - This matches MOBILE_PLAN.md Section 16 feature 9, whose three empty states already assume the desktop diet list (including "Set up your diet on desktop to see personalised suggestions" when the list is empty).
+- **`allFoodNutrients: FoodNutrientMap` is `Record<number, Record<number, number | null>>`** (`lib/dietProfile.ts:24`) — a plain nested object, **not** `Map<number, Map<number, number>>`. Build it from `appData.foods` once (`{ [f.food_id]: f.nutrients }`) and memoize.
+- Run the profile + suggestions calls in a `useMemo` keyed on `selectedFoods + rdaProfile`.
 - Category filter on food search: for now a simple row of category pills (same categories as `filterConstants.ts`). No bottom sheet for this yet — inline pills scroll horizontally.
 
 **PROJECT_STATE.md update (agent writes this at end):**
@@ -378,7 +530,8 @@ components/mobile/
 
 #### Safe Areas
 - [ ] All fixed bottom elements (`MobileShell` tab bar, FAB in `MobileDayLog`, "Log to Today" bar in `MobileNutritionScreen`, `MobileAddSheet` bottom buttons) use `pb-[env(safe-area-inset-bottom)]` or `calc(56px + env(safe-area-inset-bottom) + Xpx)` offsets.
-- [ ] `app/m/layout.tsx` has `viewport-fit=cover` in the viewport meta tag (required for `safe-area-inset-*` to work).
+- [ ] `app/m/layout.tsx` sets `viewportFit: 'cover'` in its `export const viewport` (required for `safe-area-inset-*` to resolve). This should already be true from Ph-0/Ph-1 — verify, don't re-add.
+- [ ] No hand-written `<meta name="viewport">` tag exists anywhere in `app/m/` (it would conflict with Next's injected tag).
 
 #### Swipe-to-Dismiss (all bottom sheets)
 - [ ] `MobileDVProfileSheet.tsx` — add drag-handle touch logic: track touchstart/touchmove/touchend, `transform: translateY(Npx)` during drag, dismiss if >80px, snap back otherwise. `transition: transform 0.2s ease` on snap-back only (remove during active drag).
@@ -440,6 +593,11 @@ components/mobile/
 ## Files Created by This Build (Complete List)
 
 ```
+app/(desktop)/
+  layout.tsx              ← Ph-0 (moved from app/layout.tsx: gate + desktop chrome)
+  page.tsx                ← Ph-0 (moved from app/page.tsx)
+lib/
+  foodLogAdapters.ts      ← Ph-5b (logItemToMealItem extracted from CalendarDayPanel)
 app/m/
   layout.tsx              ← Ph-1
   page.tsx                ← Ph-1
@@ -477,6 +635,8 @@ Use these prompts in order to execute each phase. Copy, paste, and run as-is.
 
 ```
 Read PROJECT_STATE.md and MOBILE_BUILD_PLAN.md carefully before doing anything.
+
+Start with the "Verified API Reference" table at the top of MOBILE_BUILD_PLAN.md. Where it and any prose disagree, the table wins. Before calling any lib/ function, open the file and confirm its signature — several descriptions in these plans were written from memory and were wrong.
 
 From PROJECT_STATE.md, understand the existing codebase: tech stack, repository structure, all components and their purposes, the lib/ files available for reuse, and the current build state.
 
@@ -562,3 +722,31 @@ After all checklist items are complete:
 
 Report a summary of every change made.
 ```
+
+---
+
+## Revision Notes — 2026-08-07 Code Audit
+
+Both mobile plans were written against a remembered version of the codebase and were checked against the live repo for the first time on 2026-08-07, before any phase had been executed. Nothing had been built yet, so all corrections are to the plans, not to code.
+
+**Structural blockers found (new Phase 0):**
+1. `app/layout.tsx:32-45` renders a `md:hidden` "Open on Desktop" gate and wraps children in `hidden md:contents`. Since `app/m/` nests inside it, the entire mobile app would have been `display: none` behind an opaque overlay on every target device. Neither plan mentioned it.
+2. Viewport/PWA meta was specified as hand-written `<meta>` tags; Next 16 injects its own and the framework API is `export const viewport` / `export const metadata`. `viewport-fit=cover` was also deferred to Ph-7 despite Ph-1 depending on safe-area insets.
+3. No path existed for a phone user landing on `/` to reach `/m`.
+
+**API signatures corrected** (all verified against source; see the Verified API Reference table): `getEntriesForDateRange` (no userId), `addEntry` (whole-object payload), `entry.entry_type` not `entry.type`, `item.amount_g` not `item.grams`, `loadSavedProfiles` / `loadSavedMeals` / `loadMealPlans` (no args), `NUTRIENT_GROUP_LIST` (no member-nutrient arrays; singular category values), `FoodNutrientMap` (Record, not Map), `computeComplementScore` (non-nullable profile).
+
+**Correctness fixes:**
+- DV target resolution was missing the `FOOD_METRIC_TARGETS` fallback, which would have left the whole Food Metrics group with no %DV.
+- Ph-5b's day-totalling recipe would have reintroduced the Glycemic Index sum-vs-weighted-average bug already fixed twice on desktop.
+
+**Design corrections:**
+- Breakfast/Lunch/Dinner/Snack grouping does not exist in the schema or on desktop; day log now groups by `entry_type` with `meal_label` sub-grouping for plan entries.
+- Diet suggestions now read the desktop diet list (`loadDietList`) instead of one day's log entries, matching MOBILE_PLAN Section 16 feature 9's own empty states.
+- Donut inner-ring-only is an additive `innerOnly` prop, not a CSS clip (the clip would cut the labels).
+- Streak counts from yesterday (not today) so it doesn't reset at midnight, and reuses the existing fetch instead of issuing a second one.
+- Nutrient info sheet state hoisted to `MobileShell`, since Ph-4c and Ph-5b both open it.
+- `document.body.style.overflow` restore-on-unmount is required (shared `<body>` across `/` and `/m`), not cosmetic.
+- Added a `/m` payload measurement gate in Ph-1 — `fetchAppData()` ships ~14.7k nutrient values to the client.
+
+**Known stale docs (not fixed here):** PROJECT_STATE.md's "Adding a New NUTRIENT" checklist describes a member-nutrient array on `NUTRIENT_GROUP_LIST` that does not exist; its repository structure omits `lib/juiceFactors.ts` and `lib/userPreferencesStorage.ts`; root layout metadata says 59 nutrients while PROJECT_STATE says 58.

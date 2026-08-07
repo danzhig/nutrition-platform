@@ -467,8 +467,17 @@ When the tour ends, `AppShell` dispatches `np:tour:demo-cleanup`. `MealPlanner` 
 
 - [ ] Food row click → slide-in detail panel
 - [ ] % RDA in hover tooltips
-- [ ] Mobile-responsive collapse
+- [ ] Mobile-responsive collapse — superseded by the `/m` mobile build (MOBILE_BUILD_PLAN.md); not started
 - [ ] Nutrient name tooltips from `nutrients.description`
+- [ ] Doc drift: repository structure above omits `lib/juiceFactors.ts` and `lib/userPreferencesStorage.ts`; root layout `metadata` says 59 nutrients while this file says 58 — reconcile
+
+---
+
+## Mobile Build — Status
+
+**Not started.** Plans reviewed and corrected against the live codebase on 2026-08-07 (no code written). See `MOBILE_BUILD_PLAN.md` → "Verified API Reference" and "Revision Notes" for what changed and why.
+
+**Before Phase 1 can pass its own acceptance test, Phase 0 must run:** `app/layout.tsx:32-45` renders a `md:hidden` "Open on Desktop" gate and wraps children in `hidden md:contents`, so anything under `app/m/` is `display: none` on every mobile viewport. Phase 0 moves the desktop page and gate into an `app/(desktop)/` route group, keeping `AuthProvider` at the root.
 
 ---
 
@@ -599,7 +608,7 @@ WHERE n.name = 'Nutrient Name' AND f.name = 'Food Name';
 |---|---|---|
 | `lib/rdaProfiles.ts` → `BUILT_IN_PROFILES` | RDA value for all 4 profiles (`male-avg`, `female-avg`, `male-active`, `female-active`) | Nutrient shows no %DV bar; appears as 0% in all views |
 | `lib/rdaProfiles.ts` → `NUTRIENT_BEHAVIORS` | `'Nutrient Name': 'normal'` (or `'limit'` or `'normal-with-ul'`) | Color scale falls back to default; may color backwards for limit nutrients |
-| `lib/filterConstants.ts` → `NUTRIENT_GROUP_LIST` | Add to the appropriate group's `nutrients` array | Nutrient won't appear in the nutrient filter panel |
+| `lib/filterConstants.ts` → `NUTRIENT_GROUP_LIST` | **Nothing** — corrected 2026-08-07. This constant is only `{ value, label }[]` (the 6 category names + display labels); it holds no per-nutrient membership list. Grouping is derived at runtime from each nutrient's `nutrient_category`, which comes from the DB. Only edit this file if you add a whole new *category*. | — |
 
 **Behavior guide:**
 - `normal` — more is better (vitamins, minerals, protein, fiber)

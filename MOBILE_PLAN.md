@@ -1,6 +1,7 @@
 # Mobile Plan — Nutrition Platform
 
 **Created:** 2026-06-01  
+**Revised:** 2026-08-07 — code audit; see corrections marked **⚠️ CORRECTED** below and the Revision Notes in MOBILE_BUILD_PLAN.md  
 **Minimum viewport:** 360 × 667 logical px (Samsung Galaxy A / iPhone 8 / SE 2020 floor)  
 **Target device:** iPhone XS and up (375 × 812 logical px) — comfortable margin above minimum  
 **Scope:** Calendar food log + Nutrition lookup, DV profile, login. No demo, no desktop-only features.  
@@ -46,8 +47,12 @@ Create `app/m/page.tsx` — a new server page with its own `<MobileShell>`. The 
 - Optional: `middleware.ts` detects touch UA and redirects `/` → `/m`.
 - Optional: `public/manifest.json` + `<link rel="manifest">` enables "Add to Home Screen" on iOS/Android.
 
-**Pros:** Desktop code is completely unaffected. Mobile bundle only loads mobile code. Clean separation — desktop quirks don't leak into mobile layout. PWA-ready with minimal extra work.  
+**Pros:** Desktop code is completely unaffected. Mobile bundle only loads mobile *code*. Clean separation — desktop quirks don't leak into mobile layout. PWA-ready with minimal extra work.  
 **Cons:** Two entry points to maintain. Auth state (Supabase session) is shared transparently since it's localStorage-based.
+
+> **⚠️ CORRECTED (2026-08-07) — this option does not work as written.** `app/m/` nests inside the root layout, and `app/layout.tsx:32-45` currently renders a `md:hidden` "Open on Desktop" gate plus a `hidden md:contents` wrapper around all children. On any viewport under 768px — every target device — the mobile app would be `display: none` behind an opaque overlay. Option B is still the right architecture, but it requires first moving the desktop page and its gate into an `app/(desktop)/` route group so `/m` escapes them. This is **Phase 0** in MOBILE_BUILD_PLAN.md and must be done before Phase 1.
+>
+> Two further caveats on "mobile bundle only loads mobile code": that is true of JavaScript but not of data — `fetchAppData()` serializes all 257 foods × 58 nutrients into the page payload either way. And nothing currently routes a phone user from `/` to `/m`; the gate needs a link (or middleware).
 
 ---
 
@@ -142,16 +147,18 @@ The calendar tab shows logged food entries and allows adding new ones.
 ├──────────────────────────────────┤
 │  Thursday, May 29                │  ← selected day heading
 │                                  │
-│  ┌─ Breakfast ──────────────────┐│
-│  │  Greek Yogurt      172g      ││  ← entry cards grouped by type
+│  ┌─[meal] Greek Yogurt Bowl ────┐│
+│  │  Greek Yogurt      172g      ││  ← entry card, items listed flat
 │  │  Blueberries        80g      ││
 │  └──────────────────────────────┘│
-│  ┌─ Lunch ───────────────────────┐│
+│  ┌─[food] Chicken Breast ───────┐│
 │  │  Chicken Breast    180g      ││
 │  └──────────────────────────────┘│
 │  [ + Add Food / Meal ]           │  ← floating action button or inline add button
 └──────────────────────────────────┘
 ```
+
+> **⚠️ CORRECTED (2026-08-07).** An earlier version of this mockup showed "Breakfast" / "Lunch" group headers. **There is no meal-time concept in this app.** `food_log` entries carry `entry_type: 'plan' | 'meal' | 'food'` (`types/calendar.ts:11`) and no time-of-day column; desktop `CalendarDayPanel.tsx:243-262` groups by `entry_type`, with `plan` entries sub-grouping their items by `item.meal_label`. The mobile day log mirrors that. Adding real breakfast/lunch/dinner grouping is a schema change (new `food_log` column + a picker in the add flow) and needs its own phase — it is not part of the mobile build.
 
 - Swipe left/right on the week strip scrolls the week.
 - Tap a day pill → day log below updates.
@@ -598,16 +605,24 @@ All layouts must be tested / verified against this minimum:
 
 **The mobile experience must feel like a native app, not a website.** The user scrolls up and down within content areas. Nothing zooms in when tapped or focused. There is no pinch-to-zoom. Filling in a field does not shift the layout.
 
-### Viewport meta (set once in `app/m/layout.tsx`, never overridden)
+### Viewport (set once in `app/m/layout.tsx`, never overridden)
 
-```html
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-/>
+> **⚠️ CORRECTED (2026-08-07).** Do **not** hand-write a `<meta name="viewport">` tag — Next 16 injects its own and you end up with two conflicting tags. Use the App Router export:
+
+```ts
+import type { Viewport } from 'next'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',   // required for env(safe-area-inset-*) — needed from Phase 1, not Phase 7
+  themeColor: '#0f172a',
+}
 ```
 
-`maximum-scale=1, user-scalable=no` locks the zoom level at all times — tap, pinch, double-tap — nothing zooms. This is the single most important line for the "app feel."
+`maximumScale: 1, userScalable: false` suppress zoom on Android and in standalone PWA mode. **They do not work in iOS Safari** — Apple has ignored both since iOS 10 so that pinch-zoom always remains available for accessibility, and that is fine. The rule that actually prevents the disruptive auto-zoom on iOS is the 16px minimum input font size below, which is the real load-bearing constraint for "app feel" — treat it, not this export, as the one that must never be violated.
 
 ### Input font size rule (enforced on every input, no exceptions)
 
@@ -655,24 +670,24 @@ The rules below go beyond the basics. Each one is a place where a mobile web exp
 
 When a user adds the `/m` page to their iPhone home screen, it launches in a chrome-free full-screen shell — no Safari address bar, no tab bar, no back/forward buttons — indistinguishable from a native app download.
 
-**Required tags in `app/m/layout.tsx`:**
+**Required in `app/m/layout.tsx`** — again via the App Router export, not raw tags (**⚠️ CORRECTED 2026-08-07**). Next emits all of the tags below from this object:
 
-```html
-<!-- Enables full-screen launch from home screen -->
-<meta name="apple-mobile-web-app-capable" content="yes" />
+```ts
+import type { Metadata } from 'next'
 
-<!-- Status bar blends with the dark slate-900 header -->
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
-<!-- App name shown under the icon on the home screen -->
-<meta name="apple-mobile-web-app-title" content="Nutrition" />
-
-<!-- App icon for home screen (add a 180×180px icon to /public) -->
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-<!-- Web app manifest (covers Android Add-to-Home-Screen) -->
-<link rel="manifest" href="/m/manifest.json" />
+export const metadata: Metadata = {
+  title: 'Nutrition',
+  manifest: '/m/manifest.json',          // → <link rel="manifest">
+  appleWebApp: {
+    capable: true,                        // → apple-mobile-web-app-capable
+    title: 'Nutrition',                   // → apple-mobile-web-app-title
+    statusBarStyle: 'black-translucent',  // → apple-mobile-web-app-status-bar-style
+  },
+  icons: { apple: '/apple-touch-icon.png' },
+}
 ```
+
+(`themeColor` lives on the `viewport` export, not here — Next moved it in v14.)
 
 **`public/m/manifest.json`:**
 
@@ -928,23 +943,32 @@ Native app sheets can be dragged down with a finger to dismiss them. This is exp
 | Portrait lock | ✅ **Option A** — soft overlay when landscape detected |
 | Swipe-to-dismiss sheets | ✅ Include from the start |
 
-### Reused from Desktop (no changes to existing files)
+### Reused from Desktop
 
-| Existing asset | Used for |
-|---|---|
-| `lib/fetchAppData.ts` | Same server-side data fetch in `app/m/page.tsx` |
-| `lib/rdaProfiles.ts` | All profile definitions, NUTRIENT_BEHAVIORS, UPPER_LIMITS |
-| `lib/portionSizes.ts` | Default grams per food |
-| `lib/foodLogStorage.ts` | All food_log CRUD (add/get/update/delete) |
-| `lib/mealStorage.ts` | Load saved plans for "Add Plan" flow |
-| `lib/savedMealStorage.ts` | Load meal templates for "Add Meal" flow |
-| `lib/presetMealStorage.ts` | Load preset meals |
-| `lib/profileStorage.ts` | Load saved custom RDA profiles |
-| `lib/rdaColorScale.ts` | Nutrient row color in accordion |
-| `lib/filterConstants.ts` | Category lists |
-| `components/AuthProvider.tsx` | Auth context unchanged |
-| `types/nutrition.ts` | All types shared |
-| `types/calendar.ts` | FoodLogEntry types |
+**⚠️ Signatures corrected 2026-08-07** — several entries here were previously described with parameters these functions do not take. The authoritative list is the **Verified API Reference** table at the top of MOBILE_BUILD_PLAN.md; consult it before calling anything below.
+
+| Existing asset | Used for | Watch out for |
+|---|---|---|
+| `lib/fetchAppData.ts` | Same server-side data fetch in `app/m/page.tsx` | Ships all 257×58 values to the client — measure the payload |
+| `lib/rdaProfiles.ts` | Profile definitions, `NUTRIENT_BEHAVIORS`, `NUTRIENT_UPPER_LIMITS`, `FOOD_METRIC_TARGETS` | The `FOOD_METRIC_TARGETS` fallback is required (Section 13) |
+| `lib/portionSizes.ts` | Default grams per food | Use `getPortionSize(id)`; it has a built-in 100g fallback |
+| `lib/foodLogStorage.ts` | All food_log CRUD | `getEntriesForDateRange(start, end)` — **no userId**; `addEntry(wholeEntryObject)` |
+| `lib/mealStorage.ts` | Saved plans for "Add Plan" | `loadMealPlans()` — **no args** |
+| `lib/savedMealStorage.ts` | Meal templates for "Add Meal" | `loadSavedMeals()` — **no args** |
+| `lib/presetMealStorage.ts` | Preset meals | `loadPresetMeals()` — no args |
+| `lib/profileStorage.ts` | Saved custom RDA profiles | `loadSavedProfiles()` — **no args**; already filters the `__np_prefs__` sentinel |
+| `lib/dietStorage.ts` | Diet list for the suggestions widget | `loadDietList(userId?)` → `{ foodId, daysPerWeek, gramsOverride? }[]` |
+| `lib/rdaColorScale.ts` | Nutrient row color in accordion | — |
+| `lib/filterConstants.ts` | Group order + labels | `NUTRIENT_GROUP_LIST` does **not** list member nutrients; group by `nutrient.nutrient_category` (values are singular) |
+| `lib/complementScore.ts` | Score badges in add sheet | `rdaProfile` is non-nullable — skip scoring when no profile |
+| `components/AuthProvider.tsx` | Auth context unchanged | Must stay in the **root** layout so `/m` inherits it (Phase 0) |
+| `types/nutrition.ts` | All types shared | — |
+| `types/calendar.ts` | FoodLogEntry types | `entry_type` (not `type`); items use `amount_g` (not `grams`) |
+
+**Two desktop files do change**, by design — both additive:
+- `app/layout.tsx` / `app/page.tsx` — split into an `app/(desktop)/` route group (Phase 0). Desktop behaviour unchanged.
+- `components/MacroDonutChart.tsx` — optional `innerOnly?: boolean` prop defaulting to `false` (Phase 5b). The previously specified CSS-clip approach does not work: the macro labels render outward at `outerRadius × (70/48) + 16`, so clipping the outer ring clips the labels too.
+- `CalendarDayPanel.tsx`'s `logItemToMealItem()` is extracted to `lib/foodLogAdapters.ts` and imported back, so mobile and desktop share one `FoodLogItem → MealItem` conversion.
 
 ### New Components (all in `components/mobile/`)
 
@@ -1011,6 +1035,20 @@ valueForDisplay:
 
 `selectedGrams` is initialised to `portionGrams` (the food's standard serving from `portionSizes.ts`) and updated whenever the user edits the gram chip. `/100g` is a fixed per-100g view that always ignores `selectedGrams`. `/srv` and `%DV` both scale by `selectedGrams`, so editing the chip updates both modes immediately.
 
+### ⚠️ CORRECTED (2026-08-07) — resolving `rdaTarget`
+
+```
+rdaTarget = rdaProfile.values[nutrientName]
+         ?? FOOD_METRIC_TARGETS[nutrientName]   // lib/rdaProfiles.ts:83
+         ?? null
+```
+
+The `FOOD_METRIC_TARGETS` fallback is **required** — `rdaProfile.values` alone has no entries for the Food Metrics group, so that entire accordion section would render with no %DV. Desktop resolves the fallback everywhere (`MealCategoryRadar.tsx:51`, `computeDietProfile`).
+
+### ⚠️ Totalling across multiple foods (Day Total, macro chips, radar)
+
+The formulas above are for **one food**, which is all the Nutrition screen shows. Anywhere the mobile app sums nutrients across several foods — the Calendar day total, the macro chip row (feature 1), the radar `totals` (feature 3), the donut (feature 6) — every nutrient accumulates as `value_per_100g × grams / 100` **except** those in `WEIGHTED_AVERAGE_NUTRIENTS` (`lib/dietProfile.ts:49` — currently `Glycemic Index`), which must be a carb-weighted average. Summing `GI × grams` is a real bug that has already been found and fixed twice on desktop (`MealComparisonView`/`FoodComparisonView`, and `computeFoodContribs`). Mirror `MealNutritionSidebar`'s handling rather than re-deriving it.
+
 ### %DV bar color
 
 Uses existing `rdaCellColor(pctDv, behavior, upperLimitPct)` from `lib/rdaColorScale.ts`. Same green/amber/red scale as desktop.
@@ -1027,6 +1065,7 @@ Confirmed after choices above are locked in.
 
 | Phase | Work | Key files |
 |---|---|---|
+| **P0 — Route unblock** (added 2026-08-07) | Move desktop page + "Open on Desktop" gate into `app/(desktop)/` route group so `/m` is not hidden by the `md:hidden` gate; keep `AuthProvider` at root; add a `/m` link to the gate. **Blocks P1.** | `app/layout.tsx`, `app/(desktop)/` |
 | **P1 — Shell + Routing** | `/m` route, layout, MobileShell, bottom tab bar, MobileHeader, DV chip placeholder | `app/m/`, `MobileShell.tsx`, `MobileHeader.tsx` |
 | **P2 — Account Screen** | Full-page login/register form, logged-in state, sign out | `MobileAccountScreen.tsx` |
 | **P3 — DV Profile Sheet** | Profile bottom sheet, device default logic, localStorage | `MobileDVProfileSheet.tsx` |
@@ -1129,6 +1168,8 @@ This section is a menu of ideas — not all are required for launch. Each comes 
 
 **Mobile rendering:** 220×220px donut, inner ring only (4 slices). Center label: total kcal for the day. Below: 2×2 legend grid (same as desktop). Shown in a swipeable card row alongside the radar — swipe left to see radar, swipe right to see donut.
 
+**⚠️ How to get inner-ring-only (2026-08-07):** add an optional `innerOnly?: boolean` prop to `MacroDonutChart.tsx` (defaulting to `false`, so desktop is untouched). Do **not** try to hide the outer ring by clipping the container — the macro labels are drawn outward at `outerRadius × (70/48) + 16` (`MacroDonutChart.tsx:56`), so any clip tight enough to cut the outer ring also cuts the labels.
+
 **Option A — Swipeable card pair:**
 ```
 ┌──────────────────────────────────┐
@@ -1216,6 +1257,8 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 
 **Effort:** Medium. Logic unchanged (`computeDietSuggestions`). New rendering for the card row at mobile proportions.
 
+**⚠️ Data source (2026-08-07):** these suggestions come from the user's **desktop diet list** (`loadDietList(userId)` → `user_diet_lists`), not from the current day's log entries. `computeDietSuggestions` models a habitual diet with per-food days-per-week frequencies; passing a single day's foods at `daysPerWeek: 7` asserts the user eats exactly today's foods every day and yields noise. The empty states below already assume the diet list — keep them consistent.
+
 **Empty states:** Three cases must be handled:
 1. **No DV profile set** → widget hidden entirely (no profile = no gap calculation possible).
 2. **Profile set but no diet data** (user has never used the Desktop Diet tab, `user_diet_lists` row is empty or absent) → show a single muted prompt card: "Set up your diet on desktop to see personalised suggestions."
@@ -1231,7 +1274,9 @@ Two columns share the nutrient label. Bars are relative to the higher value of t
 
 **Why it works on mobile:** Streaks are a proven mobile engagement mechanic (Duolingo, Apple Rings, Headspace). On a nutrition app the motivator is real: people who log consistently get more value. This doesn't exist on desktop because desktop is more of a planning/analysis tool; mobile is where daily logging happens.
 
-**Where the logic comes from:** `lib/foodLogStorage.ts` → `getEntriesForDateRange()`. Load the last 30 days, count back from today until you find a day with no entries.
+**Where the logic comes from:** `lib/foodLogStorage.ts` → `getEntriesForDateRange(startDate, endDate)` (**no userId param**). Widen the Calendar screen's existing ±14-day fetch to start 30 days back rather than issuing a second query, then count back through that map.
+
+**⚠️ Count from yesterday, not today (2026-08-07).** If the walk starts at today, every user's streak drops to 0 at midnight and only reappears after they log — which reads as a bug. Count the unbroken run ending yesterday and fold today in once today has an entry.
 
 **Mobile rendering:** A small amber pill in the Calendar header: `🔥 4`. Tap → tooltip: "You've logged 4 days in a row. Keep it up." If streak = 0: not shown (no guilt mechanic).
 
@@ -1311,4 +1356,26 @@ Mark each as confirmed:
 - [x] **Gram input:** **Option A** ✅ / ~~Option B~~ / ~~Option C~~ — tap-to-edit inline chip
 - [x] **Unit toggle:** **Option A** ✅ / ~~Option B~~ — segmented control (%DV · /srv · /100g)
 - [x] **DV profile:** **Option A** ✅ / ~~Option B~~ — persistent header chip → bottom sheet picker
-- [x] **Build phase order:** ✅ confirmed as P1–P7 above
+- [x] **Build phase order:** ✅ confirmed as P1–P7 above — **P0 prepended 2026-08-07** (route unblock; see Section 1)
+
+---
+
+## Corrections Applied 2026-08-07
+
+This document was written before any code was built and was checked against the live repo for the first time on 2026-08-07. Design decisions (Sections 1–10) all survived review. The following were factually wrong and are marked **⚠️ CORRECTED** inline:
+
+| Where | Was | Now |
+|---|---|---|
+| §1 Option B | `/m` route is enough | Blocked by the root layout's `md:hidden` desktop gate — needs a Phase 0 route group |
+| §3 Option A mockup | Day log grouped by Breakfast / Lunch | Grouped by `entry_type` (plan/meal/food); no meal-time concept exists in the schema |
+| §10c viewport | Hand-written `<meta name="viewport">` | `export const viewport` (Next injects its own tag otherwise); `viewport-fit: cover` needed from P1 |
+| §10c zoom lock | "single most important line for app feel" | iOS Safari ignores `user-scalable=no`; the 16px input floor is the load-bearing rule |
+| §10d Group 1 | Hand-written apple/manifest `<meta>` tags | `export const metadata` with `appleWebApp` / `manifest` / `icons` |
+| §13 | `rdaTarget = rdaProfile.values[name]` | Needs the `FOOD_METRIC_TARGETS` fallback, or Food Metrics shows no %DV |
+| §13 | (nothing on multi-food totals) | Glycemic Index is a weighted average, never a sum — added |
+| §16 #6 donut | Clip the container to hide the outer ring | Add an `innerOnly` prop — clipping also cuts the labels |
+| §16 #9 suggestions | (ambiguous source) | Reads the desktop diet list via `loadDietList`, not one day's log |
+| §16 #10 streak | Count from today; separate 30-day fetch | Count from yesterday; widen the existing fetch |
+| Reuse table | Several functions listed as taking `userId` | None of `loadSavedProfiles` / `loadSavedMeals` / `loadMealPlans` / `getEntriesForDateRange` take one — RLS scopes them |
+
+The full corrected signature list lives in the **Verified API Reference** table at the top of MOBILE_BUILD_PLAN.md, which is the authoritative source when the two documents disagree.
