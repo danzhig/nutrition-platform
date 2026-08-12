@@ -63,7 +63,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Phase | Name | Status |
 |---|---|---|
 | Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ✅ Complete (2026-08-12) |
-| Ph-1 | Foundation: Route, Layout, Shell, Header | ⬜ Not started |
+| Ph-1 | Foundation: Route, Layout, Shell, Header | ✅ Complete (2026-08-12) |
 | Ph-2 | Account Screen + Auth | ⬜ Not started |
 | Ph-3 | DV Profile Sheet | ⬜ Not started |
 | Ph-4a | Nutrition Screen — Core Controls | ⬜ Not started |
@@ -155,11 +155,16 @@ app/(desktop)/
 
 ---
 
-### ⬜ Phase 1 — Foundation: Route, Layout, Shell, Header
+### ✅ Phase 1 — COMPLETE (2026-08-12) — Foundation: Route, Layout, Shell, Header
 
 **Prerequisite:** Phase 0 must be complete. If `app/(desktop)/` does not exist, stop and do Phase 0 first — otherwise nothing built here is visible on a phone.
 
 **Goal:** Everything needed before a single screen can render. After this phase, visiting `/m` shows a blank dark shell with a bottom tab bar and a top header.
+
+**Implementation notes (2026-08-12):**
+- Icons: inline SVG (no icon library dependency added, per instruction).
+- Mobile CSS shipped as `app/m/mobile.css`, imported only by `app/m/layout.tsx` (the "Option B" choice offered in the file list above).
+- **`/m` transfer size not measured this session** — this dev environment has no `.env.local` / Supabase credentials (`next build`'s page-data-collection step fails on `Missing Supabase environment variables` for both `/` and `/m`, a pre-existing environment gap unrelated to this phase's code). `tsc --noEmit` is clean and `next build` compiles and passes the TypeScript step. **Follow-up required:** once Supabase env vars are available (locally or in CI), measure the `/m` RSC transfer size per the Ph-1 payload warning above and open a follow-up if it exceeds ~500 KB compressed.
 
 **Files to create:**
 
