@@ -39,7 +39,7 @@ export default function MobileNutrientRow({
         <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
           <div
             className="h-full rounded-full"
-            style={{ width: `${Math.min(pctDv!, 200) / 2}%`, backgroundColor: barColor }}
+            style={{ width: `${Math.min(pctDv!, 100)}%`, backgroundColor: barColor }}
           />
         </div>
       )}
