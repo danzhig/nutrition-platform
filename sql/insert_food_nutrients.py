@@ -3,10 +3,12 @@
 Insert food_nutrient rows for the 7 new nutrients (IDs 53–59).
 Run from repo root: python3 sql/insert_food_nutrients.py
 """
-import json, urllib.request, sys
+import json, os, urllib.request, sys
 
 SUPABASE_URL = "https://ieqrdzffpotiedipffka.supabase.co"
-SERVICE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImllcXJkemZmcG90aWVkaXBmZmthIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjIwOTg3MiwiZXhwIjoyMDkxNzg1ODcyfQ.6wPkTbb2yidI2Lb2uRS-eOX4URAmf3xJbKQF0Tdvon4"
+SERVICE_KEY  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+if not SERVICE_KEY:
+    sys.exit("Set SUPABASE_SERVICE_ROLE_KEY in the environment before running this script.")
 
 HEADERS = {
     "apikey": SERVICE_KEY,
