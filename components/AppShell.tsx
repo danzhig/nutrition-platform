@@ -151,9 +151,6 @@ export default function AppShell({ data }: Props) {
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-white">Nutrition Platform</h1>
-            <p className="text-sm text-slate-400 mt-0.5">
-              {data.foods.length} foods · {data.nutrients.length} nutrients
-            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
