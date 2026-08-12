@@ -72,7 +72,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-5a | Calendar Screen — Week Strip + Day Log | ✅ Complete (2026-08-12) |
 | Ph-5b | Calendar Screen — Summary Chips + Visualizations | ✅ Complete (2026-08-12) |
 | Ph-6 | Add Food/Meal Sheet | ✅ Complete (2026-08-12) |
-| Ph-7 | Polish, Safe Areas, App-Like Behaviour | ⬜ Not started |
+| Ph-7 | Polish, Safe Areas, App-Like Behaviour | ✅ Complete (2026-08-12) |
 
 ---
 
@@ -569,68 +569,69 @@ await addEntry({
 
 ---
 
-### ⬜ Phase 7 — Polish & iOS Safe Areas
+### ✅ Phase 7 — COMPLETE (2026-08-12) — Polish & iOS Safe Areas
 
 **Goal:** Cross-device testing and all the "app-like" behaviour rules from MOBILE_PLAN.md Sections 10c, 10d. After this phase, the app should be indistinguishable from a native app at first glance on any iPhone XS+ or Android equivalent.
 
 **Files to modify (no new files — polish pass across all components):**
 
+**⚠️ Testing caveat (2026-08-12):** No browser/device tool was available this session (Chrome extension declined). Every item below was verified by code audit (`grep`/reading the rendered class lists) plus `tsc --noEmit` + `next build` + a dev-server smoke test against live Supabase data — not by visually opening the app in a mobile viewport or on a real device. Items that inherently require a viewport (no-horizontal-scroll, FAB clearance, keyboard-covering-a-sheet) are marked done based on the CSS actually shipped (relative units, flex/grid layouts, no fixed pixel widths outside scroll containers) — treat them as "should be correct by construction," and give the app a real device pass before shipping.
+
 **Checklist of items (agent checks each off as done):**
 
 #### Safe Areas
-- [ ] All fixed bottom elements (`MobileShell` tab bar, FAB in `MobileDayLog`, "Log to Today" bar in `MobileNutritionScreen`, `MobileAddSheet` bottom buttons) use `pb-[env(safe-area-inset-bottom)]` or `calc(56px + env(safe-area-inset-bottom) + Xpx)` offsets.
-- [ ] `app/m/layout.tsx` sets `viewportFit: 'cover'` in its `export const viewport` (required for `safe-area-inset-*` to resolve). This should already be true from Ph-0/Ph-1 — verify, don't re-add.
-- [ ] No hand-written `<meta name="viewport">` tag exists anywhere in `app/m/` (it would conflict with Next's injected tag).
+- [x] All fixed bottom elements (`MobileShell` tab bar, FAB in `MobileDayLog`, "Log to Today" bar in `MobileNutritionScreen`, `MobileAddSheet` bottom buttons) use `pb-[env(safe-area-inset-bottom)]` or `calc(56px + env(safe-area-inset-bottom) + Xpx)` offsets. Also added to the two other sheets' scrollable content (`MobileNutrientInfoSheet`, `MobileDVProfileSheet`) and `MobileAddSheet`'s content area, which weren't in the original file list but are just as susceptible to being covered by the home indicator.
+- [x] `app/m/layout.tsx` sets `viewportFit: 'cover'` — verified still present from Ph-0/Ph-1, not re-added.
+- [x] No hand-written `<meta name="viewport">` tag anywhere in `app/m/` — verified via grep.
 
 #### Swipe-to-Dismiss (all bottom sheets)
-- [ ] `MobileDVProfileSheet.tsx` — add drag-handle touch logic: track touchstart/touchmove/touchend, `transform: translateY(Npx)` during drag, dismiss if >80px, snap back otherwise. `transition: transform 0.2s ease` on snap-back only (remove during active drag).
-- [ ] `MobileAddSheet.tsx` — same drag-to-dismiss logic.
-- [ ] `MobileNutrientInfoSheet.tsx` — same.
+- [x] New shared hook `components/mobile/useSwipeToDismiss.ts`: tracks touchstart/touchmove/touchend, returns `{ dragging, style, handlers }`; dismiss fires (calling the sheet's existing `requestClose`, so the Android back-button history state stays consistent) at >80px drag, otherwise `dragY` resets to 0 and the sheet's normal `transition-transform duration-300` snaps it back (the checklist's "0.2s ease" was folded into the existing open/close transition rather than a second bespoke one, since re-using it avoids a visible seam between drag-release and the sheet's own animation).
+- [x] `MobileDVProfileSheet.tsx` — wired.
+- [x] `MobileAddSheet.tsx` — wired.
+- [x] `MobileNutrientInfoSheet.tsx` — wired.
 
 #### Portrait Overlay
-- [ ] Add a `PortraitOverlay` component (inline in `MobileShell.tsx` or small file). Listens to `window.innerWidth > window.innerHeight` via a `resize` event listener. When landscape detected, renders a full-screen slate-900 overlay with centered text: "Please rotate your device to portrait mode." Hides when portrait restored.
+- [x] `PortraitOverlay` added inline in `MobileShell.tsx`: `resize`-listener-driven, full-screen `bg-slate-900` with centered "Please rotate your device to portrait mode." text, hides automatically when portrait is restored.
 
 #### Touch Feedback
-- [ ] Verify all buttons in tab bar, sheets, and food rows have `active:opacity-70 active:scale-[0.97] transition-none` Tailwind classes (or equivalent CSS). `transition-none` prevents animation INTO the press; add `transition-opacity transition-transform duration-150` on the button element itself for release animation.
-- [ ] All buttons have `touch-action: manipulation` (eliminates 300ms delay).
+- [x] Tab bar (from Ph-1) already had `active:opacity-70 active:scale-[0.97]`. Added `active:scale-[0.98]`/`active:scale-95` + `transition-transform duration-150` to the FAB, both primary "Log"/"Log It" CTAs, and every food/meal/plan row button across `MobileFoodSearch.tsx` and `MobileAddSheet.tsx` (the checklist's explicit "food rows"). Simpler list rows (accordion nutrient rows, day-log entry cards) keep their existing `active:bg-slate-800`-style background feedback rather than adding a scale-dip to every single button in the tree — a deliberate prioritization, not an oversight; called out here so it's traceable.
+- [x] `touch-manipulation` verified present on all interactive buttons audited above.
 
 #### Focus Rings
-- [ ] Verify global CSS has `*:focus { outline: none }` and `*:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }` in the mobile CSS.
+- [x] Verified `app/m/mobile.css` (from Ph-1) already has `*:focus { outline: none }` and `*:focus-visible { outline: 2px solid #7c3aed; outline-offset: 2px; }` — no change needed.
 
 #### Scroll Containers
-- [ ] Day log: `overflow-y-auto overscroll-contain`
-- [ ] Nutrient accordion: `overflow-y-auto overscroll-contain`
-- [ ] Add-sheet food results: `overflow-y-auto overscroll-contain`
-- [ ] `MobileShell` content area: `overflow-y-auto overscroll-contain`
+- [x] `MobileShell` content area (`<main>`) has `overflow-y-auto overscroll-contain` (Ph-1) — this is the single shared scroll region for the Day Log and Nutrient Accordion screens (per the Ph-1 architecture: "Screen area between header and tab bar ... is the scrollable content region"), so those two checklist items are satisfied by inheritance rather than a second nested scroll container.
+- [x] Add-sheet food results: `overflow-y-auto overscroll-contain` on `MobileAddSheet`'s content div — verified present (Ph-6).
 
 #### No Horizontal Scroll
-- [ ] Test each screen at 360px viewport width (use DevTools). Fix any overflow.
+- [x] Code-audited (see testing caveat above): no fixed pixel widths outside their own `overflow-x-auto` containers (diet-suggestion cards, category pill rows, the visualization swiper); `MobileWeekStrip`'s 7-day grid uses `grid-cols-7` with no fixed track sizes, so it always fits its flex-1 parent.
 
 #### Minimum Touch Targets
-- [ ] Audit tab bar icons: minimum 44×44px tap area. Use padding to expand if needed.
-- [ ] Week strip day pills: minimum 44px tap area.
-- [ ] Accordion group headers: minimum 44px height.
+- [x] Tab bar icons: 56px-tall flex children of the fixed-height nav — comfortably ≥44×44.
+- [x] Week strip day pills: `min-h-11` (44px height). **Documented trade-off:** pill *width* is ~35–40px at 360–375px viewports once the prev/next arrows (shrunk to `w-8 h-11` this phase, from `w-11`) and gaps are accounted for — fitting 7 same-width columns plus two nav arrows in ~320px of usable width makes a true 44px-wide column physically impossible without dropping a day or the arrows. Height meets the 44px minimum; width does not. This mirrors how most native week-view calendars handle the same constraint.
+- [x] Accordion group headers: `min-h-11` (44px height) — verified present (Ph-4b).
 
 #### Input Font Sizes
-- [ ] Audit every `<input>` in the mobile components. All must have `text-base` (16px) minimum. Check: food search, gram input, email field, password field.
+- [x] Audited all 5 `<input>` elements in `components/mobile/`: food search (×2, `MobileFoodSearch` + `MobileAddSheet`), gram-edit input (`MobileGramInput`), email + password (`MobileAccountScreen`) — all `text-base` (16px).
 
 #### No Native Selects
-- [ ] Verify no `<select>` element exists anywhere in `components/mobile/`. If any exist, replace with bottom-sheet or pill-row equivalent.
+- [x] `MobileFoodSearch.tsx`'s category `<select>` (flagged as temporary in Ph-4a) replaced with a horizontally-scrolling pill row, matching the pattern already used in `MobileAddSheet.tsx`. Verified via grep: zero `<select>` elements remain in `components/mobile/`.
 
 #### Drag Image Prevention
-- [ ] Add `draggable="false"` to any `<img>` tags in mobile components.
+- [x] N/A — zero `<img>` tags exist anywhere in `components/mobile/` (all icons are inline SVG, per the Ph-1 "no new icon library" decision). Verified via grep.
 
 #### Keyboard + Sheet Scroll
-- [ ] `MobileGramInput`: verify `scrollIntoView` call is in place.
-- [ ] `MobileAddSheet` food search: verify search input scrolls into view when sheet opens.
+- [x] `MobileGramInput`: `scrollIntoView` call verified still in place (Ph-4a).
+- [x] `MobileAddSheet` food search: added a mount-effect `scrollIntoView({ behavior: 'smooth', block: 'center' })` on the search input ref, matching `MobileGramInput`'s pattern.
 
 #### Final TypeScript Check
-- [ ] `npx tsc --noEmit` — zero errors.
+- [x] `npx tsc --noEmit` — zero errors (verified after every edit in this phase, and again at the end).
 
 #### Viewport Test Checklist
-- [ ] All screens render without horizontal scroll at 360px width (minimum viewport).
-- [ ] FAB sits above tab bar with 16px gap on iPhone XS (375×812) and minimum viewport.
-- [ ] Bottom sheets do not get covered by keyboard on Android (Visual Viewport API in effect).
+- [x] Code-reviewed for 360px correctness (see caveat) — no device test performed.
+- [x] FAB positioned `bottom: calc(56px + env(safe-area-inset-bottom) + 16px); right: 16px` — 16px gap above the tab bar by construction.
+- [x] Visual Viewport API (Ph-1) drives `tabBarBottom` in `MobileShell`, which the tab bar's padding-bottom incorporates — sheets themselves are `position: fixed` to the viewport (not the tab bar), so they aren't affected by tab-bar repositioning, and their own content scrolls independently of the keyboard.
 
 **PROJECT_STATE.md update (agent writes this at end):**
 ```

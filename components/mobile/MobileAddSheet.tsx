@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AppData, FoodRow, NutrientMeta } from '@/types/nutrition'
 import type { FoodLogEntry } from '@/types/calendar'
 import type { RDAProfile } from '@/lib/rdaProfiles'
@@ -16,6 +16,7 @@ import { loadDietList } from '@/lib/dietStorage'
 import { computeDietProfile, type FoodNutrientMap } from '@/lib/dietProfile'
 import { computeDietSuggestions, type SuggestedFood } from '@/lib/dietSuggestions'
 import MobileGramInput from './MobileGramInput'
+import { useSwipeToDismiss } from './useSwipeToDismiss'
 
 type Tab = 'food' | 'meal' | 'plan'
 
@@ -75,6 +76,8 @@ export default function MobileAddSheet({
     }
   }
 
+  const swipe = useSwipeToDismiss(requestClose)
+
   function showToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 1500)
@@ -102,9 +105,11 @@ export default function MobileAddSheet({
         className={`fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-2xl bg-slate-800 border-t border-slate-700 shadow-2xl transition-transform duration-300 ${
           visible ? 'translate-y-0' : 'translate-y-full'
         }`}
-        style={{ height: '80vh', transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+        style={{ height: '80vh', transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', ...swipe.style }}
       >
-        <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto mt-2 mb-3 shrink-0" />
+        <div className="pt-2 pb-3 shrink-0 touch-none" {...swipe.handlers}>
+          <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto" />
+        </div>
 
         <div className="flex shrink-0 px-3 gap-1 border-b border-slate-700 pb-2">
           {(['food', 'meal', 'plan'] as Tab[]).map((t) => (
@@ -121,7 +126,7 @@ export default function MobileAddSheet({
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
           {tab === 'food' && (
             <FoodTab
               appData={appData}
@@ -184,6 +189,11 @@ function FoodTab({
   const [grams, setGrams] = useState(100)
   const [submitting, setSubmitting] = useState(false)
   const [suggestions, setSuggestions] = useState<SuggestedFood[] | 'loading' | 'no-diet-data'>('loading')
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [])
 
   const currentMeals = useMemo(() => {
     const items = currentDayEntries.flatMap((e) => e.items).map(logItemToMealItem)
@@ -286,7 +296,7 @@ function FoodTab({
           type="button"
           onClick={handleLogIt}
           disabled={submitting}
-          className="w-full py-3 rounded-xl bg-violet-600 disabled:opacity-60 text-white text-sm font-semibold active:opacity-80 touch-manipulation"
+          className="w-full py-3 rounded-xl bg-violet-600 disabled:opacity-60 text-white text-sm font-semibold active:opacity-80 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
         >
           {submitting ? 'Logging…' : 'Log It'}
         </button>
@@ -300,6 +310,7 @@ function FoodTab({
 
       <div className="flex gap-2">
         <input
+          ref={searchInputRef}
           type="search"
           inputMode="text"
           autoComplete="off"
@@ -345,7 +356,7 @@ function FoodTab({
               key={food.food_id}
               type="button"
               onClick={() => selectFood(food)}
-              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 touch-manipulation"
+              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
             >
               <div className="min-w-0">
                 <p className="text-sm text-slate-100 truncate">{food.food_name}</p>
@@ -518,7 +529,7 @@ function MealSection({
               key={meal.id}
               type="button"
               onClick={() => onSelect(meal)}
-              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 touch-manipulation"
+              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
             >
               <div className="min-w-0">
                 <p className="text-sm text-slate-100 truncate">{meal.name}</p>
@@ -595,7 +606,7 @@ function PlanTab({
           key={plan.id}
           type="button"
           onClick={() => handleLog(plan)}
-          className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 touch-manipulation"
+          className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
         >
           <p className="text-sm text-slate-100 truncate">{plan.name}</p>
           <p className="text-[10px] text-slate-500 shrink-0">{plan.meals.length} meals</p>

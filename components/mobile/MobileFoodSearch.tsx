@@ -26,30 +26,41 @@ export default function MobileFoodSearch({ foods, onSelect }: MobileFoodSearchPr
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        <input
-          type="search"
-          inputMode="text"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search foods…"
-          className="flex-1 min-w-0 text-base bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 rounded-lg px-3 py-3 outline-none focus:ring-2 focus:ring-violet-500"
-        />
-        {/* TODO(Ph-6): replace native select with a bottom-sheet / pill-row category picker (Ph-7 "No Native Selects" audit) */}
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="text-sm bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-2 outline-none"
+      <input
+        type="search"
+        inputMode="text"
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search foods…"
+        className="w-full text-base bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 rounded-lg px-3 py-3 outline-none focus:ring-2 focus:ring-violet-500"
+      />
+
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setCategory('')}
+          className={`shrink-0 min-h-11 px-3 rounded-full text-xs font-medium touch-manipulation active:opacity-70 ${
+            category === '' ? 'bg-violet-600 text-white' : 'bg-slate-800 border border-slate-700 text-slate-300'
+          }`}
         >
-          <option value="">All</option>
-          {FOOD_CATEGORY_LIST.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+          All
+        </button>
+        {FOOD_CATEGORY_LIST.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setCategory(cat)}
+            className={`shrink-0 min-h-11 px-3 rounded-full text-xs font-medium touch-manipulation active:opacity-70 ${
+              category === cat ? 'bg-violet-600 text-white' : 'bg-slate-800 border border-slate-700 text-slate-300'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
       {query.trim() === '' ? (
@@ -64,7 +75,7 @@ export default function MobileFoodSearch({ foods, onSelect }: MobileFoodSearchPr
               type="button"
               data-food-name={food.food_name.toLowerCase()}
               onClick={() => onSelect(food)}
-              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 touch-manipulation"
+              className="flex items-center justify-between px-3 py-3 bg-slate-900 text-left active:bg-slate-800 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
             >
               <span className="text-sm text-slate-100 truncate">{food.food_name}</span>
               <span className="text-xs text-slate-500 shrink-0 ml-2">{food.category}</span>

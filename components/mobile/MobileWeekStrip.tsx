@@ -31,7 +31,7 @@ export default function MobileWeekStrip({
       <button
         type="button"
         onClick={onPrevWeek}
-        className="w-11 h-11 shrink-0 flex items-center justify-center text-slate-400 active:opacity-70 touch-manipulation"
+        className="w-8 h-11 shrink-0 flex items-center justify-center text-slate-400 active:opacity-70 touch-manipulation"
         aria-label="Previous week"
       >
         ‹
@@ -70,7 +70,7 @@ export default function MobileWeekStrip({
       <button
         type="button"
         onClick={onNextWeek}
-        className="w-11 h-11 shrink-0 flex items-center justify-center text-slate-400 active:opacity-70 touch-manipulation"
+        className="w-8 h-11 shrink-0 flex items-center justify-center text-slate-400 active:opacity-70 touch-manipulation"
         aria-label="Next week"
       >
         ›

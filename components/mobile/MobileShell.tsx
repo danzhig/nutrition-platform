@@ -25,6 +25,27 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'account', label: 'Account' },
 ]
 
+function PortraitOverlay() {
+  const [landscape, setLandscape] = useState(false)
+
+  useEffect(() => {
+    function check() {
+      setLandscape(window.innerWidth > window.innerHeight)
+    }
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  if (!landscape) return null
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center px-8 text-center">
+      <p className="text-slate-300 text-sm">Please rotate your device to portrait mode.</p>
+    </div>
+  )
+}
+
 function TabIcon({ id, active }: { id: Tab; active: boolean }) {
   const cls = active ? 'text-violet-400' : 'text-slate-400'
   if (id === 'calendar') {
@@ -126,6 +147,7 @@ export default function MobileShell({ data }: { data: AppData }) {
 
   return (
     <div className="flex flex-col h-dvh bg-slate-900 text-slate-100">
+      <PortraitOverlay />
       <MobileHeader
         profileLabel={rdaProfile ? rdaProfile.shortLabel : 'No Profile'}
         onProfileClick={() => setOpenSheet('dv')}

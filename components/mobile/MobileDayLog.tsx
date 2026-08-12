@@ -177,7 +177,7 @@ export default function MobileDayLog({
       <button
         type="button"
         onClick={onOpenAddSheet}
-        className="fixed z-30 w-14 h-14 rounded-full bg-violet-600 text-white text-2xl leading-none flex items-center justify-center shadow-xl active:opacity-80 touch-manipulation"
+        className="fixed z-30 w-14 h-14 rounded-full bg-violet-600 text-white text-2xl leading-none flex items-center justify-center shadow-xl active:opacity-80 active:scale-95 transition-transform duration-150 touch-manipulation"
         style={{ bottom: 'calc(56px + env(safe-area-inset-bottom) + 16px)', right: 16 }}
         aria-label="Add entry"
       >

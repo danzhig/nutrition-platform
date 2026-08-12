@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { FoodRow, NutrientMeta } from '@/types/nutrition'
 import MobileNutrientRanking from './MobileNutrientRanking'
+import { useSwipeToDismiss } from './useSwipeToDismiss'
 
 interface MobileNutrientInfoSheetProps {
   open: boolean
@@ -50,6 +51,8 @@ export default function MobileNutrientInfoSheet({
     }
   }
 
+  const swipe = useSwipeToDismiss(requestClose)
+
   if (!open) return null
 
   const nutrient = allNutrients.find((n) => n.nutrient_name === nutrientName) ?? null
@@ -62,11 +65,13 @@ export default function MobileNutrientInfoSheet({
         className={`fixed inset-x-0 bottom-0 z-40 max-h-[80vh] flex flex-col rounded-t-2xl bg-slate-800 border-t border-slate-700 shadow-2xl transition-transform duration-300 ${
           visible ? 'translate-y-0' : 'translate-y-full'
         }`}
-        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', ...swipe.style }}
       >
-        <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto mt-2 mb-4 shrink-0" />
+        <div className="pt-2 pb-4 shrink-0 touch-none" {...swipe.handlers}>
+          <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto" />
+        </div>
 
-        <div className="overflow-y-auto overscroll-contain px-5 pb-6">
+        <div className="overflow-y-auto overscroll-contain px-5 pb-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
           <h2 className="text-base font-semibold text-slate-100 mb-4">
             {nutrient?.nutrient_name ?? nutrientName}
           </h2>

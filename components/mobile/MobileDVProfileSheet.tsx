@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { RDA_PROFILES } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
+import { useSwipeToDismiss } from './useSwipeToDismiss'
 
 const LS_DEFAULT = 'np:m:rda-default'
 const LS_DEFAULT_SET = 'np:m:rda-default-set'
@@ -65,6 +66,8 @@ export default function MobileDVProfileSheet({
     }
   }
 
+  const swipe = useSwipeToDismiss(requestClose)
+
   function handleSelect(key: string) {
     onSelect(key)
     if (localStorage.getItem(LS_DEFAULT_SET) !== 'true') {
@@ -106,12 +109,14 @@ export default function MobileDVProfileSheet({
         className={`fixed inset-x-0 bottom-0 z-40 max-h-[80vh] flex flex-col rounded-t-2xl bg-slate-800 border-t border-slate-700 shadow-2xl transition-transform duration-300 ${
           visible ? 'translate-y-0' : 'translate-y-full'
         }`}
-        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)' }}
+        style={{ transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)', ...swipe.style }}
       >
-        <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto mt-2 mb-4 shrink-0" />
+        <div className="pt-2 pb-4 shrink-0 touch-none" {...swipe.handlers}>
+          <div className="w-9 h-1 rounded-full bg-slate-600 mx-auto" />
+        </div>
         <h2 className="px-5 pb-3 text-sm font-semibold text-slate-100 shrink-0">Daily Value Profile</h2>
 
-        <div className="overflow-y-auto overscroll-contain px-2 pb-4">
+        <div className="overflow-y-auto overscroll-contain px-2 pb-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}>
           <ProfileRow
             row={{ key: '', label: 'None' }}
             active={rdaSelection === ''}

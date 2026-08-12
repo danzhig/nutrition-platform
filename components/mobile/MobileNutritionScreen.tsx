@@ -169,7 +169,7 @@ export default function MobileNutritionScreen({
               type="button"
               onClick={handleLogToToday}
               disabled={logging}
-              className="w-full py-3 rounded-xl bg-violet-600 disabled:opacity-60 text-white text-sm font-semibold shadow-lg active:opacity-80 touch-manipulation"
+              className="w-full py-3 rounded-xl bg-violet-600 disabled:opacity-60 text-white text-sm font-semibold shadow-lg active:opacity-80 active:scale-[0.98] transition-transform duration-150 touch-manipulation"
             >
               {userId ? `+ Log ${selectedGrams}g to Today` : 'Sign in to log'}
             </button>
