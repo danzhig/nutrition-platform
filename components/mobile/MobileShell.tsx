@@ -10,6 +10,7 @@ import { useAuth } from '@/components/AuthProvider'
 import MobileHeader from './MobileHeader'
 import MobileAccountScreen from './MobileAccountScreen'
 import MobileDVProfileSheet from './MobileDVProfileSheet'
+import MobileNutritionScreen from './MobileNutritionScreen'
 
 const LS_RDA_SEL = 'np:m:rda-sel'
 
@@ -130,7 +131,7 @@ export default function MobileShell({ data }: { data: AppData }) {
           <div className="p-4 text-slate-400">Coming in Phase 5</div>
         )}
         {activeTab === 'nutrition' && (
-          <div className="p-4 text-slate-400">Coming in Phase 4</div>
+          <MobileNutritionScreen foods={data.foods} rdaProfile={rdaProfile} />
         )}
         {activeTab === 'account' && (
           <MobileAccountScreen

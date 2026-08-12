@@ -66,7 +66,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-1 | Foundation: Route, Layout, Shell, Header | ✅ Complete (2026-08-12) |
 | Ph-2 | Account Screen + Auth | ✅ Complete (2026-08-12) |
 | Ph-3 | DV Profile Sheet | ✅ Complete (2026-08-12) |
-| Ph-4a | Nutrition Screen — Core Controls | ⬜ Not started |
+| Ph-4a | Nutrition Screen — Core Controls | ✅ Complete (2026-08-12) |
 | Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ⬜ Not started |
 | Ph-4c | Nutrition Screen — Advanced Features | ⬜ Not started |
 | Ph-5a | Calendar Screen — Week Strip + Day Log | ⬜ Not started |
@@ -283,9 +283,13 @@ components/mobile/
 
 ---
 
-### ⬜ Phase 4a — Nutrition Screen: Core Controls
+### ✅ Phase 4a — COMPLETE (2026-08-12) — Nutrition Screen: Core Controls
 
 **Goal:** The Nutrition tab shows a food search bar, a selected food card with gram input and unit toggle, wired together. No accordion yet — just the top section functioning end-to-end.
+
+**Implementation notes (2026-08-12):**
+- Category filter in `MobileFoodSearch` uses a native `<select>` as this phase explicitly permits ("a simple select for now — replace later"); left a `TODO(Ph-6)` comment pointing at the Ph-7 "No Native Selects" audit item so it isn't missed.
+- `MobileNutritionScreen` receives `rdaProfile: RDAProfile | null` (not just `foods`) since the %DV unit mode needs it; shows a small amber hint when `%DV` is selected with no profile active, rather than silently rendering nothing (the accordion itself, and its 0%-vs-no-profile handling, is Ph-4b).
 
 **Files to create:**
 
