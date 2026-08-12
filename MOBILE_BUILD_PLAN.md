@@ -164,7 +164,7 @@ app/(desktop)/
 **Implementation notes (2026-08-12):**
 - Icons: inline SVG (no icon library dependency added, per instruction).
 - Mobile CSS shipped as `app/m/mobile.css`, imported only by `app/m/layout.tsx` (the "Option B" choice offered in the file list above).
-- **`/m` transfer size not measured this session** — this dev environment has no `.env.local` / Supabase credentials (`next build`'s page-data-collection step fails on `Missing Supabase environment variables` for both `/` and `/m`, a pre-existing environment gap unrelated to this phase's code). `tsc --noEmit` is clean and `next build` compiles and passes the TypeScript step. **Follow-up required:** once Supabase env vars are available (locally or in CI), measure the `/m` RSC transfer size per the Ph-1 payload warning above and open a follow-up if it exceeds ~500 KB compressed.
+- **`/m` transfer size measured 2026-08-12** (once `.env.local` was provided): static `/m` output is 189 KB raw RSC / ~51 KB gzipped, well under the ~500 KB budget in the payload warning above. No follow-up needed.
 
 **Files to create:**
 
