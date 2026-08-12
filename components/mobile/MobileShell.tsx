@@ -12,6 +12,7 @@ import MobileAccountScreen from './MobileAccountScreen'
 import MobileDVProfileSheet from './MobileDVProfileSheet'
 import MobileNutritionScreen from './MobileNutritionScreen'
 import MobileNutrientInfoSheet from './MobileNutrientInfoSheet'
+import MobileCalendarScreen from './MobileCalendarScreen'
 
 const LS_RDA_SEL = 'np:m:rda-sel'
 
@@ -57,6 +58,7 @@ export default function MobileShell({ data }: { data: AppData }) {
   const [openSheet, setOpenSheet] = useState<SheetId>(null)
   const [nutrientSheetName, setNutrientSheetName] = useState<string | null>(null)
   const [jumpToFood, setJumpToFood] = useState<FoodRow | null>(null)
+  const [streakDays, setStreakDays] = useState(0)
 
   const [rdaSelection, setRdaSelection] = useState<string>('')
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
@@ -127,11 +129,23 @@ export default function MobileShell({ data }: { data: AppData }) {
       <MobileHeader
         profileLabel={rdaProfile ? rdaProfile.shortLabel : 'No Profile'}
         onProfileClick={() => setOpenSheet('dv')}
+        streakDays={streakDays}
       />
 
       <main className="flex-1 overflow-y-auto overscroll-contain">
         {activeTab === 'calendar' && (
-          <div className="p-4 text-slate-400">Coming in Phase 5</div>
+          <MobileCalendarScreen
+            appData={data}
+            rdaProfile={rdaProfile}
+            userId={user?.id ?? null}
+            onOpenNutrientSheet={(name) => {
+              setNutrientSheetName(name)
+              setOpenSheet('nutrient')
+            }}
+            // Ph-6 replaces this with the real Add Food/Meal Sheet.
+            onOpenAddSheet={() => {}}
+            onStreakChange={setStreakDays}
+          />
         )}
         {activeTab === 'nutrition' && (
           <MobileNutritionScreen

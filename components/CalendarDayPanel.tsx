@@ -2,11 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import type { NutrientMeta, FoodRow } from '@/types/nutrition'
-import type { Meal, MealItem } from '@/types/meals'
+import type { Meal } from '@/types/meals'
 import type { FoodLogEntry, FoodLogItem, FoodLogEntryType } from '@/types/calendar'
 import type { RDAProfile } from '@/lib/rdaProfiles'
 import { updateEntryItemGrams, deleteEntry } from '@/lib/foodLogStorage'
 import { getPortionSize, getSizeKey } from '@/lib/portionSizes'
+import { logItemToMealItem } from '@/lib/foodLogAdapters'
 import MealNutritionSidebar from './MealNutritionSidebar'
 import MealNutritionChart from './MealNutritionChart'
 import SizeButtons from './SizeButtons'
@@ -29,20 +30,6 @@ function stepDate(dateStr: string, delta: number): string {
   const d = new Date(dateStr + 'T00:00:00')
   d.setDate(d.getDate() + delta)
   return d.toISOString().split('T')[0]
-}
-
-function logItemToMealItem(item: FoodLogItem): MealItem {
-  const p = getPortionSize(item.food_id)
-  return {
-    id: `${item.food_id}-${item.meal_label ?? 'direct'}`,
-    food_id: item.food_id,
-    food_name: item.food_name,
-    grams: item.amount_g,
-    mode: item.mode,
-    servings: item.amount_g / p.grams,
-    portion_grams: p.grams,
-    portion_label: p.label,
-  }
 }
 
 function entryBadgeClass(type: FoodLogEntryType): string {

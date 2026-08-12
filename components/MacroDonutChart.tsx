@@ -10,6 +10,8 @@ interface Props {
   nutrients: NutrientMeta[]
   meals: Meal[]
   foodsById: Map<number, FoodRow>
+  /** Skip the outer (top-5-foods) ring and shrink the label radius. Used by the mobile calendar's compact visualization card. */
+  innerOnly?: boolean
 }
 
 // Caloric conversion per gram (4 kcal/g for all carb fractions matches USDA labeling
@@ -51,9 +53,9 @@ type OuterSlice = { name: string; macroName: MacroName; value: number; color: st
 
 const RADIAN = Math.PI / 180
 
-function MacroLabel({ cx, cy, midAngle, outerRadius, name, value, totalKcal }: any) {
+function MacroLabel({ cx, cy, midAngle, outerRadius, name, value, totalKcal, innerOnly }: any) {
   if (!value || value / totalKcal < 0.04) return null  // hide label on tiny slices
-  const r = outerRadius * (70 / 48) + 16
+  const r = innerOnly ? outerRadius * 1.35 + 10 : outerRadius * (70 / 48) + 16
   const x = cx + r * Math.cos(-midAngle * RADIAN)
   const y = cy + r * Math.sin(-midAngle * RADIAN)
   const color = MACRO_BASE[name as MacroName] ?? '#94a3b8'
@@ -100,7 +102,7 @@ function DonutTooltip({ active, payload, totalKcal }: any) {
   )
 }
 
-export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) {
+export default function MacroDonutChart({ nutrients, meals, foodsById, innerOnly = false }: Props) {
   const data = useMemo(() => {
     const netCarbsId = nutrients.find((n) => n.nutrient_name === 'Net Carbohydrates')?.nutrient_id
     const fibreId    = nutrients.find((n) => n.nutrient_name === 'Dietary Fibre')?.nutrient_id
@@ -202,7 +204,7 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
     <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col h-full">
       <p className="text-xs font-semibold text-slate-300 mb-1">Macro Split</p>
       <p className="text-[10px] text-slate-500 mb-2">
-        Inner: macro calorie share · Outer: top 5 foods per macro
+        {innerOnly ? 'Macro calorie share' : 'Inner: macro calorie share · Outer: top 5 foods per macro'}
       </p>
 
       {/* Legend — 2×2 grid to fit 4 macros */}
@@ -244,7 +246,7 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               endAngle={-270}
               strokeWidth={0}
               isAnimationActive={false}
-              label={(props) => <MacroLabel {...props} totalKcal={data.totalKcal} />}
+              label={(props) => <MacroLabel {...props} totalKcal={data.totalKcal} innerOnly={innerOnly} />}
               labelLine={false}
             >
               {data.innerData.map((entry, i) => (
@@ -252,21 +254,23 @@ export default function MacroDonutChart({ nutrients, meals, foodsById }: Props) 
               ))}
             </Pie>
 
-            <Pie
-              data={data.outerData}
-              dataKey="value"
-              innerRadius="52%"
-              outerRadius="70%"
-              startAngle={90}
-              endAngle={-270}
-              strokeWidth={1.5}
-              stroke="#0f172a"
-              isAnimationActive={false}
-            >
-              {data.outerData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} fillOpacity={0.9} />
-              ))}
-            </Pie>
+            {!innerOnly && (
+              <Pie
+                data={data.outerData}
+                dataKey="value"
+                innerRadius="52%"
+                outerRadius="70%"
+                startAngle={90}
+                endAngle={-270}
+                strokeWidth={1.5}
+                stroke="#0f172a"
+                isAnimationActive={false}
+              >
+                {data.outerData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} fillOpacity={0.9} />
+                ))}
+              </Pie>
+            )}
 
             <Tooltip content={<DonutTooltip totalKcal={data.totalKcal} />} isAnimationActive={false} />
           </PieChart>

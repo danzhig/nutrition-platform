@@ -69,8 +69,8 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-4a | Nutrition Screen — Core Controls | ✅ Complete (2026-08-12) |
 | Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ✅ Complete (2026-08-12) |
 | Ph-4c | Nutrition Screen — Advanced Features | ✅ Complete (2026-08-12) |
-| Ph-5a | Calendar Screen — Week Strip + Day Log | ⬜ Not started |
-| Ph-5b | Calendar Screen — Summary Chips + Visualizations | ⬜ Not started |
+| Ph-5a | Calendar Screen — Week Strip + Day Log | ✅ Complete (2026-08-12) |
+| Ph-5b | Calendar Screen — Summary Chips + Visualizations | ✅ Complete (2026-08-12) |
 | Ph-6 | Add Food/Meal Sheet | ⬜ Not started |
 | Ph-7 | Polish, Safe Areas, App-Like Behaviour | ⬜ Not started |
 
@@ -419,9 +419,15 @@ await addEntry({
 
 ---
 
-### ⬜ Phase 5a — Calendar Screen: Week Strip + Day Log
+### ✅ Phase 5a — COMPLETE (2026-08-12) — Calendar Screen: Week Strip + Day Log
 
 **Goal:** The Calendar tab shows a week strip at the top and a scrollable day log below. Tapping a day pill updates the log. Entries are loaded from Supabase via `foodLogStorage.ts`.
+
+**Implementation notes (2026-08-12) — 5a and 5b were built together this session:**
+- `lib/mobileDateUtils.ts` added (`toISODate`/`fromISODate`/`addDays`/`mondayOf`) — small date helpers with no desktop equivalent to reuse.
+- Went straight to the Ph-5b-widened `-30d..+14d` load range in `MobileCalendarScreen`'s initial fetch (rather than implementing Ph-5a's standalone ±14d range first and widening it in a follow-up edit), since both phases landed in the same session. `ensureRangeLoaded()` extends the loaded window (merges bounds, refetches) when week navigation goes outside it.
+- `MobileDayLog`'s entry cards are read-only (tap header to expand items) — Ph-5a's own spec only calls for expand-to-view, unlike desktop's inline gram editing, so grams-edit/remove were left out as out of scope.
+- `onOpenAddSheet` passed into `MobileCalendarScreen` from `MobileShell` is a no-op stub until Ph-6 builds the real `MobileAddSheet`.
 
 **Files to create:**
 
@@ -455,9 +461,17 @@ await addEntry({
 
 ---
 
-### ⬜ Phase 5b — Calendar Screen: Summary Chips + Visualizations
+### ✅ Phase 5b — COMPLETE (2026-08-12) — Calendar Screen: Summary Chips + Visualizations
 
 **Goal:** Three features on top of the working calendar: the macro summary chip row at the top of the day log, the streak pill in the header, and the swipeable donut + radar visualization card.
+
+**Implementation notes (2026-08-12):**
+- `lib/foodLogAdapters.ts` created with `logItemToMealItem()` extracted verbatim from `CalendarDayPanel.tsx`; `CalendarDayPanel.tsx` now imports it (desktop behavior unchanged, verified: build + live smoke test of `/` still render 257 foods correctly).
+- `MacroDonutChart.tsx` got the planned `innerOnly?: boolean` prop (default `false`): skips the outer `<Pie>` and uses a tighter label radius (`outerRadius * 1.35 + 10` vs the two-ring `* 70/48 + 16`) so labels sit correctly around the single ring; the "Inner: … · Outer: …" caption also switches to a shorter string when `innerOnly`. Purely additive — desktop's default (`innerOnly` unset) is byte-identical to before.
+- Swipe implemented via native `overflow-x-auto snap-x snap-mandatory` (not manual touch-event tracking) — simpler and gets momentum scrolling for free; `MobileVisualizationCard` tracks the active dot from `onScroll` (`Math.round(scrollLeft / clientWidth)`).
+- GI is excluded from the shared `totals` map the same way `MealNutritionSidebar.tsx` excludes it (skip the nutrient id while summing) — moot for the radar itself (its category list has no "Food Metric" group) but kept for correctness and because the plan's warning applies to "any future day/week totalling," which the macro chips are.
+- Macro chips read `Calories`/`Protein`/`Total Fat`/`Net Carbohydrates` directly from the shared `totals` map — none of the four are weighted-average nutrients, so no special-casing needed there.
+- Verified end-to-end against live Supabase data (257 foods) via `next build` + a dev-server smoke test: both `/` and `/m` render with no runtime errors, and `/m`'s guest (logged-out) calendar view correctly shows the "No entries for this day" empty state server-rendered.
 
 **Files to modify:**
 
