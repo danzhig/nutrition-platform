@@ -71,7 +71,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-4c | Nutrition Screen — Advanced Features | ✅ Complete (2026-08-12) |
 | Ph-5a | Calendar Screen — Week Strip + Day Log | ✅ Complete (2026-08-12) |
 | Ph-5b | Calendar Screen — Summary Chips + Visualizations | ✅ Complete (2026-08-12) |
-| Ph-6 | Add Food/Meal Sheet | ⬜ Not started |
+| Ph-6 | Add Food/Meal Sheet | ✅ Complete (2026-08-12) |
 | Ph-7 | Polish, Safe Areas, App-Like Behaviour | ⬜ Not started |
 
 ---
@@ -515,9 +515,17 @@ await addEntry({
 
 ---
 
-### ⬜ Phase 6 — Add Food/Meal Sheet
+### ✅ Phase 6 — COMPLETE (2026-08-12) — Add Food/Meal Sheet
 
 **Goal:** Tapping the FAB opens a bottom sheet with Food / Meal / Plan tabs. Food tab: search → gram confirm → log. Meal tab: browse saved meals + presets → log. Plan tab: browse saved plans → log. Complement score badges on food results. Diet suggestions row at top of Food tab.
+
+**Implementation notes (2026-08-12):**
+- Sheet open state lives in `MobileCalendarScreen` (not `MobileShell`) exactly as this phase's own wiring note specifies — `MobileDayLog`'s FAB → `MobileCalendarScreen`'s `addSheetOpen` state → `MobileAddSheet`. `onEntriesChanged` re-runs `loadRange()` over the currently-loaded window rather than a full refetch.
+- Food tab does **not** reuse `MobileFoodSearch.tsx` as a black box — that component's `onSelect`-only API has no way to render per-row complement-score badges or take an externally-computed sort order, both required here. Instead `MobileAddSheet` has its own search+category-pills+row list (visually matching `MobileFoodSearch`) with `ScoreBadge` rendering. `MobileGramInput` (Ph-4a) *is* reused directly for the gram-confirm step.
+- Diet suggestions row: three states implemented exactly per `MOBILE_PLAN.md` §16 feature 9 — hidden entirely with no profile (`suggestions = []` short-circuits before the "no diet data" check), "Set up your diet on desktop…" prompt when `loadDietList()` returns empty, and the row of ≤10 cards (140×110px, name + top-2 gap tags + `+ Log to Today`) otherwise. Cards call straight into the same `selectFood()` used by search results, landing on the gram-confirm step rather than logging immediately, so the user can adjust the amount first.
+- `computeComplementScore`'s `nutrients` argument must be the **full** nutrient list — an early draft of the Meal tab passed `[]` for it, which silently zeroes every score (`maxBenefit` stays 0 → `benefitScore` 0 for every meal). Fixed before commit by threading `appData.nutrients` through.
+- Meal/Plan tab payloads copied verbatim from `CalendarAddModal.tsx:168` and `:192` (meal: `entry_type: 'meal'`, `meal_label` = meal name on every item; plan: single `entry_type: 'plan'` entry spanning all meals, each item tagged with its own meal's name).
+- Verified against live Supabase data: `tsc --noEmit` and `next build` both clean.
 
 **Files to create:**
 

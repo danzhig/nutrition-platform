@@ -8,6 +8,7 @@ import { getEntriesForDateRange } from '@/lib/foodLogStorage'
 import { toISODate, fromISODate, addDays, mondayOf } from '@/lib/mobileDateUtils'
 import MobileWeekStrip from './MobileWeekStrip'
 import MobileDayLog from './MobileDayLog'
+import MobileAddSheet from './MobileAddSheet'
 
 const LS_DATE = 'np:m:cal-date'
 
@@ -16,7 +17,6 @@ interface MobileCalendarScreenProps {
   rdaProfile: RDAProfile | null
   userId: string | null
   onOpenNutrientSheet: (nutrientName: string) => void
-  onOpenAddSheet: () => void
   onStreakChange?: (streak: number) => void
 }
 
@@ -25,12 +25,12 @@ export default function MobileCalendarScreen({
   rdaProfile,
   userId,
   onOpenNutrientSheet,
-  onOpenAddSheet,
   onStreakChange,
 }: MobileCalendarScreenProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
   const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(new Date()))
   const [entriesByDate, setEntriesByDate] = useState<Record<string, FoodLogEntry[]>>({})
+  const [addSheetOpen, setAddSheetOpen] = useState(false)
   const loadedRange = useRef<{ start: string; end: string } | null>(null)
 
   const foodsById = useMemo(() => {
@@ -125,6 +125,11 @@ export default function MobileCalendarScreen({
     onStreakChange?.(streak)
   }, [streak, onStreakChange])
 
+  function handleEntriesChanged() {
+    const loaded = loadedRange.current
+    if (loaded) loadRange(loaded.start, loaded.end)
+  }
+
   const selectedEntries = entriesByDate[toISODate(selectedDate)] ?? []
 
   return (
@@ -142,8 +147,18 @@ export default function MobileCalendarScreen({
         nutrients={appData.nutrients}
         foodsById={foodsById}
         rdaProfile={rdaProfile}
-        onOpenAddSheet={onOpenAddSheet}
+        onOpenAddSheet={() => setAddSheetOpen(true)}
         onOpenNutrientSheet={onOpenNutrientSheet}
+      />
+      <MobileAddSheet
+        open={addSheetOpen}
+        onClose={() => setAddSheetOpen(false)}
+        selectedDate={toISODate(selectedDate)}
+        appData={appData}
+        userId={userId}
+        currentDayEntries={selectedEntries}
+        rdaProfile={rdaProfile}
+        onEntriesChanged={handleEntriesChanged}
       />
     </div>
   )

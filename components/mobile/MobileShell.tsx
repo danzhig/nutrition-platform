@@ -142,8 +142,6 @@ export default function MobileShell({ data }: { data: AppData }) {
               setNutrientSheetName(name)
               setOpenSheet('nutrient')
             }}
-            // Ph-6 replaces this with the real Add Food/Meal Sheet.
-            onOpenAddSheet={() => {}}
             onStreakChange={setStreakDays}
           />
         )}
