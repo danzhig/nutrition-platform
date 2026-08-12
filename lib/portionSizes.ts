@@ -211,6 +211,44 @@ export const PORTION_SIZES: Record<number, PortionSize> = {
   161: { grams: 85,  label: '3 oz' },           // Clams
   162: { grams: 85,  label: '3 oz' },           // Squid
 
+  // ── Red Meat / Poultry / Fish & Seafood, cooked ─────────────────────────────
+  // Grams reflect the cooked weight after typical cooking-loss shrinkage from the
+  // raw serving above (not simply copied), per food's yield% in sql/insert_cooked_meat_fish.mjs.
+  258: { grams: 80,  label: '~3 oz cooked' },          // Beef (ground, 80% lean, cooked)
+  259: { grams: 120, label: '~4 oz cooked' },          // Beef (sirloin steak, cooked)
+  260: { grams: 60,  label: '~2 oz cooked' },          // Beef Liver (cooked)
+  261: { grams: 60,  label: '~2 oz cooked' },          // Lamb (leg, cooked)
+  262: { grams: 80,  label: '~3 oz cooked' },          // Pork Chop (cooked)
+  263: { grams: 45,  label: '~1.5 oz cooked' },        // Pork Belly (cooked)
+  264: { grams: 10,  label: '2 slices, cooked' },      // Bacon (pork, cooked)
+  265: { grams: 60,  label: '~2 oz cooked' },          // Veal (cooked)
+  266: { grams: 60,  label: '~2 oz cooked' },          // Venison (cooked)
+  267: { grams: 60,  label: '~2 oz cooked' },          // Bison (cooked)
+  268: { grams: 120, label: '1 breast, cooked' },      // Chicken Breast (skinless, cooked)
+  269: { grams: 80,  label: '1 thigh, cooked' },       // Chicken Thigh (skinless, cooked)
+  270: { grams: 75,  label: '1 drumstick, cooked' },   // Chicken Drumstick (cooked)
+  271: { grams: 60,  label: '~2 oz cooked' },          // Turkey Breast (cooked)
+  272: { grams: 80,  label: '~3 oz cooked' },          // Turkey Ground (cooked)
+  273: { grams: 105, label: '1 breast, cooked' },      // Duck Breast (cooked)
+  274: { grams: 60,  label: '~2 oz cooked' },          // Chicken Liver (cooked)
+  275: { grams: 135, label: '~4.5 oz fillet, cooked' }, // Salmon (Atlantic, cooked)
+  276: { grams: 135, label: '~4.5 oz fillet, cooked' }, // Tuna (yellowfin, cooked)
+  277: { grams: 70,  label: '~2.5 oz cooked' },        // Mackerel (Atlantic, cooked)
+  278: { grams: 135, label: '~4.5 oz fillet, cooked' }, // Cod (cooked)
+  279: { grams: 90,  label: '~3 oz fillet, cooked' },  // Tilapia (cooked)
+  280: { grams: 135, label: '~4.5 oz fillet, cooked' }, // Halibut (cooked)
+  281: { grams: 135, label: '~4.5 oz fillet, cooked' }, // Rainbow Trout (cooked)
+  282: { grams: 70,  label: '~2.5 oz cooked' },        // Herring (cooked)
+  283: { grams: 15,  label: '5 anchovies, cooked' },   // Anchovies (cooked)
+  284: { grams: 70,  label: '~2.5 oz cooked' },        // Shrimp (cooked)
+  285: { grams: 70,  label: '~2.5 oz cooked' },        // Crab (Alaskan King, cooked)
+  286: { grams: 70,  label: '~2.5 oz cooked' },        // Lobster (cooked)
+  287: { grams: 70,  label: '~2.5 oz cooked' },        // Mussels (cooked)
+  288: { grams: 70,  label: '~2.5 oz (~6 oysters), cooked' }, // Oysters (cooked)
+  289: { grams: 70,  label: '~2.5 oz cooked' },        // Scallops (cooked)
+  290: { grams: 70,  label: '~2.5 oz cooked' },        // Clams (cooked)
+  291: { grams: 70,  label: '~2.5 oz cooked' },        // Squid (cooked)
+
   // ── Eggs ──────────────────────────────────────────────────────────────────
   163: { grams: 50, label: '1 large egg',   sizes: { s: { grams: 38, label: '1 small egg' },   m: { grams: 50, label: '1 large egg' },   l: { grams: 63, label: '1 jumbo egg' } } },   // Chicken Egg (whole)
   164: { grams: 33, label: '1 large white', sizes: { s: { grams: 25, label: '1 small white' }, m: { grams: 33, label: '1 large white' }, l: { grams: 42, label: '1 jumbo white' } } }, // Chicken Egg White
