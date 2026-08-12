@@ -67,8 +67,8 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-2 | Account Screen + Auth | ✅ Complete (2026-08-12) |
 | Ph-3 | DV Profile Sheet | ✅ Complete (2026-08-12) |
 | Ph-4a | Nutrition Screen — Core Controls | ✅ Complete (2026-08-12) |
-| Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ⬜ Not started |
-| Ph-4c | Nutrition Screen — Advanced Features | ⬜ Not started |
+| Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ✅ Complete (2026-08-12) |
+| Ph-4c | Nutrition Screen — Advanced Features | ✅ Complete (2026-08-12) |
 | Ph-5a | Calendar Screen — Week Strip + Day Log | ⬜ Not started |
 | Ph-5b | Calendar Screen — Summary Chips + Visualizations | ⬜ Not started |
 | Ph-6 | Add Food/Meal Sheet | ⬜ Not started |
@@ -317,9 +317,14 @@ components/mobile/
 
 ---
 
-### ⬜ Phase 4b — Nutrition Screen: Accordion + Nutrient Rows
+### ✅ Phase 4b — COMPLETE (2026-08-12) — Nutrition Screen: Accordion + Nutrient Rows
 
 **Goal:** The accordion below the food card renders all 58 nutrients grouped into 6 categories. Macronutrients are expanded by default. Values compute correctly per the selected unit and gram amount.
+
+**Implementation notes (2026-08-12):**
+- Calories is **not** special-cased (no bar suppression) — confirmed by grep that no desktop component (`MealNutritionSidebar.tsx`, `DietNutrientPanel.tsx`) special-cases it either, so mobile matches by doing nothing special.
+- Grid-rows accordion animation uses Tailwind's arbitrary-property syntax `transition-[grid-template-rows]` with an inline `gridTemplateRows: isOpen ? '1fr' : '0fr'` style (Tailwind JIT-compiled, as the plan anticipated).
+- `MobileNutrientRow` takes a `showBar` prop (true only when `unit === 'pct'`) rather than inferring bar visibility from data shape — keeps the /srv and /100g modes visually simple (value only, no bar) per the plan's mode table.
 
 **Files to create:**
 
@@ -351,9 +356,15 @@ components/mobile/
 
 ---
 
-### ⬜ Phase 4c — Nutrition Screen: Advanced Features
+### ✅ Phase 4c — COMPLETE (2026-08-12) — Nutrition Screen: Advanced Features
 
 **Goal:** Three features added on top of the working nutrition screen: nutrient info sheet (tap any row), "Log to Today" sticky bar, and top-foods ranking sheet.
+
+**Implementation notes (2026-08-12):**
+- **Deviation from the file-modify table below, deliberately:** rather than `MobileNutritionScreen` owning `openNutrientSheet` state locally, it's hoisted onto `MobileShell` as `openSheet: 'dv' | 'nutrient' | null` + `nutrientSheetName` — exactly the architecture the Ph-3 write-up called for ("Ph-4c's nutrient info sheet is opened from both the Nutrition accordion and the Ph-5b macro chips on the Calendar screen — hoisting the state now avoids duplicating sheet plumbing in two screens later"). `MobileNutritionScreen` just calls `onOpenNutrientSheet(nutrientName)`.
+- `MobileNutrientRanking.tsx`'s "top foods" tap-to-select needed a way to move the *already-rendered* Nutrition screen to a different food from a sheet owned one level up. Added a small controlled hand-off: `MobileShell` holds `jumpToFood: FoodRow | null`; the info sheet's `onSelectFood` sets it (and switches `activeTab` to `'nutrition'`); `MobileNutritionScreen` has a `useEffect` on the `jumpToFood` prop that selects it and calls `onJumpHandled()` to clear it. This is the same hand-off Ph-5b's "tap a macro chip to open the info sheet" flow will need, so it generalizes past this phase.
+- "Log to Today" sticky bar's sign-in guard calls a `onSwitchToAccount` callback (→ `MobileShell` sets `activeTab = 'account'`) rather than duplicating auth UI inline.
+- Toast and sticky-bar payload exactly match the plan's `addEntry()` call shape (`mode: 'grams'`, `source_id: null`, `notes: null`).
 
 **Files to create:**
 

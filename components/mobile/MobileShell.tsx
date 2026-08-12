@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { AppData } from '@/types/nutrition'
+import type { AppData, FoodRow } from '@/types/nutrition'
 import type { ProfileId, RDAProfile } from '@/lib/rdaProfiles'
 import { getProfile } from '@/lib/rdaProfiles'
 import type { SavedProfile } from '@/lib/profileStorage'
@@ -11,6 +11,7 @@ import MobileHeader from './MobileHeader'
 import MobileAccountScreen from './MobileAccountScreen'
 import MobileDVProfileSheet from './MobileDVProfileSheet'
 import MobileNutritionScreen from './MobileNutritionScreen'
+import MobileNutrientInfoSheet from './MobileNutrientInfoSheet'
 
 const LS_RDA_SEL = 'np:m:rda-sel'
 
@@ -54,6 +55,8 @@ export default function MobileShell({ data }: { data: AppData }) {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
   const [tabBarBottom, setTabBarBottom] = useState(0)
   const [openSheet, setOpenSheet] = useState<SheetId>(null)
+  const [nutrientSheetName, setNutrientSheetName] = useState<string | null>(null)
+  const [jumpToFood, setJumpToFood] = useState<FoodRow | null>(null)
 
   const [rdaSelection, setRdaSelection] = useState<string>('')
   const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
@@ -131,7 +134,19 @@ export default function MobileShell({ data }: { data: AppData }) {
           <div className="p-4 text-slate-400">Coming in Phase 5</div>
         )}
         {activeTab === 'nutrition' && (
-          <MobileNutritionScreen foods={data.foods} rdaProfile={rdaProfile} />
+          <MobileNutritionScreen
+            foods={data.foods}
+            allNutrients={data.nutrients}
+            rdaProfile={rdaProfile}
+            userId={user?.id ?? null}
+            onSwitchToAccount={() => setActiveTab('account')}
+            onOpenNutrientSheet={(name) => {
+              setNutrientSheetName(name)
+              setOpenSheet('nutrient')
+            }}
+            jumpToFood={jumpToFood}
+            onJumpHandled={() => setJumpToFood(null)}
+          />
         )}
         {activeTab === 'account' && (
           <MobileAccountScreen
@@ -174,6 +189,18 @@ export default function MobileShell({ data }: { data: AppData }) {
         onSelect={setRdaSelection}
         savedProfiles={savedProfiles}
         isLoggedIn={!!user}
+      />
+
+      <MobileNutrientInfoSheet
+        open={openSheet === 'nutrient'}
+        onClose={() => setOpenSheet(null)}
+        nutrientName={nutrientSheetName}
+        allNutrients={data.nutrients}
+        foods={data.foods}
+        onSelectFood={(food) => {
+          setActiveTab('nutrition')
+          setJumpToFood(food)
+        }}
       />
     </div>
   )
