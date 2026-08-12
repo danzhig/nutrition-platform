@@ -62,7 +62,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 
 | Phase | Name | Status |
 |---|---|---|
-| Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ⬜ Not started |
+| Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ✅ Complete (2026-08-12) |
 | Ph-1 | Foundation: Route, Layout, Shell, Header | ⬜ Not started |
 | Ph-2 | Account Screen + Auth | ⬜ Not started |
 | Ph-3 | DV Profile Sheet | ⬜ Not started |
@@ -80,7 +80,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 
 ---
 
-### ⬜ Phase 0 — Unblock `/m`: Route Group, Viewport Export, Mobile Entry Point
+### ✅ Phase 0 — COMPLETE (2026-08-12) — Unblock `/m`: Route Group, Viewport Export, Mobile Entry Point
 
 **Why this phase exists:** The current root layout makes `/m` impossible to see on a phone. `app/layout.tsx:32-45` renders a full-screen "Open on Desktop" gate (`md:hidden fixed inset-0 z-[9999]`) and wraps all children in `<div className="hidden md:contents">`. Because `app/m/layout.tsx` nests inside the root layout, every mobile component built in Ph-1 onward would be `display: none` under 768px, behind an opaque overlay. **Phase 1's acceptance test cannot pass until this is fixed.** Nothing in this phase is mobile UI — it is purely making the route reachable.
 
