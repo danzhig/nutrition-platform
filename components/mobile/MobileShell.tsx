@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { AppData } from '@/types/nutrition'
 import MobileHeader from './MobileHeader'
+import MobileAccountScreen from './MobileAccountScreen'
 
 type Tab = 'calendar' | 'nutrition' | 'account'
 
@@ -86,7 +87,7 @@ export default function MobileShell({ data }: { data: AppData }) {
           <div className="p-4 text-slate-400">Coming in Phase 4</div>
         )}
         {activeTab === 'account' && (
-          <div className="p-4 text-slate-400">Coming in Phase 2</div>
+          <MobileAccountScreen onLoginSuccess={() => setActiveTab('calendar')} />
         )}
       </main>
 

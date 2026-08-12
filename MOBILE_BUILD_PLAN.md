@@ -64,7 +64,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 |---|---|---|
 | Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ✅ Complete (2026-08-12) |
 | Ph-1 | Foundation: Route, Layout, Shell, Header | ✅ Complete (2026-08-12) |
-| Ph-2 | Account Screen + Auth | ⬜ Not started |
+| Ph-2 | Account Screen + Auth | ✅ Complete (2026-08-12) |
 | Ph-3 | DV Profile Sheet | ⬜ Not started |
 | Ph-4a | Nutrition Screen — Core Controls | ⬜ Not started |
 | Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ⬜ Not started |
@@ -208,7 +208,7 @@ components/mobile/
 
 ---
 
-### ⬜ Phase 2 — Account Screen + Auth
+### ✅ Phase 2 — COMPLETE (2026-08-12) — Account Screen + Auth
 
 **Goal:** The Account tab shows a full-page login form when logged out and account info when logged in. No modals — it is a full-screen page within the shell.
 
