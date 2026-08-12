@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/components/AuthProvider'
+import type { RDAProfile } from '@/lib/rdaProfiles'
 
 interface MobileAccountScreenProps {
   onLoginSuccess?: () => void
+  rdaProfile?: RDAProfile | null
+  onOpenDVSheet?: () => void
 }
 
-const RDA_SEL_KEY = 'np:m:rda-sel'
-
-export default function MobileAccountScreen({ onLoginSuccess }: MobileAccountScreenProps) {
+export default function MobileAccountScreen({ onLoginSuccess, rdaProfile, onOpenDVSheet }: MobileAccountScreenProps) {
   const { user, loading, signIn, signUp, signOut } = useAuth()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
@@ -63,8 +64,6 @@ export default function MobileAccountScreen({ onLoginSuccess }: MobileAccountScr
   }
 
   if (user) {
-    const profileLabel = typeof window !== 'undefined' ? localStorage.getItem(RDA_SEL_KEY) : null
-
     return (
       <div className="p-4 space-y-4">
         <div className="rounded-xl bg-slate-800 border border-slate-700 p-4 space-y-1">
@@ -74,11 +73,12 @@ export default function MobileAccountScreen({ onLoginSuccess }: MobileAccountScr
 
         <button
           type="button"
+          onClick={onOpenDVSheet}
           className="w-full flex items-center justify-between rounded-xl bg-slate-800 border border-slate-700 p-4 text-left active:opacity-70 active:scale-[0.99] transition-opacity transition-transform duration-150"
         >
           <span className="text-sm text-slate-300">Default DV Profile</span>
           <span className="text-sm text-slate-400 truncate max-w-[140px]">
-            {profileLabel ?? 'No Profile'}
+            {rdaProfile ? rdaProfile.shortLabel : 'No Profile'}
           </span>
         </button>
 

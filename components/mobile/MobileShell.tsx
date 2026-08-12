@@ -1,11 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { AppData } from '@/types/nutrition'
+import type { ProfileId, RDAProfile } from '@/lib/rdaProfiles'
+import { getProfile } from '@/lib/rdaProfiles'
+import type { SavedProfile } from '@/lib/profileStorage'
+import { loadSavedProfiles } from '@/lib/profileStorage'
+import { useAuth } from '@/components/AuthProvider'
 import MobileHeader from './MobileHeader'
 import MobileAccountScreen from './MobileAccountScreen'
+import MobileDVProfileSheet from './MobileDVProfileSheet'
+
+const LS_RDA_SEL = 'np:m:rda-sel'
 
 type Tab = 'calendar' | 'nutrition' | 'account'
+type SheetId = 'dv' | 'nutrient' | null
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'calendar', label: 'Calendar' },
@@ -40,8 +49,42 @@ function TabIcon({ id, active }: { id: Tab; active: boolean }) {
 }
 
 export default function MobileShell({ data }: { data: AppData }) {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
   const [tabBarBottom, setTabBarBottom] = useState(0)
+  const [openSheet, setOpenSheet] = useState<SheetId>(null)
+
+  const [rdaSelection, setRdaSelection] = useState<string>('')
+  const [savedProfiles, setSavedProfiles] = useState<SavedProfile[]>([])
+
+  useEffect(() => {
+    const sel = localStorage.getItem(LS_RDA_SEL)
+    if (sel !== null) setRdaSelection(sel)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LS_RDA_SEL, rdaSelection)
+  }, [rdaSelection])
+
+  useEffect(() => {
+    if (!user) {
+      setSavedProfiles([])
+      setRdaSelection((sel) => (sel.startsWith('saved:') ? '' : sel))
+      return
+    }
+    loadSavedProfiles().then(setSavedProfiles).catch(console.error)
+  }, [user])
+
+  const rdaProfile = useMemo<RDAProfile | null>(() => {
+    if (!rdaSelection) return null
+    if (rdaSelection.startsWith('saved:')) {
+      const saved = savedProfiles.find((p) => p.id === rdaSelection.slice(6))
+      if (!saved) return null
+      const dw = typeof saved.values['dailyWeightG'] === 'number' ? (saved.values['dailyWeightG'] as number) : 1700
+      return { id: 'custom', label: saved.name, shortLabel: saved.name, description: 'Saved custom profile', values: saved.values, dailyWeightG: dw }
+    }
+    return getProfile(rdaSelection as ProfileId, undefined)
+  }, [rdaSelection, savedProfiles])
 
   // Body scroll lock — /m and / share one <body> (single root layout), so a
   // missing restore on unmount leaves the desktop app unscrollable after
@@ -77,7 +120,10 @@ export default function MobileShell({ data }: { data: AppData }) {
 
   return (
     <div className="flex flex-col h-dvh bg-slate-900 text-slate-100">
-      <MobileHeader />
+      <MobileHeader
+        profileLabel={rdaProfile ? rdaProfile.shortLabel : 'No Profile'}
+        onProfileClick={() => setOpenSheet('dv')}
+      />
 
       <main className="flex-1 overflow-y-auto overscroll-contain">
         {activeTab === 'calendar' && (
@@ -87,7 +133,11 @@ export default function MobileShell({ data }: { data: AppData }) {
           <div className="p-4 text-slate-400">Coming in Phase 4</div>
         )}
         {activeTab === 'account' && (
-          <MobileAccountScreen onLoginSuccess={() => setActiveTab('calendar')} />
+          <MobileAccountScreen
+            onLoginSuccess={() => setActiveTab('calendar')}
+            rdaProfile={rdaProfile}
+            onOpenDVSheet={() => setOpenSheet('dv')}
+          />
         )}
       </main>
 
@@ -115,6 +165,15 @@ export default function MobileShell({ data }: { data: AppData }) {
           )
         })}
       </nav>
+
+      <MobileDVProfileSheet
+        open={openSheet === 'dv'}
+        onClose={() => setOpenSheet(null)}
+        rdaSelection={rdaSelection}
+        onSelect={setRdaSelection}
+        savedProfiles={savedProfiles}
+        isLoggedIn={!!user}
+      />
     </div>
   )
 }

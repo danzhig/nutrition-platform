@@ -65,7 +65,7 @@ Every signature below was read directly from the repo on 2026-08-07. **Where thi
 | Ph-0 | Unblock `/m`: route group, viewport export, mobile entry point | ✅ Complete (2026-08-12) |
 | Ph-1 | Foundation: Route, Layout, Shell, Header | ✅ Complete (2026-08-12) |
 | Ph-2 | Account Screen + Auth | ✅ Complete (2026-08-12) |
-| Ph-3 | DV Profile Sheet | ⬜ Not started |
+| Ph-3 | DV Profile Sheet | ✅ Complete (2026-08-12) |
 | Ph-4a | Nutrition Screen — Core Controls | ⬜ Not started |
 | Ph-4b | Nutrition Screen — Accordion + Nutrient Rows | ⬜ Not started |
 | Ph-4c | Nutrition Screen — Advanced Features | ⬜ Not started |
@@ -237,9 +237,16 @@ components/mobile/
 
 ---
 
-### ⬜ Phase 3 — DV Profile Sheet
+### ✅ Phase 3 — COMPLETE (2026-08-12) — DV Profile Sheet
 
 **Goal:** The DV profile chip in the header is tappable. Tapping opens a bottom sheet showing all profiles. Selection persists to `np:m:rda-sel` in localStorage. First selection shows a toast asking to set as device default.
+
+**Implementation notes (2026-08-12):**
+- Selection is a single `string` (mirrors desktop `AppShell.tsx`'s `rdaSelection` pattern exactly): `''` = None, a `ProfileId` for built-ins, `saved:<uuid>` for a saved profile. `getProfile()` resolves built-ins; saved profiles are resolved inline the same way `AppShell.tsx:128-145` does.
+- Custom-profile **editing** is intentionally not built on mobile yet (per this phase's own scope note — "for now allow selecting built-ins only"); saved custom profiles created on desktop are still selectable and shown under a "Saved Profiles" divider.
+- The device-default star and first-selection toast are purely local (`localStorage` `np:m:rda-default` / `np:m:rda-default-set`) — no Supabase account-default write, since that's an account-scoped desktop feature (`userPreferencesStorage.ts`) out of scope here.
+- `MobileAccountScreen`'s "Default DV Profile" row (Ph-2 placeholder) now reads the live `rdaProfile` computed in `MobileShell` instead of raw localStorage, and opens the same sheet.
+- Sheet open/close animation implemented (slide up via a mount-then-`translate-y-0` pattern); swipe-to-dismiss drag gesture is explicitly Ph-7 scope and not added here.
 
 **Files to create:**
 
